@@ -1,4 +1,4 @@
-﻿using ApiCore.Services;
+using ApiCore.Services;
 using ApiCore.Models;
 using ApiCore.Data;
 using Microsoft.AspNetCore.Mvc;
@@ -6,11 +6,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ApiCore.Controllers;
 
-/*
-Сервис для обработки отправки данных в систему
-Содержит:
-    UploadFiles - endpoint для отправки файлов с фронта
-*/
 
 [ApiController]
 [Route("api/v1/analysis")]
@@ -32,16 +27,12 @@ public class AnalysisController : ControllerBase
     [HttpPost("upload")]
     [DisableRequestSizeLimit] // Чтобы методисты могли загружать тяжелые CSV/архивы
     public async Task<IActionResult> UploadFiles(
-        [FromForm] IFormFile benchmarkFile,           // Эталонный файл (JSON/CSV)
-        [FromForm] List<IFormFile> userResponseFiles,    // Массив файлов с реальными ответами студентов
+        [FromForm] List<IFormFile> userResponseFiles,    // Массив файлов с реальными отзывами/анкетами
         [FromForm] string modelType = "deepseek")     // Выбор нейросети (deepseek или gigachat)
     {
         // 1. Быстрая валидация (Критерий ТЗ: Обработка ошибок)
-        if (benchmarkFile == null || benchmarkFile.Length == 0)
-            return BadRequest(new { error = "Отсутствует или пуст файл с эталонными ответами." });
-
         if (userResponseFiles == null || !userResponseFiles.Any())
-            return BadRequest(new { error = "Необходимо загрузить хотя бы один файл с ответами пользователей." });
+            return BadRequest(new { error = "Необходимо загрузить хотя бы один файл с отзывами пользователей." });
 
         var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
         if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
@@ -56,12 +47,6 @@ public class AnalysisController : ControllerBase
         var tempDir = Path.Combine(Directory.GetCurrentDirectory(), "temp_uploads", taskId);
         Directory.CreateDirectory(tempDir);
 
-        var benchmarkPath = Path.Combine(tempDir, benchmarkFile.FileName);
-        using (var stream = new FileStream(benchmarkPath, FileMode.Create))
-        {
-            await benchmarkFile.CopyToAsync(stream);
-        }
-
         var userResponsePaths = new List<string>();
         foreach (var file in userResponseFiles)
         {
@@ -74,7 +59,7 @@ public class AnalysisController : ControllerBase
         }
 
         // Сохраняем информацию об отчете в базу данных
-        var courseName = FileParser.ExtractCourseName(benchmarkFile.FileName);
+        var courseName = FileParser.ExtractCourseName(userResponseFiles[0].FileName);
         var report = new AnalysisReport
         {
             Id = taskId,
@@ -92,14 +77,14 @@ public class AnalysisController : ControllerBase
         {
             using var scope = _serviceScopeFactory.CreateScope();
             var scopedService = scope.ServiceProvider.GetRequiredService<AnalysisService>();
-            await scopedService.ProcessAnalysisAsync(taskId, userId, benchmarkPath, userResponsePaths, modelType, tempDir);
+            await scopedService.ProcessAnalysisAsync(taskId, userId, userResponsePaths, modelType, tempDir);
         });
 
         // Возвращаем фронту ID задачи. Фронт начнет слушать WebSocket/SignalR с этим ID
         return Accepted(new
         {
             task_id = taskId,
-            message = "Файлы успешно прошли первичную валидацию и приняты в обработку ИИ-агентами."
+            message = "Файлы опросов успешно прошли первичную валидацию и приняты в обработку ИИ-агентами."
         });
     }
 

@@ -1,4 +1,4 @@
-﻿using ApiCore.Models;
+using ApiCore.Models;
 using ApiCore.Data;
 using System.Text;
 using System.Text.Json;
@@ -34,7 +34,7 @@ public class AnalysisService
         _dbContext = dbContext;
     }
 
-    public async Task ProcessAnalysisAsync(string taskId, Guid userId, string benchmarkPath, List<string> userResponsePaths, string modelType, string tempDir)
+    public async Task ProcessAnalysisAsync(string taskId, Guid userId, List<string> userResponsePaths, string modelType, string tempDir)
     {
         _logger.LogInformation($"[Task {taskId}] Начало фоновой обработки пакета файлов.");
         TaskTracker[taskId] = ("Processing", null, null);
@@ -100,7 +100,7 @@ public class AnalysisService
             userResponsePaths = expandedPaths;
 
             // 1. Повторная глубокая валидация в фоне
-            var validation = _validationService.ValidateFiles(benchmarkPath, userResponsePaths);
+            var validation = _validationService.ValidateFiles(userResponsePaths);
             if (!validation.IsValid)
             {
                 var errors = string.Join("; ", validation.Errors);
@@ -118,7 +118,7 @@ public class AnalysisService
 
             // 2. Парсинг файла
             _logger.LogInformation($"[Task {taskId}] Запуск циклического парсинга CSV файлов...");
-            CourseBatchAnalysisRequest payload = _fileParser.ParseToBatchRequest(benchmarkPath, userResponsePaths);
+            CourseBatchAnalysisRequest payload = _fileParser.ParseToBatchRequest(userResponsePaths);
             payload.BatchId = taskId;
 
             // 3. Отправка JSON-контракта в Python AI-Driver
