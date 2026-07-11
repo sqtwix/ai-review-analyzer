@@ -1,4 +1,4 @@
-﻿using System.Text;
+using System.Text;
 using ApiCore.Data;
 using ApiCore.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer; // Добавить этот using
@@ -67,28 +67,21 @@ builder.Services.AddOpenApi(options =>
             var formSchema = new OpenApiSchema
             {
                 Type = "object",
-                Required = new HashSet<string> { "benchmarkFile", "userResponseFiles" }
+                Required = new HashSet<string> { "userResponseFiles" }
             };
-
-            formSchema.Properties.Add("benchmarkFile", new OpenApiSchema
-            {
-                Type = "string",
-                Format = "binary",
-                Description = "Эталонный файл с ответами курса (.csv / .json)"
-            });
 
             formSchema.Properties.Add("userResponseFiles", new OpenApiSchema
             {
                 Type = "array",
                 Items = new OpenApiSchema { Type = "string", Format = "binary" },
-                Description = "Массив файлов с реальными ответами студентов"
+                Description = "Массив файлов с анкетами/отзывами слушателей курса (.xlsx / .xls / .csv)"
             });
 
             formSchema.Properties.Add("modelType", new OpenApiSchema
             {
                 Type = "string",
                 Default = new OpenApiString("deepseek"),
-                Description = "Модель ИИ (deepseek или gigachat)"
+                Description = "Модель ИИ (deepseek, gigachat или qwen_local)"
             });
 
             operation.RequestBody.Content.Add("multipart/form-data", new OpenApiMediaType

@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace ApiCore.Controllers;
 
+
 [ApiController]
 [Route("api/v1/auth")]
 public class AuthController : ControllerBase

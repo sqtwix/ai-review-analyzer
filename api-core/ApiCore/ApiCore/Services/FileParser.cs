@@ -1,6 +1,7 @@
-﻿using ApiCore.Models;
+using ApiCore.Models;
 using System.Text;
 using ExcelDataReader;
+using System.Text.RegularExpressions;
 
 namespace ApiCore.Services;
 
@@ -25,86 +26,26 @@ public class FileParser
         return rows;
     }
 
-    public CourseBatchAnalysisRequest ParseToBatchRequest(string benchmarkPath, List<string> userResponsePaths)
+    public CourseBatchAnalysisRequest ParseToBatchRequest(List<string> surveyPaths)
     {
         var batchRequest = new CourseBatchAnalysisRequest
         {
-            BatchId = Guid.NewGuid().ToString(),
-            // Вытаскиваем имя курса из названия файла эталона (например, "ЭК 001")
-            CourseName = ExtractCourseName(Path.GetFileName(benchmarkPath))
+            BatchId = Guid.NewGuid().ToString()
         };
 
-        // 1. Сначала парсим общий эталонный файл в плоский словарь: "Текст Вопроса" -> "Правильный Ответ"
-        var referenceAnswersLookup = ParseBenchmarkFile(benchmarkPath);
-
-        // 2. Поочередно парсим каждый файл с ответами студентов по темам
-        foreach (var userPath in userResponsePaths)
+        foreach (var path in surveyPaths)
         {
-            var testPayload = ParseUserResponseFile(userPath, referenceAnswersLookup);
-            if (testPayload != null)
+            var courseSurvey = ParseSurveyFile(path);
+            if (courseSurvey != null)
             {
-                batchRequest.Tests.Add(testPayload);
+                batchRequest.Courses.Add(courseSurvey);
             }
         }
 
         return batchRequest;
     }
 
-    private Dictionary<string, string> ParseBenchmarkFile(string filePath)
-    {
-        var lookup = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        var ext = Path.GetExtension(filePath).ToLowerSuffix();
-
-        if (ext == ".xlsx" || ext == ".xls")
-        {
-            var rows = ReadExcelRows(filePath);
-            if (rows.Count < 3) return lookup;
-
-            var excelHeaders = rows[0];
-            var excelValues = rows[2];
-
-            for (int i = 0; i < excelHeaders.Count; i++)
-            {
-                if (i < excelValues.Count && !string.IsNullOrWhiteSpace(excelHeaders[i]))
-                {
-                    string questionText = CleanText(excelHeaders[i]);
-                    lookup[questionText] = CleanText(excelValues[i]);
-                }
-            }
-            return lookup;
-        }
-
-        using var stream = File.OpenRead(filePath);
-        var encoding = GetEncoding(stream);
-        using var reader = new StreamReader(stream, encoding);
-
-        // Строка 1: Текст вопросов (Заголовки)
-        string? headerLine = reader.ReadLine();
-        // Строка 2: Субхидеры со словом "Правильный ответ" (пропускаем)
-        string? subHeaderLine = reader.ReadLine();
-        // Строка 3: Сами правильные ответы из эталона
-        string? valuesLine = reader.ReadLine();
-
-        if (headerLine == null || valuesLine == null) return lookup;
-
-        char delimiter = headerLine.Contains(';') ? ';' : ',';
-        var headers = ParseCsvLine(headerLine, delimiter);
-        var values = ParseCsvLine(valuesLine, delimiter);
-
-        for (int i = 0; i < headers.Count; i++)
-        {
-            if (i < values.Count && !string.IsNullOrWhiteSpace(headers[i]))
-            {
-                // Очищаем заголовки от возможных артефактов и кавычек
-                string questionText = CleanText(headers[i]);
-                lookup[questionText] = CleanText(values[i]);
-            }
-        }
-
-        return lookup;
-    }
-
-    private AiTestPayloadDto? ParseUserResponseFile(string filePath, Dictionary<string, string> referenceAnswersLookup)
+    private CourseSurveyDto? ParseSurveyFile(string filePath)
     {
         var ext = Path.GetExtension(filePath).ToLowerSuffix();
         List<List<string>> rows;
@@ -138,98 +79,153 @@ public class FileParser
         if (rows.Count < 2) return null;
 
         var headers = rows[0];
-        var subHeaders = rows[1];
 
-        var testPayload = new AiTestPayloadDto
+        // Динамическое сопоставление колонок
+        int posCategoryIdx = FindColumnIndex(headers, new[] { "должность", "категори" });
+        int motivationIdx = FindColumnIndex(headers, new[] { "почему вы решили", "решили пройти", "почему решили" });
+        
+        int usefulnessScoreIdx = FindColumnIndex(headers, new[] { "полезность программы", "полезность по 10", "программа полезна" });
+        int usefulnessCommentIdx = FindColumnIndex(headers, new[] { "наиболее актуальны", "актуальны и почему" });
+        int appliedSkillsIdx = FindColumnIndex(headers, new[] { "сможете применить", "применить в своей" });
+        
+        int expectedEffectIdx = FindColumnIndex(headers, new[] { "эффект от обучения", "ожидаемый эффект" });
+        int expectedEffectReasonIdx = FindColumnIndex(headers, new[] { "почему", "причины" }, expectedEffectIdx + 1);
+        
+        int topicsExcludeIdx = FindColumnIndex(headers, new[] { "исключить" });
+        int topicsAddIdx = FindColumnIndex(headers, new[] { "дополнить" });
+        
+        int practicalityScoreIdx = FindColumnIndex(headers, new[] { "практическую часть", "практико-ориентированность" });
+        int practicalityCommentIdx = FindColumnIndex(headers, new[] { "достаточно ли практических" });
+        int practiceTuningIdx = FindColumnIndex(headers, new[] { "требуют большей практической" });
+        int practiceChangeIdx = FindColumnIndex(headers, new[] { "изменить в организации" });
+        
+        int accessibilityScoreIdx = FindColumnIndex(headers, new[] { "доступность материала" });
+        int accessibilityCommentIdx = FindColumnIndex(headers, new[] { "последовательность тем", "логика изложения" });
+        int logicSequenceReasonIdx = FindColumnIndex(headers, new[] { "в чем это заключается" }, accessibilityCommentIdx + 1);
+        
+        int askQuestionsIdx = FindColumnIndex(headers, new[] { "задать интересующие", "задать вопросы" });
+        int askQuestionsReasonIdx = FindColumnIndex(headers, new[] { "подробнее" }, askQuestionsIdx + 1);
+        
+        int isDetachedIdx = FindColumnIndex(headers, new[] { "отстраненность от процесса", "отстраненность" });
+        int detachmentReasonIdx = FindColumnIndex(headers, new[] { "обучения они возникали", "моменты обучения" });
+        int involvementIdx = FindColumnIndex(headers, new[] { "повысить вашу вовлеченность", "вовлеченность в обучение" });
+        
+        int formatIdx = FindColumnIndex(headers, new[] { "формат обучения" });
+        int interactionScoreIdx = FindColumnIndex(headers, new[] { "взаимодействие по 10", "взаимодействие с командой" });
+        int interactionCommentIdx = FindColumnIndex(headers, new[] { "прокомментируйте", "комментарий" }, interactionScoreIdx + 1);
+
+        // Извлечение имени и периода курса из названия файла
+        string fileName = Path.GetFileNameWithoutExtension(filePath);
+        string period = "";
+        string courseName = fileName;
+
+        // Поиск паттерна даты: например "28.05-10.06" или "28.05-10.06.2026"
+        var periodMatch = Regex.Match(fileName, @"^\d{2}\.\d{2}-\d{2}\.\d{2}(\.\d{4})?");
+        if (periodMatch.Success)
         {
-            TestName = ExtractTestName(Path.GetFileName(filePath))
+            period = periodMatch.Value;
+            courseName = fileName.Substring(period.Length).Trim(' ', '_', '-');
+        }
+
+        // Дополнительная чистка названия курса
+        courseName = Regex.Replace(courseName, @"_\d+_(ДОТ|очно|дист)", "", RegexOptions.IgnoreCase).Trim();
+        courseName = courseName.Replace("Вопросы функционирования контрактной системы_40_ДОТ", "Вопросы функционирования контрактной системы").Trim();
+
+        var courseSurvey = new CourseSurveyDto
+        {
+            CourseName = courseName,
+            Period = string.IsNullOrEmpty(period) ? "Не указан" : period,
+            StudentsCount = 0
         };
 
-        // Шаг A. Картируем структуру колонок вопросов.
-        // Первые 4 колонки (0,1,2,3) — это Пользователь, Дата, Статус, Баллы. 
-        // Начиная с 4-й идут блоки вопросов с шагом в 4 колонки.
-        var questionColumnsIndices = new List<(string QuestionId, string QuestionText, int StartIdx)>();
-        int questionCounter = 1;
-
-        for (int i = 4; i < headers.Count; i += 4)
-        {
-            string rawQuestionText = headers[i];
-            if (string.IsNullOrWhiteSpace(rawQuestionText)) continue;
-
-            string questionText = CleanText(rawQuestionText);
-
-            // Генерируем уникальный ID вопроса для ИИ-драйвера
-            string questionId = $"q_{testPayload.TestName.Replace(" ", "_")}_{questionCounter++}";
-
-            // Ищем правильный ответ в словаре эталона. Если его там нет, подстрахуемся дефолтным
-            string refAnswer = referenceAnswersLookup.TryGetValue(questionText, out var ans)
-                ? ans
-                : "Эталонный ответ не найден в мастер-файле";
-
-            testPayload.Questions.Add(new AiQuestionDto
-            {
-                QuestionId = questionId,
-                QuestionText = questionText,
-                QuestionType = "единственный выбор", // Будет обновлено динамически из строк студентов
-                ReferenceAnswer = refAnswer
-            });
-
-            questionColumnsIndices.Add((questionId, questionText, i));
-        }
-
-        // Шаг Б. Читаем строки с ответами студентов
-        for (int r = 2; r < rows.Count; r++)
+        int studentCounter = 1;
+        for (int r = 1; r < rows.Count; r++)
         {
             var fields = rows[r];
-            if (fields.Count < 4) continue;
+            if (fields.Count == 0 || fields.All(string.IsNullOrWhiteSpace)) continue;
 
-            // Пропускаем технические или пустые строки, если ID пользователя не числовой
-            string studentId = fields[0];
-            if (string.IsNullOrWhiteSpace(studentId) || studentId.Contains("Пользователь")) continue;
+            // Если колонка с должностью пуста и все остальные пусты, пропускаем
+            string pos = GetValueSafely(fields, posCategoryIdx);
+            if (string.IsNullOrWhiteSpace(pos) && fields.Count > usefulnessScoreIdx && string.IsNullOrWhiteSpace(GetValueSafely(fields, usefulnessScoreIdx)))
+                continue;
 
-            var attempt = new StudentAttemptDto
+            var response = new SurveyResponseDto
             {
-                StudentId = studentId,
-                CompletionDate = fields[1],
-                Status = fields[2],
-                TotalScoreText = fields[3]
+                StudentId = $"student_{studentCounter++}",
+                PositionCategory = pos,
+                MotivationComment = GetValueSafely(fields, motivationIdx),
+                UsefulnessScore = ParseScore(GetValueSafely(fields, usefulnessScoreIdx)),
+                UsefulnessComment = GetValueSafely(fields, usefulnessCommentIdx),
+                AppliedSkillsComment = GetValueSafely(fields, appliedSkillsIdx),
+                ExpectedEffect = GetValueSafely(fields, expectedEffectIdx),
+                ExpectedEffectReason = GetValueSafely(fields, expectedEffectReasonIdx),
+                TopicsToExcludeComment = GetValueSafely(fields, topicsExcludeIdx),
+                TopicsToAddComment = GetValueSafely(fields, topicsAddIdx),
+                PracticalityScore = ParseScore(GetValueSafely(fields, practicalityScoreIdx)),
+                PracticalityComment = GetValueSafely(fields, practicalityCommentIdx),
+                PracticeTuningComment = GetValueSafely(fields, practiceTuningIdx),
+                PracticeChangeComment = GetValueSafely(fields, practiceChangeIdx),
+                AccessibilityScore = ParseScore(GetValueSafely(fields, accessibilityScoreIdx)),
+                AccessibilityComment = GetValueSafely(fields, accessibilityCommentIdx),
+                LogicSequenceReason = GetValueSafely(fields, logicSequenceReasonIdx),
+                AskQuestionsComment = GetValueSafely(fields, askQuestionsIdx),
+                AskQuestionsReason = GetValueSafely(fields, askQuestionsReasonIdx),
+                IsDetached = ParseIsDetached(GetValueSafely(fields, isDetachedIdx)),
+                DetachmentReasonComment = GetValueSafely(fields, detachmentReasonIdx),
+                InvolvementComment = GetValueSafely(fields, involvementIdx),
+                PreferredFormat = GetValueSafely(fields, formatIdx),
+                InteractionScore = ParseScore(GetValueSafely(fields, interactionScoreIdx)),
+                InteractionComment = GetValueSafely(fields, interactionCommentIdx)
             };
 
-            // Разбираем ответы студента по нашему маппингу индексов колонок
-            foreach (var qMap in questionColumnsIndices)
-            {
-                int baseIdx = qMap.StartIdx;
-                if (baseIdx + 2 < fields.Count)
-                {
-                    // Динамически обновляем тип вопроса в блоке Questions (например: "текстовый ввод")
-                    var linkedQuestion = testPayload.Questions.FirstOrDefault(q => q.QuestionId == qMap.QuestionId);
-                    if (linkedQuestion != null && fields[baseIdx] != "Тип")
-                    {
-                        linkedQuestion.QuestionType = fields[baseIdx];
-                    }
-
-                    // Код lcnwu5wcgk означает верный ответ, r1s987zw3e — неверный
-                    bool isCorrectByLms = fields[baseIdx + 1].Equals("lcnwu5wcgk", StringComparison.OrdinalIgnoreCase);
-
-                    // Так как в выгрузках ЛМС нет тайминга на каждый вопрос, а ТЗ строго требует "анализ временных метрик",
-                    // мы симулируем реалистичное время прохождения (от 35 до 160 секунд) на базе хэша студента, 
-                    // чтобы ИИ-агенты могли отрабатывать аномалии (SpeedCheating).
-                    int simulatedTime = new Random(studentId.GetHashCode() + baseIdx).Next(35, 160);
-
-                    attempt.Answers.Add(new AiUserAnswerDto
-                    {
-                        QuestionId = qMap.QuestionId,
-                        UserAnswer = CleanText(fields[baseIdx + 2]),
-                        IsCorrectByLms = isCorrectByLms,
-                        TimeSpentSeconds = simulatedTime
-                    });
-                }
-            }
-
-            testPayload.StudentAttempts.Add(attempt);
+            courseSurvey.Responses.Add(response);
         }
 
-        return testPayload;
+        courseSurvey.StudentsCount = courseSurvey.Responses.Count;
+        return courseSurvey;
+    }
+
+    private static string GetValueSafely(List<string> row, int index)
+    {
+        if (index >= 0 && index < row.Count)
+        {
+            return row[index].Trim();
+        }
+        return string.Empty;
+    }
+
+    private static int FindColumnIndex(List<string> headers, string[] keywords, int startIdx = 0)
+    {
+        if (startIdx < 0) startIdx = 0;
+        for (int i = startIdx; i < headers.Count; i++)
+        {
+            var header = headers[i].ToLowerInvariant();
+            if (keywords.Any(k => header.Contains(k)))
+            {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    private static int ParseScore(string text, int defaultValue = 10)
+    {
+        if (string.IsNullOrWhiteSpace(text)) return defaultValue;
+        var match = Regex.Match(text, @"\d+");
+        if (match.Success && int.TryParse(match.Value, out int score))
+        {
+            if (score < 1) return 1;
+            if (score > 10) return 10;
+            return score;
+        }
+        return defaultValue;
+    }
+
+    private static bool ParseIsDetached(string text)
+    {
+        if (string.IsNullOrWhiteSpace(text)) return false;
+        var clean = text.Trim().ToLowerInvariant();
+        return clean == "да" || clean == "yes" || clean == "1" || clean == "true";
     }
 
     private static List<string> ParseCsvLine(string line, char delimiter = ',')
@@ -245,12 +241,12 @@ public class FileParser
             {
                 if (inQuotes && i + 1 < line.Length && line[i + 1] == '"')
                 {
-                    currentField.Append('"'); // Читаем экранированную кавычку ""
+                    currentField.Append('"');
                     i++;
                 }
                 else
                 {
-                    inQuotes = !inQuotes; // Переключаем режим кавычек
+                    inQuotes = !inQuotes;
                 }
             }
             else if (c == delimiter && !inQuotes)
@@ -283,7 +279,7 @@ public class FileParser
         }
 
         string cp1251String = cp1251.GetString(buffer, 0, bytesRead);
-        if (cp1251String.Contains("Пользователь") || cp1251String.Contains("Дата") || cp1251String.Contains("Статус") || cp1251String.Contains("Правильный ответ"))
+        if (cp1251String.Contains("должность") || cp1251String.Contains("полезность") || cp1251String.Contains("формат") || cp1251String.Contains("практико"))
         {
             return cp1251;
         }
@@ -293,30 +289,15 @@ public class FileParser
 
     public static string ExtractCourseName(string fileName)
     {
-        int dashIdx = fileName.IndexOf(" - ");
-        if (dashIdx != -1) return fileName.Substring(0, dashIdx).Replace("Эталон ответов ", "").Trim();
-        return "Электронный курс";
-    }
-
-    public static string ExtractTestName(string fileName)
-    {
-        int dashIdx = fileName.IndexOf(" - ");
-        if (dashIdx != -1)
+        string nameWithoutExt = Path.GetFileNameWithoutExtension(fileName);
+        var periodMatch = Regex.Match(nameWithoutExt, @"^\d{2}\.\d{2}-\d{2}\.\d{2}(\.\d{4})?");
+        string courseName = nameWithoutExt;
+        if (periodMatch.Success)
         {
-            int dotIdx = fileName.LastIndexOf('.');
-            return fileName.Substring(dashIdx + 3, dotIdx - (dashIdx + 3)).Trim();
+            courseName = nameWithoutExt.Substring(periodMatch.Value.Length).Trim(' ', '_', '-');
         }
-        return Path.GetFileNameWithoutExtension(fileName);
-    }
-
-    private string CleanText(string text)
-    {
-        if (string.IsNullOrEmpty(text)) return text;
-        // Убираем лишние кавычки по краям, которые могли остаться после парсинга CSV
-        if (text.StartsWith("\"") && text.EndsWith("\"") && text.Length > 1)
-        {
-            text = text.Substring(1, text.Length - 2);
-        }
-        return text.Trim().Replace("\"\"", "\"");
+        courseName = Regex.Replace(courseName, @"_\d+_(ДОТ|очно|дист)", "", RegexOptions.IgnoreCase).Trim();
+        courseName = courseName.Replace("Вопросы функционирования контрактной системы_40_ДОТ", "Вопросы функционирования контрактной системы").Trim();
+        return courseName;
     }
 }
