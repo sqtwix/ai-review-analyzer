@@ -1,69 +1,119 @@
-﻿from pydantic import BaseModel, Field
-from typing import List
+from pydantic import BaseModel, Field
+from typing import List, Dict
 
 # ========================= Analysis Response Schemas =========================
 
 # Эти схемы соответствуют контракту ответа от ai-driver к api-core.
-# Содержат результаты работы всей цепочки агентов: анализ, аномалии, статистику.
+# Содержат результаты работы цепочки ИИ-агентов по анализу отзывов и анкет.
 
-class CriticalMassError(BaseModel):
-    # ID вопроса с массовой ошибкой
-    question_id: str
-    # Процент неправильных ответов
-    fail_rate_percent: float
-    # Описание паттерна ошибок
-    error_pattern_description: str
-    # Методическая причина
-    methodological_reason: str
+class Distribution(BaseModel):
+    low: float  # 1-3 %
+    mid: float  # 4-7 %
+    high: float  # 8-10 %
 
-class TestSummary(BaseModel):
-    # Название теста
-    test_name: str
-    # Массовые ошибки по вопросам
-    critical_mass_errors: List[CriticalMassError] = []
+class NumericMetric(BaseModel):
+    average: float
+    median: float
+    std_dev: float
+    distribution: Distribution
 
-class StudentDetailedAnalysis(BaseModel):
-    # ID студента
-    student_id: str
-    # Название теста
-    test_name: str
-    # ID вопроса
-    question_id: str
-    # Оценка совпадения с эталоном (0-100)
-    ai_score_percent: float
-    # Статус уникальности: "Normal", "SuspiciousMatch"
-    uniqueness_status: str
-    # Объяснение ошибки
-    error_explanation: str
+class InvolvementMetric(BaseModel):
+    detached_percent: float
+    involved_percent: float
+    yes_count: int
+    no_count: int
 
-class Anomaly(BaseModel):
-    # ID студента с аномалией
-    student_id: str
-    # Тип: "SpeedCheating", "SuspiciousMatch"
-    anomaly_type: str
-    # Серьезность: "Low", "Medium", "High"
-    severity: str
-    # Описание аномалии
+class CourseStatistics(BaseModel):
+    usefulness: NumericMetric
+    practicality: NumericMetric
+    accessibility: NumericMetric
+    interaction: NumericMetric
+    involvement: InvolvementMetric
+
+class Section2KeyCriteria(BaseModel):
+    usefulness_summary: str
+    practicality_summary: str
+    accessibility_summary: str
+    interaction_summary: str
+    involvement_summary: str
+
+class AddedTopic(BaseModel):
+    topic: str
+    count: int
+
+class Section3Suggestions(BaseModel):
+    unwanted_topics: List[str]
+    added_topics: List[AddedTopic]
+    preferred_format_summary: str
+
+class Section4Trajectory(BaseModel):
+    further_implementation_needed: str
+    student_selection_correction: str
+    added_topics_recommendation: str
+    hours_correction_needed: str
+    format_correction_needed: str
+    conclusions: List[str]
+
+class AnalyticalReport(BaseModel):
+    section1_general_info: str
+    section2_key_criteria: Section2KeyCriteria
+    section3_suggestions: Section3Suggestions
+    section4_trajectory: Section4Trajectory
+
+class TrendPoint(BaseModel):
+    period: str
+    usefulness_avg: float
+    practicality_avg: float
+    accessibility_avg: float
+    interaction_avg: float
+    involvement_avg: float
+
+class DashboardData(BaseModel):
+    correlation_matrix: Dict[str, Dict[str, float]]
+    trend_data: List[TrendPoint] = []
+
+class TopicInfo(BaseModel):
+    topic: str
     description: str
+    frequency: int
 
-class CourseRecommendation(BaseModel):
-    # Цель рекомендации (тест, тема)
+class SentimentInfo(BaseModel):
+    positive: float
+    neutral: float
+    negative: float
+
+class ProblemInfo(BaseModel):
+    problem: str
+    frequency_percent: float
+    severity: str
+
+class QuoteInfo(BaseModel):
+    quote: str
+    frequency: int
+
+class RecommendationInfo(BaseModel):
     target: str
-    # Действие
     action_item: str
-    # Приоритет: "Low", "Medium", "High"
     priority: str
 
+class TextAnalysis(BaseModel):
+    top_topics: List[TopicInfo] = []
+    sentiment: SentimentInfo
+    key_problems: List[ProblemInfo] = []
+    quotes: List[QuoteInfo] = []
+    recommendations: List[RecommendationInfo] = []
+
+class CourseAnalysisResult(BaseModel):
+    course_name: str
+    period: str
+    students_count: int
+    statistics: CourseStatistics
+    position_distribution: Dict[str, int]
+    preferred_formats: Dict[str, int]
+    analytical_report: AnalyticalReport
+    dashboard_data: DashboardData
+    text_analysis: TextAnalysis
+
 class AnalysisResponse(BaseModel):
-    # Идентификатор пакета
     batch_id: str
-    # Общий вывод по курсу
-    global_course_summary: str
-    # Сводки по тестам
-    test_summaries: List[TestSummary] = []
-    # Детальный анализ по студентам
-    student_detailed_analyses: List[StudentDetailedAnalysis] = []
-    # Аномалии
-    anomalies: List[Anomaly] = []
-    # Рекомендации
-    course_recommendations: List[CourseRecommendation] = []
+    courses_analysis: List[CourseAnalysisResult]

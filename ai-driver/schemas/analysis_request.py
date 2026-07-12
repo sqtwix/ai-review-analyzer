@@ -1,53 +1,45 @@
-﻿from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field
 from typing import List, Optional
 
 # ========================= Analysis Request Schemas =========================
 
 # Эти схемы соответствуют контракту данных между api-core и ai-driver.
-# Представляют полную структуру: курс -> тесты -> вопросы -> попытки студентов.
+# Представляют полную структуру опроса: анкеты слушателей по курсам.
 
-class StudentAnswer(BaseModel):
-    question_id: str
-    # Ответ пользователя (текстовый или кодовый)
-    user_answer: str
-    # Флаг правильности от LMS (эталон для сравнения с оценкой ИИ)
-    is_correct_by_lms: bool
-    # Время выполнения задания в секундах
-    time_spent_seconds: int
-
-class StudentAttempt(BaseModel):
-    # Обезличенный идентификатор студента
+class SurveyResponse(BaseModel):
     student_id: str
-    # Дата завершения попытки
-    completion_date: str
-    # Статус: "Пройден", "Не пройден", "В процессе"
-    status: str
-    # Текстовый результат, например "12 / 15 (80%)"
-    total_score_text: str
-    # Массив ответов студента на вопросы
-    answers: List[StudentAnswer]
+    position_category: str
+    usefulness_score: int
+    practicality_score: int
+    accessibility_score: int
+    interaction_score: int
+    preferred_format: str
+    is_detached: bool
+    
+    motivation_comment: str
+    usefulness_comment: str
+    applied_skills_comment: str
+    expected_effect: str
+    expected_effect_reason: str
+    topics_to_exclude_comment: str
+    topics_to_add_comment: str
+    practicality_comment: str
+    practice_tuning_comment: str
+    practice_change_comment: str
+    accessibility_comment: str
+    logic_sequence_reason: str
+    ask_questions_comment: str
+    ask_questions_reason: str
+    detachment_reason_comment: str
+    involvement_comment: str
+    interaction_comment: str
 
-class Question(BaseModel):
-    question_id: str
-    # Текст вопроса
-    question_text: str
-    # Тип: "единственный выбор", "множественный выбор", "текстовый ввод"
-    question_type: str
-    # Эталонный правильный ответ
-    reference_answer: str
-
-class Test(BaseModel):
-    # Название теста
-    test_name: str
-    # Вопросы с эталонными ответами
-    questions: List[Question]
-    # Попытки студентов
-    student_attempts: List[StudentAttempt]
+class CourseSurvey(BaseModel):
+    course_name: str
+    period: str
+    students_count: int
+    responses: List[SurveyResponse]
 
 class AnalysisRequest(BaseModel):
-    # Идентификатор пакета для трассировки
     batch_id: str
-    # Название курса
-    course_name: str
-    # Массив тестов для анализа
-    tests: List[Test]
+    courses: List[CourseSurvey]
