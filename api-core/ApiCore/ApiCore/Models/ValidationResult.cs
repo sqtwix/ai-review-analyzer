@@ -1,7 +1,4 @@
 ﻿namespace ApiCore.Models;
-/*
-Класс для сервсиа валидации, который хранит ошибки 
-*/
 
 
 public class ValidationResult
