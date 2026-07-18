@@ -1,4 +1,4 @@
-﻿from backend.agent_client import AgentClient
+from backend.agent_client import AgentClient
 import os
 
 # ========================= Agent Factory =========================
@@ -19,9 +19,9 @@ import os
 class AgentFactory:
 
     SPECIALIZATIONS = [
-        "main-analyzer",
-        "anomalies-analyzer",
-        "statistics-summarizer"
+        "qualitative-analyst",
+        "synthesis-creator",
+        "synthesis-summarizer"
     ]
 
     def create_queue(self, model: str) -> list:
