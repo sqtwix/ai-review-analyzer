@@ -2,10 +2,11 @@ import { useState, useMemo } from "react";
 import { 
   ArchiveRestore, ArrowLeft, Construction, Eye, Layers3, Monitor, Moon, PanelLeftClose, 
   PanelLeftOpen, Search, Sun, Pencil, Archive, Save, BookOpen, BarChart3, MessageSquare, 
-  AlertTriangle, CheckCircle, HelpCircle, ChevronRight, ThumbsUp, Quote
+  AlertTriangle, CheckCircle, HelpCircle, ChevronRight, ThumbsUp
 } from "lucide-react";
 import { buildCourseReportViewModel } from "../reportViewModel";
 import { DashboardTab } from "./report/DashboardTab";
+import { QualitativeTab } from "./report/QualitativeTab";
 
 // ========================= Auth Page Component =========================
 export function AuthPage({
@@ -607,13 +608,6 @@ export function CourseReportDetailPage({
     studentsCount,
   } = reportViewModel;
 
-  const getPriorityClass = (priority) => {
-    const p = String(priority).toLowerCase();
-    if (p === "high" || p === "высокий") return "risk";
-    if (p === "medium" || p === "средний") return "watch";
-    return "normal";
-  };
-
   return (
     <section className="page active" id="report-detail" data-title="Детали отчёта">
       <div className="report-header">
@@ -738,130 +732,13 @@ export function CourseReportDetailPage({
       {activeTab === "dashboard" && <DashboardTab viewModel={reportViewModel} />}
 
       {/* Tab 2: Qualitative Insights */}
-      {activeTab === "qualitative" && textAnalysis && (
-        <div style={{ display: "grid", gridTemplateColumns: "180px 1fr", gap: "24px" }}>
-          {/* Left Sub-nav */}
-          <aside style={{ display: "flex", flexDirection: "column", gap: "4px", borderRight: "1px solid var(--border-color)", paddingRight: "16px" }}>
-            {[
-              { key: "topics", label: "Темы отзывов" },
-              { key: "sentiment", label: "Тональность" },
-              { key: "problems", label: "Критичные проблемы" },
-              { key: "quotes", label: "Цитаты слушателей" },
-              { key: "recommendations", label: "Рекомендации" }
-            ].map((subTab) => (
-              <button
-                key={subTab.key}
-                type="button"
-                className={`subtab-btn ${qualActiveTab === subTab.key ? "active" : ""}`}
-                onClick={() => setQualActiveTab(subTab.key)}
-                style={{
-                  textAlign: "left", background: "none", border: "none", padding: "8px 10px", fontSize: "0.85rem",
-                  color: qualActiveTab === subTab.key ? "var(--accent-color)" : "var(--text-muted)", cursor: "pointer",
-                  fontWeight: qualActiveTab === subTab.key ? "bold" : "normal", borderRadius: "4px",
-                  background: qualActiveTab === subTab.key ? "var(--hover-color)" : "none"
-                }}
-              >
-                {subTab.label}
-              </button>
-            ))}
-          </aside>
-
-          {/* Right Content Area */}
-          <div style={{ minHeight: "300px" }}>
-            {/* Sub-tab: Topics */}
-            {qualActiveTab === "topics" && textAnalysis.top_topics && (
-              <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-                {textAnalysis.top_topics.map((t, idx) => (
-                  <article key={idx} className="panel" style={{ padding: "16px", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                    <div>
-                      <h4 style={{ fontSize: "1rem", margin: "0 0 6px 0", color: "var(--text-color)" }}>{t.topic}</h4>
-                      <p className="muted" style={{ fontSize: "0.85rem", margin: 0 }}>{t.description}</p>
-                    </div>
-                    <span className="badge" style={{ background: "var(--soft-green)", color: "var(--accent-color)", padding: "4px 10px", borderRadius: "10px", fontWeight: "bold" }}>
-                      Упоминаний: {t.frequency}
-                    </span>
-                  </article>
-                ))}
-              </div>
-            )}
-
-            {/* Sub-tab: Sentiment */}
-            {qualActiveTab === "sentiment" && textAnalysis.sentiment && (
-              <section className="panel" style={{ padding: "20px" }}>
-                <h3>Эмоциональная тональность отзывов</h3>
-                <p className="muted" style={{ fontSize: "0.85rem" }}>
-                  Распределение комментариев по тональности, определенное с помощью семантического ИИ-анализа.
-                </p>
-                <div style={{ display: "flex", gap: "16px", marginTop: "20px" }}>
-                  {[
-                    { label: "Позитивные отзывы", value: textAnalysis.sentiment.positive, color: "var(--accent-color)" },
-                    { label: "Нейтральные отзывы", value: textAnalysis.sentiment.neutral, color: "#f4a261" },
-                    { label: "Негативные отзывы", value: textAnalysis.sentiment.negative, color: "#e07a5f" }
-                  ].map((s, idx) => (
-                    <div key={idx} style={{ flex: 1, textAlign: "center", padding: "16px", background: "var(--hover-color)", borderRadius: "6px" }}>
-                      <strong style={{ fontSize: "1.8rem", color: s.color }}>{s.value.toFixed(0)}%</strong>
-                      <p className="muted" style={{ fontSize: "0.8rem", marginTop: "6px", marginBottom: 0 }}>{s.label}</p>
-                    </div>
-                  ))}
-                </div>
-              </section>
-            )}
-
-            {/* Sub-tab: Problems */}
-            {qualActiveTab === "problems" && textAnalysis.key_problems && (
-              <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-                {textAnalysis.key_problems.map((p, idx) => (
-                  <article key={idx} className="panel" style={{ display: "flex", alignItems: "center", gap: "16px", padding: "16px" }}>
-                    <span className={`risk-pill ${getPriorityClass(p.severity)}`} style={{ minWidth: "70px", textAlign: "center", padding: "4px 8px", fontSize: "0.75rem", borderRadius: "4px", fontWeight: "bold" }}>
-                      {p.severity}
-                    </span>
-                    <div style={{ flex: 1 }}>
-                      <strong style={{ fontSize: "0.95rem" }}>{p.problem}</strong>
-                    </div>
-                    <span className="muted" style={{ fontSize: "0.85rem" }}>
-                      Встречается в <b>{p.frequency_percent.toFixed(0)}%</b> отзывов
-                    </span>
-                  </article>
-                ))}
-              </div>
-            )}
-
-            {/* Sub-tab: Quotes */}
-            {qualActiveTab === "quotes" && textAnalysis.quotes && (
-              <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-                {textAnalysis.quotes.map((q, idx) => (
-                  <article key={idx} className="panel quote-card" style={{ padding: "16px", borderLeft: "4px solid var(--accent-color)" }}>
-                    <Quote size={20} className="muted" style={{ opacity: 0.3, marginBottom: "8px" }} />
-                    <p style={{ fontStyle: "italic", fontSize: "0.95rem", margin: "0 0 8px 0" }}>«{q.quote}»</p>
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.8rem", color: "var(--text-muted)" }}>
-                      <span>Слушатель курса</span>
-                      <span>Частота схожих отзывов: <b>{q.frequency}</b></span>
-                    </div>
-                  </article>
-                ))}
-              </div>
-            )}
-
-            {/* Sub-tab: Recommendations */}
-            {qualActiveTab === "recommendations" && textAnalysis.recommendations && (
-              <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-                {textAnalysis.recommendations.map((r, idx) => (
-                  <article key={idx} className="panel" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px" }}>
-                    <div>
-                      <span className="badge" style={{ fontSize: "0.75rem", background: "var(--border-color)", color: "var(--text-color)", padding: "2px 6px", borderRadius: "3px", marginRight: "8px" }}>
-                        Объект: {r.target}
-                      </span>
-                      <strong style={{ fontSize: "0.95rem" }}>{r.action_item}</strong>
-                    </div>
-                    <span className={`risk-pill ${getPriorityClass(r.priority)}`} style={{ padding: "4px 10px", fontSize: "0.75rem", borderRadius: "4px", fontWeight: "bold" }}>
-                      Приоритет: {r.priority}
-                    </span>
-                  </article>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
+      {activeTab === "qualitative" && (
+        <QualitativeTab
+          textAnalysis={textAnalysis}
+          activeTab={qualActiveTab}
+          onTabChange={setQualActiveTab}
+          sourceLimitation={reportViewModel.limitations.sourceEvidence}
+        />
       )}
 
       {/* Tab 3: Analytical Document View */}

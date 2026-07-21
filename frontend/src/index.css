@@ -1815,6 +1815,19 @@ th {
     grid-template-columns: 1fr;
   }
 
+  .qualitative-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .qualitative-subnav {
+    flex-direction: row;
+    flex-wrap: wrap;
+    padding-right: 0;
+    padding-bottom: 12px;
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+
   .settings-side {
     align-self: start;
   }
@@ -1862,6 +1875,16 @@ th {
   .chart-frame,
   .chart-frame-square {
     height: 240px;
+  }
+
+  .qualitative-card,
+  .recommendation-card {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .sentiment-grid {
+    grid-template-columns: 1fr;
   }
 
   .settings-back {
@@ -2913,6 +2936,152 @@ body[data-density="minimal"] .state-panel {
   display: block;
   height: 100%;
   background: var(--accent);
+}
+
+.qualitative-layout {
+  display: grid;
+  grid-template-columns: 190px minmax(0, 1fr);
+  gap: 24px;
+}
+
+.qualitative-subnav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-right: 16px;
+  border-right: 1px solid var(--line);
+}
+
+.qualitative-content {
+  min-height: 300px;
+  min-width: 0;
+}
+
+.qualitative-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.qualitative-card {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px;
+}
+
+.qualitative-card h4,
+.recommendation-card h4 {
+  margin: 0 0 6px;
+  color: var(--text);
+  font-size: 1rem;
+}
+
+.qualitative-card p {
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+.evidence-line {
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+.evidence-badge {
+  flex-shrink: 0;
+  background: var(--mint);
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.qualitative-empty {
+  padding: 24px;
+}
+
+.problem-card {
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.problem-card .risk-pill {
+  flex-shrink: 0;
+  min-width: 78px;
+  text-align: center;
+}
+
+.sentiment-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px;
+}
+
+.sentiment-panel h3 {
+  margin: 0;
+}
+
+.sentiment-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.sentiment-card {
+  display: grid;
+  gap: 6px;
+  min-height: 100px;
+  place-items: center;
+  padding: 16px;
+  border-radius: var(--radius);
+  background: var(--surface-soft);
+  text-align: center;
+}
+
+.sentiment-card strong {
+  font-size: 1.8rem;
+}
+
+.sentiment-card.positive strong {
+  color: var(--accent);
+}
+
+.sentiment-card.neutral strong {
+  color: var(--warning);
+}
+
+.sentiment-card.negative strong {
+  color: var(--danger);
+}
+
+.qualitative-quote-card {
+  padding: 16px;
+  border-left: 4px solid var(--accent);
+}
+
+.qualitative-quote-card svg {
+  opacity: 0.36;
+  margin-bottom: 8px;
+}
+
+.qualitative-quote-card p {
+  margin: 0;
+  font-size: 0.95rem;
+  font-style: italic;
+}
+
+.recommendation-card {
+  align-items: center;
+}
+
+.recommendation-target {
+  display: inline-flex;
+  margin-bottom: 8px;
+  background: var(--line);
+  color: var(--text);
+  font-size: 0.75rem;
 }
 
 .controls-panel {

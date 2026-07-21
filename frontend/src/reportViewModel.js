@@ -126,9 +126,9 @@ export function buildCourseReportViewModel(report) {
     involvement,
     limitations: {
       exactScoreDistribution:
-        "backend does not provide absolute 1-10 score buckets; frontend can display only aggregated 1-3 / 4-7 / 8-10 percentages.",
+        "Backend пока не передает абсолютные корзины оценок 1-10; frontend показывает агрегированные проценты 1-3 / 4-7 / 8-10.",
       sourceEvidence:
-        "backend does not provide source question ids or row ids for exact comment-level evidence.",
+        "точные номера строк и вопросов недоступны до расширения backend-контракта.",
     },
   };
 }
