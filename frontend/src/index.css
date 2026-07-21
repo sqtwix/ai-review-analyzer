@@ -900,6 +900,14 @@ p {
   animation: fade-in var(--motion-slow) var(--ease-out);
 }
 
+#report-detail {
+  background: var(--bg);
+}
+
+#report-detail .report-header {
+  box-shadow: none;
+}
+
 .hero-panel,
 .panel,
 .report-header {
@@ -3752,7 +3760,7 @@ body[data-density="minimal"] .state-panel {
   padding: 6px 0 10px;
   overflow-x: auto;
   border-bottom: 1px solid var(--line);
-  background: var(--bg);
+  background: inherit;
   scrollbar-width: thin;
 }
 
