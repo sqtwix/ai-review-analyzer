@@ -3118,15 +3118,23 @@ body[data-density="minimal"] .state-panel {
 
 .breakdown-row,
 .format-breakdown-row > div:first-child {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) max-content;
   align-items: center;
-  justify-content: space-between;
-  gap: 16px;
+  gap: 12px;
   font-size: var(--font-size-sm);
+}
+
+.breakdown-row span,
+.format-breakdown-row > div:first-child span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .breakdown-row strong,
 .format-breakdown-row strong {
+  justify-self: end;
   white-space: nowrap;
 }
 
