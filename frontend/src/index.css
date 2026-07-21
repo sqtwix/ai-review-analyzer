@@ -2062,14 +2062,14 @@ th {
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  margin-top: 2px;
+  gap: 3px;
+  margin-top: 0;
   max-height: calc(var(--app-viewport-height) - 320px);
 }
 
 .sidebar-section-title {
   padding-left: 12px;
-  margin-bottom: 4px;
+  margin-bottom: 2px;
   color: var(--muted);
   font-size: var(--font-size-xs);
   font-weight: var(--font-weight-secondary);
@@ -2081,7 +2081,7 @@ th {
 
 .sidebar-search {
   min-height: 38px;
-  margin-bottom: 2px;
+  margin-bottom: 0;
   padding: 0 10px;
   border: 2px solid var(--line);
   border-radius: var(--radius);
