@@ -480,7 +480,7 @@ export function StudentsPage({ reports, onNewAnalysis }) {
                   const pct = Math.round((count / total) * 100);
                   return (
                     <div key={pos} className="breakdown-row">
-                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px", fontSize: "0.9rem" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px", fontSize: "var(--font-size-sm)" }}>
                         <span><b>{pos}</b></span>
                         <span className="muted">{count} чел. ({pct}%)</span>
                       </div>
@@ -501,7 +501,7 @@ export function StudentsPage({ reports, onNewAnalysis }) {
                   const pct = Math.round((count / total) * 100);
                   return (
                     <div key={format} className="breakdown-row">
-                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px", fontSize: "0.9rem" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px", fontSize: "var(--font-size-sm)" }}>
                         <span style={{ textTransform: "capitalize" }}><b>{format}</b></span>
                         <span className="muted">{pct}%</span>
                       </div>
@@ -530,7 +530,7 @@ export function StudentsPage({ reports, onNewAnalysis }) {
             </div>
 
             <div className="table-responsive" style={{ overflowX: "auto" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "0.9rem" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "var(--font-size-sm)" }}>
                 <thead>
                   <tr style={{ borderBottom: "1px solid var(--border-color)", paddingBottom: "10px" }}>
                     <th style={{ padding: "12px 8px" }}>Название курса</th>
@@ -552,7 +552,7 @@ export function StudentsPage({ reports, onNewAnalysis }) {
                         <span style={{ 
                           background: Number(c.avgScore) >= 8.0 ? "#e6f4ea" : "#fef7e0", 
                           color: Number(c.avgScore) >= 8.0 ? "#137333" : "#b06000",
-                          padding: "3px 8px", borderRadius: "4px", fontWeight: "bold" 
+                          padding: "3px 8px", borderRadius: "4px", fontWeight: "var(--font-weight-strong)" 
                         }}>
                           {c.avgScore}
                         </span>
@@ -560,7 +560,7 @@ export function StudentsPage({ reports, onNewAnalysis }) {
                       <td style={{ padding: "12px 8px" }}>{c.detached}%</td>
                       <td style={{ padding: "12px 8px" }} className="muted">{c.topTopic}</td>
                       <td style={{ padding: "12px 8px" }}>
-                        <a href={`#report-detail-${c.id}`} style={{ display: "inline-flex", alignItems: "center", gap: "2px", textDecoration: "none", color: "var(--accent-color)", fontWeight: "600" }}>
+                        <a href={`#report-detail-${c.id}`} style={{ display: "inline-flex", alignItems: "center", gap: "2px", textDecoration: "none", color: "var(--accent-color)", fontWeight: "var(--font-weight-strong)" }}>
                           Открыть <ChevronRight size={14} />
                         </a>
                       </td>
@@ -652,7 +652,7 @@ export function CourseReportDetailPage({
             </div>
           )}
           <h2 id="report-title-heading" style={{ margin: 0 }}>{report.title}</h2>
-          <p className="muted" style={{ fontSize: "0.85rem", marginTop: "3px" }}>
+          <p className="muted" style={{ fontSize: "var(--font-size-sm)", marginTop: "3px" }}>
             Период: <b>{period}</b> · Анкетировано слушателей: <b>{studentsCount} чел.</b>
           </p>
         </div>
@@ -717,7 +717,7 @@ export function CourseReportDetailPage({
               onClick={() => setActiveTab(t.key)}
               style={{
                 display: "inline-flex", alignItems: "center", gap: "6px", background: "none", border: "none", 
-                padding: "8px 12px", fontSize: "0.95rem", fontWeight: activeTab === t.key ? "bold" : "normal",
+                padding: "8px 12px", fontSize: "var(--font-size-base)", fontWeight: activeTab === t.key ? "var(--font-weight-strong)" : "var(--font-weight-secondary)",
                 color: activeTab === t.key ? "var(--accent-color)" : "var(--text-muted)", cursor: "pointer",
                 borderBottom: activeTab === t.key ? "2.5px solid var(--accent-color)" : "none"
               }}

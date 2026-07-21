@@ -30,6 +30,17 @@ const chartColors = {
   high: "var(--accent)",
 };
 
+const axisTick = {
+  fill: "var(--text)",
+  fontSize: "var(--font-size-xs)",
+  fontWeight: "var(--font-weight-secondary)",
+};
+
+const mutedAxisTick = {
+  ...axisTick,
+  fill: "var(--muted)",
+};
+
 const formatNumber = (value, digits = 1) => {
   const number = Number(value);
   return Number.isFinite(number) ? number.toFixed(digits) : "-";
@@ -108,8 +119,8 @@ function AverageBarChart({ criteria }) {
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} layout="vertical" margin={{ top: 8, right: 18, left: 16, bottom: 8 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--line)" />
-            <XAxis type="number" domain={[0, 10]} tick={{ fill: "var(--muted)", fontSize: 12 }} />
-            <YAxis type="category" dataKey="label" width={118} tick={{ fill: "var(--text)", fontSize: 12 }} />
+            <XAxis type="number" domain={[0, 10]} tick={mutedAxisTick} />
+            <YAxis type="category" dataKey="label" width={118} tick={axisTick} />
             <Tooltip formatter={(value) => [`${formatNumber(value)} / 10`, "Среднее"]} />
             <Bar dataKey="value" fill={chartColors.primary} radius={[0, 4, 4, 0]} />
           </BarChart>
@@ -129,8 +140,8 @@ function SatisfactionRadarChart({ criteria }) {
         <ResponsiveContainer width="100%" height="100%">
           <RadarChart data={data} outerRadius="70%">
             <PolarGrid stroke="var(--line)" />
-            <PolarAngleAxis dataKey="label" tick={{ fill: "var(--text)", fontSize: 12 }} />
-            <PolarRadiusAxis angle={90} domain={[0, 10]} tick={{ fill: "var(--muted)", fontSize: 11 }} />
+            <PolarAngleAxis dataKey="label" tick={axisTick} />
+            <PolarRadiusAxis angle={90} domain={[0, 10]} tick={mutedAxisTick} />
             <Tooltip formatter={(value, _name, item) => [item.payload.displayValue, "Значение"]} />
             <Radar dataKey="value" fill="rgba(47, 111, 101, 0.28)" stroke={chartColors.primary} strokeWidth={2} />
           </RadarChart>
@@ -166,8 +177,8 @@ function CorrelationHeatmap({ matrix }) {
       <div className="chart-frame chart-frame-square">
         <ResponsiveContainer width="100%" height="100%">
           <ScatterChart margin={{ top: 16, right: 24, bottom: 18, left: 28 }}>
-            <XAxis dataKey="x" type="category" allowDuplicatedCategory={false} tick={{ fill: "var(--text)", fontSize: 11 }} />
-            <YAxis dataKey="y" type="category" tick={{ fill: "var(--text)", fontSize: 11 }} width={96} />
+            <XAxis dataKey="x" type="category" allowDuplicatedCategory={false} tick={axisTick} />
+            <YAxis dataKey="y" type="category" tick={axisTick} width={96} />
             <ZAxis range={[260, 260]} />
             <Tooltip formatter={(value, name) => (name === "value" ? [formatNumber(value, 2), "Корреляция"] : value)} />
             <Scatter data={data} shape="square">
@@ -196,8 +207,8 @@ function OverallDistributionChart({ distribution, limitation }) {
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} margin={{ top: 8, right: 18, left: 8, bottom: 8 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--line)" />
-            <XAxis dataKey="label" tick={{ fill: "var(--text)", fontSize: 12 }} />
-            <YAxis domain={[0, 100]} tick={{ fill: "var(--muted)", fontSize: 12 }} />
+            <XAxis dataKey="label" tick={axisTick} />
+            <YAxis domain={[0, 100]} tick={mutedAxisTick} />
             <Tooltip formatter={(value) => [`${formatNumber(value, 0)}%`, "Доля"]} />
             <Bar dataKey="value" radius={[4, 4, 0, 0]}>
               {data.map((entry) => (
@@ -235,8 +246,8 @@ function TrendChart({ trendData }) {
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={trendData} margin={{ top: 8, right: 18, left: 8, bottom: 8 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--line)" />
-            <XAxis dataKey="period" tick={{ fill: "var(--text)", fontSize: 12 }} />
-            <YAxis domain={[0, 10]} tick={{ fill: "var(--muted)", fontSize: 12 }} />
+            <XAxis dataKey="period" tick={axisTick} />
+            <YAxis domain={[0, 10]} tick={mutedAxisTick} />
             <Tooltip formatter={(value) => [`${formatNumber(value)} / 10`, ""]} />
             <Legend />
             <Line type="monotone" dataKey="usefulness_avg" name="Полезность" stroke={chartColors.primary} strokeWidth={2} dot={{ r: 3 }} />
