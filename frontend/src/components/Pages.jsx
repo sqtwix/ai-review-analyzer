@@ -4,6 +4,7 @@ import {
   PanelLeftOpen, Search, Sun, Pencil, Archive, Save, BookOpen, BarChart3, MessageSquare, 
   AlertTriangle, CheckCircle, HelpCircle, ChevronRight, TrendingUp, ThumbsUp, Quote
 } from "lucide-react";
+import { buildCourseReportViewModel } from "../reportViewModel";
 
 // ========================= Auth Page Component =========================
 export function AuthPage({
@@ -596,17 +597,18 @@ export function CourseReportDetailPage({
   const [activeTab, setActiveTab] = useState("dashboard"); // dashboard, qualitative, report
   const [qualActiveTab, setQualActiveTab] = useState("topics"); // topics, sentiment, problems, quotes, recommendations
 
-  const courseAnalysis = report.result?.courses_analysis?.[0];
-  const statistics = courseAnalysis?.statistics;
-  const preferredFormats = courseAnalysis?.preferred_formats || {};
-  const positionDistribution = courseAnalysis?.position_distribution || {};
-  const reportData = courseAnalysis?.analytical_report;
-  const textAnalysis = courseAnalysis?.text_analysis;
-  const dashboardData = courseAnalysis?.dashboard_data || {};
-
-  const courseName = courseAnalysis?.course_name || report.course || "Электронный курс";
-  const period = courseAnalysis?.period || "Не указан";
-  const studentsCount = courseAnalysis?.students_count || 0;
+  const reportViewModel = buildCourseReportViewModel(report);
+  const {
+    statistics,
+    preferredFormats,
+    positionDistribution,
+    reportData,
+    textAnalysis,
+    dashboardData,
+    courseName,
+    period,
+    studentsCount,
+  } = reportViewModel;
 
   // Custom inline SVG Radar Chart generator
   const renderRadarChart = () => {
