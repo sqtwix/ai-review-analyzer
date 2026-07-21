@@ -103,7 +103,7 @@
 :root[data-accessibility="enabled"] {
   --line: #b7c8c1;
   --shadow: 0 0 0 2px rgba(47, 111, 101, 0.12);
-  --accessibility-toolbar-height: 52px;
+  --accessibility-toolbar-height: 76px;
   --app-viewport-height: calc(100dvh - var(--accessibility-toolbar-height));
 }
 
@@ -424,7 +424,7 @@ a {
   width: 100%;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   flex-wrap: wrap;
   gap: 8px 18px;
 }
@@ -443,10 +443,10 @@ a {
 }
 
 .accessibility-tool-button {
-  width: 34px;
-  height: 34px;
-  min-width: 34px;
-  min-height: 34px;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
   padding: 0;
   border: 2px solid var(--accent);
   border-radius: 4px;
@@ -2208,7 +2208,7 @@ th {
 
 @media (max-width: 640px) {
   :root[data-accessibility="enabled"] {
-    --accessibility-toolbar-height: 96px;
+    --accessibility-toolbar-height: 148px;
   }
 
   .accessibility-toolbar {
