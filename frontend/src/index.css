@@ -3312,8 +3312,9 @@ body[data-density="minimal"] .state-panel {
 }
 
 .document-panel {
-  max-width: 800px;
-  margin: 0 auto;
+  width: 100%;
+  max-width: none;
+  margin: 0;
   padding: 30px;
   border: 1px solid var(--line);
   background: var(--surface-soft);
@@ -3321,6 +3322,7 @@ body[data-density="minimal"] .state-panel {
 }
 
 .document-sheet {
+  width: 100%;
   color: var(--text);
   font-family: var(--font-sans);
   line-height: var(--line-height-relaxed);
@@ -3877,7 +3879,7 @@ body[data-density="minimal"] .state-panel {
 }
 
 .document-panel {
-  width: min(800px, 100%);
+  width: 100%;
   max-width: 100%;
   padding: 22px;
 }
