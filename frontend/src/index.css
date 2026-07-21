@@ -623,6 +623,16 @@ body.is-resizing-sidebar {
   font-weight: var(--font-weight-secondary);
 }
 
+:where(.panel, .report-header, .state-panel, .settings-panel, .metric-card, .qualitative-card, .document-panel) :where(h1, h2, h3, h4, p, li) {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+:where(.panel, .report-header, .state-panel, .settings-panel, .metric-card, .qualitative-card, .document-panel) > *,
+:where(.section-heading, .settings-copy, .students-intro, .qualitative-card, .recommendation-card) > * {
+  min-width: 0;
+}
+
 small,
 .muted,
 .eyebrow,
@@ -2856,12 +2866,26 @@ body[data-density="minimal"] .state-panel {
 }
 
 .students-intro {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) max-content;
   gap: 18px;
   align-items: center;
   min-width: 0;
   animation: surface-in var(--motion-slow) var(--ease-out);
+}
+
+.students-intro > div {
+  min-width: 0;
+}
+
+.students-intro .muted {
+  max-width: 100%;
+  margin-bottom: 0;
+  overflow-wrap: anywhere;
+}
+
+.students-intro .badge {
+  justify-self: end;
 }
 
 .badge {
@@ -3969,6 +3993,14 @@ body[data-density="minimal"] .state-panel {
   .section-heading {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .students-intro {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .students-intro .badge {
+    justify-self: start;
   }
 
   .report-tabs {
