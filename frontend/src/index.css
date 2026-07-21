@@ -1393,6 +1393,32 @@ p {
   background: var(--mint);
 }
 
+.validation-box {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.validation-box p {
+  margin: 6px 0 0;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.validation-box-pending {
+  border-color: var(--warning);
+  background: var(--warning-soft);
+}
+
+.validation-box-error {
+  border-color: var(--danger);
+  background: var(--danger-soft);
+}
+
+.validation-box-error b,
+.validation-box-error p {
+  color: var(--danger);
+}
+
 .error-box {
   margin: 16px 0;
   padding: 14px;

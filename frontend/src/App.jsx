@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { Archive, Clock3, Files, Pencil, Save, Upload, XCircle } from "lucide-react";
 import {
   login,
@@ -652,6 +652,45 @@ function App() {
     }
   };
 
+  const uploadValidation = useMemo(() => {
+    if (selectedResponseFiles.length === 0) {
+      return {
+        status: "idle",
+        title: "Файлы не выбраны",
+        message: "Выберите Excel, CSV или ZIP-архив с анкетами.",
+      };
+    }
+
+    const allowedExtensions = new Set(["csv", "xlsx", "zip"]);
+    const invalidFiles = selectedResponseFiles.filter((file) => {
+      const extension = file.name.split(".").pop()?.toLowerCase();
+      return !allowedExtensions.has(extension);
+    });
+    const emptyFiles = selectedResponseFiles.filter((file) => file.size === 0);
+
+    if (invalidFiles.length > 0) {
+      return {
+        status: "error",
+        title: "Неподдерживаемый формат",
+        message: `Проверьте файлы: ${invalidFiles.map((file) => file.name).join(", ")}. Поддерживаются только .xlsx, .csv и .zip.`,
+      };
+    }
+
+    if (emptyFiles.length > 0) {
+      return {
+        status: "error",
+        title: "Пустой файл",
+        message: `Файлы без данных не будут обработаны: ${emptyFiles.map((file) => file.name).join(", ")}.`,
+      };
+    }
+
+    return {
+      status: "pending",
+      title: "Базовая проверка пройдена",
+      message: "Расширения и размер файлов корректны. Наличие обязательных колонок проверит сервер при запуске анализа.",
+    };
+  }, [selectedResponseFiles]);
+
   // Trigger validation banner visibility
   useEffect(() => {
     if (selectedResponseFiles.length > 0) {
@@ -676,6 +715,15 @@ function App() {
         type: "warning",
         title: "Не хватает файлов",
         message: "Выберите файлы анкет опросов перед запуском анализа.",
+      });
+      return;
+    }
+
+    if (uploadValidation.status === "error") {
+      notify({
+        type: "error",
+        title: uploadValidation.title,
+        message: uploadValidation.message,
       });
       return;
     }
@@ -1087,9 +1135,13 @@ function App() {
                 </div>
 
                 {showValidation && (
-                  <div className="validation-box" id="upload-validation-box" style={{ marginTop: "20px" }}>
-                    <b>Проверка пройдена</b>
-                    <p>Колонки распознаны успешно. Формат корректен.</p>
+                  <div
+                    className={`validation-box validation-box-${uploadValidation.status}`}
+                    id="upload-validation-box"
+                    style={{ marginTop: "20px" }}
+                  >
+                    <b>{uploadValidation.title}</b>
+                    <p>{uploadValidation.message}</p>
                   </div>
                 )}
 
@@ -1098,6 +1150,7 @@ function App() {
                   id="start-analysis-btn"
                   style={{ marginTop: "20px", width: "100%" }}
                   onClick={startAnalysis}
+                  disabled={uploadValidation.status === "error"}
                 >
                   Запустить анализ
                 </button>
