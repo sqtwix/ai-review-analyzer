@@ -1811,6 +1811,10 @@ th {
     grid-template-columns: 1fr;
   }
 
+  .dashboard-chart-grid {
+    grid-template-columns: 1fr;
+  }
+
   .settings-side {
     align-self: start;
   }
@@ -1849,6 +1853,15 @@ th {
   .settings-topbar {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .dashboard-metric-card strong {
+    font-size: 1.5rem;
+  }
+
+  .chart-frame,
+  .chart-frame-square {
+    height: 240px;
   }
 
   .settings-back {
@@ -2727,6 +2740,179 @@ body[data-density="minimal"] .state-panel {
 .metric-card.normal.selected,
 .metric-card.normal:hover {
   border-color: var(--accent);
+}
+
+.dashboard-tab {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.dashboard-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.dashboard-metric-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 156px;
+  padding: 16px;
+}
+
+.dashboard-metric-card > span {
+  font-size: 0.85rem;
+}
+
+.dashboard-metric-card strong {
+  color: var(--text);
+  font-size: 1.8rem;
+  line-height: 1;
+}
+
+.dashboard-metric-card strong span {
+  font-size: 0.9rem;
+  font-weight: 400;
+}
+
+.dashboard-metric-card small {
+  font-size: 0.75rem;
+}
+
+.stacked-distribution {
+  display: flex;
+  height: 7px;
+  overflow: hidden;
+  border-radius: 4px;
+  background: var(--line);
+}
+
+.stacked-distribution span {
+  min-width: 0;
+}
+
+.stacked-distribution .low {
+  background: var(--danger);
+}
+
+.stacked-distribution .mid {
+  background: var(--warning);
+}
+
+.stacked-distribution .high {
+  background: var(--accent);
+}
+
+.distribution-labels {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 0.7rem;
+}
+
+.dashboard-chart-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+}
+
+.chart-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-height: 348px;
+  padding: 20px;
+}
+
+.chart-panel h3 {
+  margin: 0;
+  font-size: 0.98rem;
+}
+
+.chart-panel-wide {
+  min-height: 330px;
+}
+
+.chart-panel-empty {
+  align-items: flex-start;
+  justify-content: center;
+  min-height: 220px;
+}
+
+.chart-frame {
+  width: 100%;
+  height: 260px;
+  min-width: 0;
+}
+
+.chart-frame-square {
+  height: 280px;
+}
+
+.chart-note {
+  margin: 0;
+  font-size: 0.78rem;
+}
+
+.trend-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.compact-breakdown-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 18px;
+}
+
+.compact-breakdown-panel h3 {
+  margin: 0;
+  font-size: 0.98rem;
+}
+
+.breakdown-row,
+.format-breakdown-row > div:first-child {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  font-size: 0.86rem;
+}
+
+.breakdown-row strong,
+.format-breakdown-row strong {
+  white-space: nowrap;
+}
+
+.format-breakdown-row {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.format-breakdown-row span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mini-progress {
+  height: 5px;
+  overflow: hidden;
+  border-radius: 3px;
+  background: var(--line);
+}
+
+.mini-progress span {
+  display: block;
+  height: 100%;
+  background: var(--accent);
 }
 
 .controls-panel {
