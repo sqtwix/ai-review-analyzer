@@ -2057,19 +2057,27 @@ th {
   }
 }
 
+.sidebar-history-section {
+  min-height: 0;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 4px;
+}
+
 .sidebar-history {
   flex: 1;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 2px;
   margin-top: 0;
   max-height: calc(var(--app-viewport-height) - 320px);
 }
 
 .sidebar-section-title {
   padding-left: 12px;
-  margin-bottom: 2px;
+  margin-bottom: 0;
   color: var(--muted);
   font-size: var(--font-size-xs);
   font-weight: var(--font-weight-secondary);

@@ -48,57 +48,59 @@ export function AppLayout({
 
         <div className="sidebar-divider"></div>
 
-        <div className="sidebar-section-title">История анализов</div>
-        <label className="sidebar-search">
-          <Search size={16} strokeWidth={2.2} />
-          <input
-            type="search"
-            value={historyQuery}
-            onChange={(e) => onHistoryQueryChange(e.target.value)}
-            placeholder="Найти отчет"
-            aria-label="Найти отчет в истории"
-          />
-        </label>
+        <div className="sidebar-history-section">
+          <div className="sidebar-section-title">История анализов</div>
+          <label className="sidebar-search">
+            <Search size={16} strokeWidth={2.2} />
+            <input
+              type="search"
+              value={historyQuery}
+              onChange={(e) => onHistoryQueryChange(e.target.value)}
+              placeholder="Найти отчет"
+              aria-label="Найти отчет в истории"
+            />
+          </label>
 
-        <div className="sidebar-history" id="reports-sidebar-list">
-          {reports.length ? (
-            reports.map((report) => (
-              <div
-                key={report.id}
-                className={`history-row ${route === `report-detail-${report.id}` ? "active" : ""}`}
-              >
-                <a
-                  href={`#report-detail-${report.id}`}
-                  className="history-item"
-                  title={report.title ? `${report.course}: ${report.title}` : report.course}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    window.location.hash = `report-detail-${report.id}`;
-                  }}
+          <div className="sidebar-history" id="reports-sidebar-list">
+            {reports.length ? (
+              reports.map((report) => (
+                <div
+                  key={report.id}
+                  className={`history-row ${route === `report-detail-${report.id}` ? "active" : ""}`}
                 >
-                  <FileText size={16} strokeWidth={2.2} />
-                  <span>{report.course}</span>
-                </a>
-                <button
-                  type="button"
-                  className="history-archive-button"
-                  aria-label={`Архивировать отчет ${report.course}`}
-                  title="Архивировать"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    onArchiveReport?.(report.id);
-                  }}
-                >
-                  <Archive size={15} strokeWidth={2.2} />
-                </button>
+                  <a
+                    href={`#report-detail-${report.id}`}
+                    className="history-item"
+                    title={report.title ? `${report.course}: ${report.title}` : report.course}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      window.location.hash = `report-detail-${report.id}`;
+                    }}
+                  >
+                    <FileText size={16} strokeWidth={2.2} />
+                    <span>{report.course}</span>
+                  </a>
+                  <button
+                    type="button"
+                    className="history-archive-button"
+                    aria-label={`Архивировать отчет ${report.course}`}
+                    title="Архивировать"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      onArchiveReport?.(report.id);
+                    }}
+                  >
+                    <Archive size={15} strokeWidth={2.2} />
+                  </button>
+                </div>
+              ))
+            ) : (
+              <div className="sidebar-empty">
+                {historyQuery ? "Ничего не найдено" : "История пока пуста"}
               </div>
-            ))
-          ) : (
-            <div className="sidebar-empty">
-              {historyQuery ? "Ничего не найдено" : "История пока пуста"}
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
         <div className="sidebar-divider"></div>
