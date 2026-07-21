@@ -540,7 +540,7 @@ select {
   border-right: 1px solid var(--line);
   display: flex;
   flex-direction: column;
-  gap: 26px;
+  gap: 16px;
   transition: padding var(--motion-base) var(--ease-standard), border-color var(--motion-base) var(--ease-standard), opacity var(--motion-base) var(--ease-standard);
 }
 
@@ -2513,7 +2513,7 @@ th {
 .sidebar-divider {
   height: 1px;
   background: var(--line);
-  margin: 12px 0;
+  margin: 2px 0;
 }
 
 .in-dev-badge {
