@@ -22,6 +22,7 @@ import { loadUserSettings, persistUserSettings, readLocalSettings } from "./sett
 import { getSidebarMaxWidth, layoutLimits, readLayoutPreferences, writeLayoutPreferences } from "./layoutPreferences";
 import {
   exportReportToCsv,
+  exportReportToDocx,
   exportReportToJson,
   exportReportToPdf,
   exportReportToXlsx,
@@ -985,6 +986,11 @@ function App() {
       if (format === "excel") {
         await exportReportToXlsx(report);
         notify({ type: "success", title: "Excel сохранен" });
+        return;
+      }
+      if (format === "docx") {
+        await exportReportToDocx(report);
+        notify({ type: "success", title: "DOCX сохранен" });
         return;
       }
       if (format === "csv") {

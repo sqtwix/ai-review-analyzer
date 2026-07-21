@@ -683,7 +683,7 @@ export function CourseReportDetailPage({
             </button>
             {isSaveMenuOpen && (
               <div className="save-menu" role="menu">
-                {["pdf", "excel", "csv", "json"].map((format) => (
+                {["pdf", "docx", "excel", "csv", "json"].map((format) => (
                   <button
                     key={format}
                     type="button"
