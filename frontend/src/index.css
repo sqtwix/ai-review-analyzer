@@ -4174,10 +4174,10 @@ body[data-density="minimal"] .document-section-body {
 }
 
 body[data-density="minimal"] .settings-panel {
-  width: fit-content;
+  width: 100%;
   max-width: 100%;
   grid-template-columns: max-content max-content;
-  justify-content: start;
+  justify-content: center;
   min-height: auto;
   align-items: center;
   gap: 18px;
@@ -4206,7 +4206,7 @@ body[data-density="minimal"] .theme-options button {
 }
 
 body[data-density="minimal"] .toggle-switch {
-  justify-self: start;
+  justify-self: center;
   min-height: 36px;
   width: max-content;
   padding: 4px;
