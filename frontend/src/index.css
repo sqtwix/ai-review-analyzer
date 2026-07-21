@@ -623,14 +623,18 @@ body.is-resizing-sidebar {
   font-weight: var(--font-weight-secondary);
 }
 
-:where(.panel, .report-header, .state-panel, .settings-panel, .metric-card, .qualitative-card, .document-panel) :where(h1, h2, h3, h4, p, li) {
+:where(.panel, .report-header, .state-panel, .settings-panel, .metric-card, .qualitative-card, .document-panel, .dialog, .toast, .student-card, .dashboard-section, .chart-panel) :where(h1, h2, h3, h4, p, li, span, strong, small, b) {
   max-width: 100%;
   overflow-wrap: anywhere;
 }
 
-:where(.panel, .report-header, .state-panel, .settings-panel, .metric-card, .qualitative-card, .document-panel) > *,
-:where(.section-heading, .settings-copy, .students-intro, .qualitative-card, .recommendation-card) > * {
+:where(.panel, .report-header, .state-panel, .settings-panel, .metric-card, .qualitative-card, .document-panel, .dialog, .toast, .student-card, .dashboard-section, .chart-panel, .archive-item) > *,
+:where(.section-heading, .settings-copy, .students-intro, .qualitative-card, .recommendation-card, .report-title-row, .breakdown-row, .format-breakdown-row) > * {
   min-width: 0;
+}
+
+:where(h1, h2, h3, h4, .section-heading, .text-stack, .report-title-block, .settings-copy, .qualitative-card, .document-section, .toast, .dialog) {
+  text-wrap: pretty;
 }
 
 small,
@@ -1045,6 +1049,27 @@ p {
   align-items: flex-start;
   justify-content: space-between;
   gap: 18px;
+}
+
+.section-heading > div:first-child,
+.text-stack,
+.report-title-block {
+  min-width: 0;
+  display: grid;
+  align-content: start;
+  gap: 6px;
+}
+
+:where(.text-stack, .report-title-block, .settings-copy > div, .qualitative-card > div, .recommendation-card > div, .student-id, .reason-block, .action-card, .dashboard-metric-card, .chart-panel, .document-prose-group, .toast > div) > :where(h1, h2, h3, h4, p, span, strong, small) {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+:where(.settings-copy > div, .qualitative-card > div, .recommendation-card > div, .student-id, .reason-block, .toast > div) {
+  min-width: 0;
+  display: grid;
+  align-content: start;
+  gap: 6px;
 }
 
 .section-heading h2,
@@ -1732,9 +1757,104 @@ th {
   font-weight: var(--font-weight-medium);
 }
 
+.course-table {
+  table-layout: fixed;
+  font-size: var(--font-size-sm);
+}
+
+.course-table th,
+.course-table td {
+  vertical-align: middle;
+}
+
+.course-table th:first-child,
+.course-table td:first-child {
+  width: 24%;
+}
+
+.course-table th:nth-child(6),
+.course-table td:nth-child(6) {
+  width: 24%;
+}
+
+.course-table td,
+.course-table th {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.course-table b {
+  color: var(--heading);
+  font-weight: var(--font-weight-medium);
+}
+
+.score-pill {
+  min-width: 46px;
+  min-height: 26px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: var(--font-weight-strong);
+  white-space: nowrap;
+}
+
+.score-pill.good {
+  background: var(--mint);
+  color: var(--accent);
+}
+
+.score-pill.watch {
+  background: var(--warning-soft);
+  color: var(--warning);
+}
+
+.table-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  color: var(--accent);
+  font-weight: var(--font-weight-strong);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.table-link:hover {
+  color: var(--accent-hover);
+}
+
+.table-empty {
+  padding: 20px;
+  text-align: center;
+  color: var(--muted);
+}
+
 .report-header {
   padding: 24px;
   margin-bottom: 18px;
+}
+
+.report-title-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 100%;
+  margin-bottom: 0;
+}
+
+.report-title-row .eyebrow {
+  margin: 0;
+}
+
+#report-title-heading {
+  margin: 0;
+}
+
+.report-meta-line {
+  margin: 0;
+  font-size: var(--font-size-sm);
 }
 
 .inline-rename-form {
@@ -2094,8 +2214,18 @@ th {
 
   .qualitative-card,
   .recommendation-card {
-    flex-direction: column;
+    grid-template-columns: 1fr;
     align-items: stretch;
+  }
+
+  .problem-card {
+    grid-template-columns: 1fr;
+  }
+
+  .evidence-badge,
+  .problem-card .risk-pill,
+  .recommendation-card .risk-pill {
+    justify-self: start;
   }
 
   .sentiment-grid {
@@ -3024,6 +3154,7 @@ body[data-density="minimal"] .state-panel {
   gap: 8px;
   min-height: 156px;
   padding: 16px;
+  justify-content: space-between;
 }
 
 .dashboard-metric-card > span {
@@ -3076,9 +3207,25 @@ body[data-density="minimal"] .state-panel {
 .distribution-labels {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   gap: 8px;
   color: var(--text-subtle);
   font-size: var(--font-size-xs);
+}
+
+.distribution-labels span {
+  min-width: 0;
+  text-align: center;
+  overflow-wrap: normal;
+  word-break: keep-all;
+}
+
+.distribution-labels span:first-child {
+  text-align: left;
+}
+
+.distribution-labels span:last-child {
+  text-align: right;
 }
 
 .dashboard-chart-grid {
@@ -3243,11 +3390,15 @@ body[data-density="minimal"] .state-panel {
 }
 
 .qualitative-card {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) max-content;
   align-items: flex-start;
-  justify-content: space-between;
   gap: 16px;
   padding: 16px;
+}
+
+.qualitative-card > div {
+  min-width: 0;
 }
 
 .qualitative-card h4,
@@ -3272,15 +3423,15 @@ body[data-density="minimal"] .state-panel {
 }
 
 .evidence-badge {
-  flex-shrink: 0;
+  justify-self: end;
   background: var(--mint);
   color: var(--accent);
   font-weight: var(--font-weight-strong);
 }
 
 .problem-card {
+  grid-template-columns: max-content minmax(0, 1fr);
   align-items: center;
-  justify-content: flex-start;
 }
 
 .problem-card .risk-pill {
@@ -3501,6 +3652,26 @@ body[data-density="minimal"] .state-panel {
   outline: 0;
   background: transparent;
   color: var(--text);
+}
+
+.students-course-panel {
+  margin-top: 24px;
+  display: grid;
+  gap: 16px;
+}
+
+.students-course-heading {
+  margin-bottom: 0;
+  align-items: center;
+}
+
+.students-course-search {
+  width: min(300px, 100%);
+  margin: 0;
+}
+
+.students-course-panel .table-wrap {
+  margin-top: 0;
 }
 
 .students-list {
@@ -3735,8 +3906,18 @@ body[data-density="minimal"] .state-panel {
 
   .qualitative-card,
   .recommendation-card {
-    flex-direction: column;
+    grid-template-columns: 1fr;
     align-items: stretch;
+  }
+
+  .problem-card {
+    grid-template-columns: 1fr;
+  }
+
+  .evidence-badge,
+  .problem-card .risk-pill,
+  .recommendation-card .risk-pill {
+    justify-self: start;
   }
 
   .sentiment-grid {
@@ -4089,6 +4270,25 @@ body[data-density="minimal"] .state-panel {
     padding: 14px;
   }
 
+  .segmented {
+    grid-auto-flow: row;
+    grid-auto-columns: unset;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .theme-options,
+  .settings-panel {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .theme-options button,
+  .segmented button {
+    width: 100%;
+    min-width: 0;
+    white-space: normal;
+    text-align: center;
+  }
+
   .chart-frame,
   .chart-frame-square {
     height: 220px;
@@ -4283,8 +4483,8 @@ body[data-density="minimal"] .document-section-body {
 body[data-density="minimal"] .settings-panel {
   width: 100%;
   max-width: 100%;
-  grid-template-columns: max-content max-content;
-  justify-content: center;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 0.82fr);
+  justify-content: stretch;
   min-height: auto;
   align-items: center;
   gap: 18px;
@@ -4300,14 +4500,16 @@ body[data-density="minimal"] .settings-copy > svg {
 }
 
 body[data-density="minimal"] .theme-options {
-  width: fit-content;
-  grid-template-columns: repeat(3, max-content);
+  width: 100%;
+  min-width: 0;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 6px;
 }
 
 body[data-density="minimal"] .theme-options button {
   min-height: 36px;
-  width: max-content;
+  width: 100%;
+  min-width: 0;
   padding: 6px 12px;
   justify-content: center;
 }
@@ -4341,6 +4543,19 @@ body[data-density="minimal"] .accessibility-toolbar-inner {
   body[data-density="minimal"] .subtab-btn {
     height: 100%;
     white-space: normal;
+  }
+
+  body[data-density="minimal"] .settings-panel,
+  body[data-density="minimal"] .theme-options {
+    width: 100%;
+    min-width: 0;
+    grid-template-columns: minmax(0, 1fr);
+    justify-content: stretch;
+  }
+
+  body[data-density="minimal"] .theme-options button {
+    width: 100%;
+    min-width: 0;
   }
 }
 

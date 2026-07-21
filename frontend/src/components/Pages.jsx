@@ -438,7 +438,7 @@ export function StudentsPage({ reports, onNewAnalysis }) {
   return (
     <section className="page active" id="students" data-title="Слушатели">
       <section className="panel students-intro">
-        <div>
+        <div className="text-stack">
           <p className="eyebrow">Кабинет методиста</p>
           <h2>Слушатели и курсы</h2>
           <p className="muted">
@@ -520,10 +520,10 @@ export function StudentsPage({ reports, onNewAnalysis }) {
             </section>
           </div>
 
-          <section className="panel" style={{ marginTop: "24px" }}>
-            <div className="section-heading" style={{ marginBottom: "16px" }}>
+          <section className="panel students-course-panel">
+            <div className="section-heading students-course-heading">
               <h3>Базы опросов по курсам</h3>
-              <div className="control-search" style={{ margin: 0, width: "300px" }}>
+              <div className="control-search students-course-search">
                 <Search size={16} strokeWidth={2.2} />
                 <input
                   type="search"
@@ -534,38 +534,34 @@ export function StudentsPage({ reports, onNewAnalysis }) {
               </div>
             </div>
 
-            <div className="table-responsive" style={{ overflowX: "auto" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "var(--font-size-sm)" }}>
+            <div className="table-wrap">
+              <table className="course-table">
                 <thead>
-                  <tr style={{ borderBottom: "1px solid var(--border-color)", paddingBottom: "10px" }}>
-                    <th style={{ padding: "12px 8px" }}>Название курса</th>
-                    <th style={{ padding: "12px 8px" }}>Период</th>
-                    <th style={{ padding: "12px 8px" }}>Анкет</th>
-                    <th style={{ padding: "12px 8px" }}>Ср. Оценка</th>
-                    <th style={{ padding: "12px 8px" }}>Отстраненные</th>
-                    <th style={{ padding: "12px 8px" }}>Ключевая тема</th>
-                    <th style={{ padding: "12px 8px" }}>Действия</th>
+                  <tr>
+                    <th>Название курса</th>
+                    <th>Период</th>
+                    <th>Анкет</th>
+                    <th>Ср. Оценка</th>
+                    <th>Отстраненные</th>
+                    <th>Ключевая тема</th>
+                    <th>Действия</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredCourses.map((c, i) => (
-                    <tr key={i} style={{ borderBottom: "1px solid var(--border-color)", verticalAlign: "middle" }}>
-                      <td style={{ padding: "12px 8px" }}><b>{c.name}</b></td>
-                      <td style={{ padding: "12px 8px" }}>{c.period}</td>
-                      <td style={{ padding: "12px 8px" }}>{c.students}</td>
-                      <td style={{ padding: "12px 8px" }}>
-                        <span style={{ 
-                          background: Number(c.avgScore) >= 8.0 ? "#e6f4ea" : "#fef7e0", 
-                          color: Number(c.avgScore) >= 8.0 ? "#137333" : "#b06000",
-                          padding: "3px 8px", borderRadius: "4px", fontWeight: "var(--font-weight-strong)" 
-                        }}>
+                    <tr key={i}>
+                      <td><b>{c.name}</b></td>
+                      <td>{c.period}</td>
+                      <td>{c.students}</td>
+                      <td>
+                        <span className={`score-pill ${Number(c.avgScore) >= 8.0 ? "good" : "watch"}`}>
                           {c.avgScore}
                         </span>
                       </td>
-                      <td style={{ padding: "12px 8px" }}>{c.detached}%</td>
-                      <td style={{ padding: "12px 8px" }} className="muted">{c.topTopic}</td>
-                      <td style={{ padding: "12px 8px" }}>
-                        <a href={`#report-detail-${c.id}`} style={{ display: "inline-flex", alignItems: "center", gap: "2px", textDecoration: "none", color: "var(--accent-color)", fontWeight: "var(--font-weight-strong)" }}>
+                      <td>{c.detached}%</td>
+                      <td className="muted">{c.topTopic}</td>
+                      <td>
+                        <a href={`#report-detail-${c.id}`} className="table-link">
                           Открыть <ChevronRight size={14} />
                         </a>
                       </td>
@@ -573,7 +569,7 @@ export function StudentsPage({ reports, onNewAnalysis }) {
                   ))}
                   {filteredCourses.length === 0 && (
                     <tr>
-                      <td colSpan="7" style={{ textAlign: "center", padding: "20px", color: "var(--text-muted)" }}>Ничего не найдено.</td>
+                      <td colSpan="7" className="table-empty">Ничего не найдено.</td>
                     </tr>
                   )}
                 </tbody>
@@ -647,8 +643,8 @@ export function CourseReportDetailPage({
               </button>
             </form>
           ) : (
-            <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "4px" }}>
-              <p className="eyebrow" id="report-course-eyebrow" style={{ margin: 0 }}>{courseName}</p>
+            <div className="report-title-row">
+              <p className="eyebrow" id="report-course-eyebrow">{courseName}</p>
               <button
                 type="button"
                 className="inline-icon-button"
@@ -663,8 +659,8 @@ export function CourseReportDetailPage({
               </button>
             </div>
           )}
-          <h2 id="report-title-heading" style={{ margin: 0 }}>{report.title}</h2>
-          <p className="muted" style={{ fontSize: "var(--font-size-sm)", marginTop: "3px" }}>
+          <h2 id="report-title-heading">{report.title}</h2>
+          <p className="muted report-meta-line">
             Период: <b>{period}</b> · Анкетировано слушателей: <b>{studentsCount} чел.</b>
           </p>
         </div>
