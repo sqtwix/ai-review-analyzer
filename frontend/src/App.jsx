@@ -709,6 +709,11 @@ function App() {
     if (intervalRef.current) clearInterval(intervalRef.current);
   };
 
+  const handleNewAnalysis = () => {
+    resetUploadForm();
+    window.location.hash = "upload";
+  };
+
   const startAnalysis = async () => {
     if (selectedResponseFiles.length === 0) {
       notify({
@@ -1223,15 +1228,18 @@ function App() {
       const report = mockReports.find((r) => r.id === reportId);
 
       if (!report) {
-      return (
-        <section className="page active">
-          <div className="state-panel">
-            <span className="state-icon state-icon-warm">
-              <XCircle size={28} strokeWidth={2.2} />
-            </span>
-            <h2>Отчёт не найден</h2>
-            <p className="muted">Пожалуйста, выберите существующий отчёт из истории в левой панели.</p>
-          </div>
+        return (
+          <section className="page active">
+            <div className="state-panel">
+              <span className="state-icon state-icon-warm">
+                <XCircle size={28} strokeWidth={2.2} />
+              </span>
+              <h2>Отчёт не найден</h2>
+              <p className="muted">Пожалуйста, выберите существующий отчёт из истории в левой панели.</p>
+              <button className="primary-button state-action" type="button" onClick={handleNewAnalysis}>
+                Новый анализ
+              </button>
+            </div>
           </section>
         );
       }
@@ -1245,6 +1253,9 @@ function App() {
               </span>
               <h2>Анализ в процессе...</h2>
               <p className="muted">ИИ-агенты в данный момент обрабатывают файлы ответов студентов. Пожалуйста, подождите.</p>
+              <button className="secondary-button state-action" type="button" onClick={() => { window.location.hash = "upload"; }}>
+                Вернуться к загрузке
+              </button>
             </div>
           </section>
         );
@@ -1261,6 +1272,9 @@ function App() {
               <p className="muted">
                 Ошибка: {report.error || "Неизвестная ошибка на стороне сервера."}
               </p>
+              <button className="primary-button state-action" type="button" onClick={handleNewAnalysis}>
+                Запустить новый анализ
+              </button>
             </div>
           </section>
         );
@@ -1361,7 +1375,9 @@ function App() {
             <XCircle size={28} strokeWidth={2.2} />
           </span>
           <h2>Страница не найдена</h2>
-          <a href="#upload" className="primary-button state-action">Назад на главную</a>
+          <button className="primary-button state-action" type="button" onClick={handleNewAnalysis}>
+            Новый анализ
+          </button>
         </div>
       </section>
     );

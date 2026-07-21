@@ -63,6 +63,15 @@ function EmptyChartState({ title, message }) {
   );
 }
 
+function DashboardSection({ title, children, defaultOpen = true }) {
+  return (
+    <details className="dashboard-section" open={defaultOpen}>
+      <summary>{title}</summary>
+      <div className="dashboard-section-body">{children}</div>
+    </details>
+  );
+}
+
 function MetricCards({ metricCards, involvement }) {
   return (
     <div className="dashboard-metrics-grid">
@@ -120,7 +129,7 @@ function AverageBarChart({ criteria }) {
           <BarChart data={data} layout="vertical" margin={{ top: 8, right: 18, left: 16, bottom: 8 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--line)" />
             <XAxis type="number" domain={[0, 10]} tick={mutedAxisTick} />
-            <YAxis type="category" dataKey="label" width={118} tick={axisTick} />
+            <YAxis type="category" dataKey="label" width={88} tick={axisTick} />
             <Tooltip formatter={(value) => [`${formatNumber(value)} / 10`, "Среднее"]} />
             <Bar dataKey="value" fill={chartColors.primary} radius={[0, 4, 4, 0]} />
           </BarChart>
@@ -178,7 +187,7 @@ function CorrelationHeatmap({ matrix }) {
         <ResponsiveContainer width="100%" height="100%">
           <ScatterChart margin={{ top: 16, right: 24, bottom: 18, left: 28 }}>
             <XAxis dataKey="x" type="category" allowDuplicatedCategory={false} tick={axisTick} />
-            <YAxis dataKey="y" type="category" tick={axisTick} width={96} />
+            <YAxis dataKey="y" type="category" tick={axisTick} width={76} />
             <ZAxis range={[260, 260]} />
             <Tooltip formatter={(value, name) => (name === "value" ? [formatNumber(value, 2), "Корреляция"] : value)} />
             <Scatter data={data} shape="square">
@@ -275,52 +284,58 @@ export function DashboardTab({ viewModel }) {
     <div className="dashboard-tab">
       <MetricCards metricCards={viewModel.metricCards} involvement={viewModel.involvement} />
 
-      <div className="dashboard-chart-grid">
-        <AverageBarChart criteria={viewModel.fiveCriteria} />
-        <SatisfactionRadarChart criteria={viewModel.fiveCriteria} />
-        <CorrelationHeatmap matrix={viewModel.dashboardData.correlation_matrix} />
-        <OverallDistributionChart
-          distribution={viewModel.overallDistribution}
-          limitation={viewModel.limitations.exactScoreDistribution}
-        />
-      </div>
+      <DashboardSection title="Критерии и распределение">
+        <div className="dashboard-chart-grid">
+          <AverageBarChart criteria={viewModel.fiveCriteria} />
+          <SatisfactionRadarChart criteria={viewModel.fiveCriteria} />
+          <CorrelationHeatmap matrix={viewModel.dashboardData.correlation_matrix} />
+          <OverallDistributionChart
+            distribution={viewModel.overallDistribution}
+            limitation={viewModel.limitations.exactScoreDistribution}
+          />
+        </div>
+      </DashboardSection>
 
-      <TrendChart trendData={viewModel.dashboardData.trend_data} />
+      <DashboardSection title="Динамика" defaultOpen={false}>
+        <TrendChart trendData={viewModel.dashboardData.trend_data} />
+      </DashboardSection>
 
-      <div className="dashboard-chart-grid">
-        <section className="panel compact-breakdown-panel">
-          <h3>Категории слушателей в партии</h3>
-          {Object.entries(viewModel.positionDistribution).map(([position, count]) => {
-            const total = Math.max(Object.values(viewModel.positionDistribution).reduce((sum, value) => sum + value, 0), 1);
-            const percent = Math.round((count / total) * 100);
-            return (
-              <div className="breakdown-row" key={position}>
-                <span>{position}</span>
-                <strong>{count} чел. ({percent}%)</strong>
-              </div>
-            );
-          })}
-        </section>
-
-        <section className="panel compact-breakdown-panel">
-          <h3>Предпочитаемые форматы обучения</h3>
-          {Object.entries(viewModel.preferredFormats).map(([format, count]) => {
-            const total = Math.max(Object.values(viewModel.preferredFormats).reduce((sum, value) => sum + value, 0), 1);
-            const percent = Math.round((count / total) * 100);
-            return (
-              <div className="format-breakdown-row" key={format}>
-                <div>
-                  <span>{format}</span>
-                  <strong>{percent}%</strong>
+      <DashboardSection title="Состав группы и форматы" defaultOpen={false}>
+        <div className="dashboard-chart-grid">
+          <section className="panel compact-breakdown-panel">
+            <h3>Категории слушателей в партии</h3>
+            {Object.entries(viewModel.positionDistribution).map(([position, count]) => {
+              const total = Math.max(Object.values(viewModel.positionDistribution).reduce((sum, value) => sum + value, 0), 1);
+              const percent = Math.round((count / total) * 100);
+              return (
+                <div className="breakdown-row" key={position}>
+                  <span>{position}</span>
+                  <strong>{count} чел. ({percent}%)</strong>
                 </div>
-                <div className="mini-progress">
-                  <span style={{ width: `${percent}%` }}></span>
+              );
+            })}
+          </section>
+
+          <section className="panel compact-breakdown-panel">
+            <h3>Предпочитаемые форматы обучения</h3>
+            {Object.entries(viewModel.preferredFormats).map(([format, count]) => {
+              const total = Math.max(Object.values(viewModel.preferredFormats).reduce((sum, value) => sum + value, 0), 1);
+              const percent = Math.round((count / total) * 100);
+              return (
+                <div className="format-breakdown-row" key={format}>
+                  <div>
+                    <span>{format}</span>
+                    <strong>{percent}%</strong>
+                  </div>
+                  <div className="mini-progress">
+                    <span style={{ width: `${percent}%` }}></span>
+                  </div>
                 </div>
-              </div>
-            );
-          })}
-        </section>
-      </div>
+              );
+            })}
+          </section>
+        </div>
+      </DashboardSection>
     </div>
   );
 }

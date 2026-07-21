@@ -1,9 +1,9 @@
-function ReportSection({ title, children }) {
+function ReportSection({ title, children, defaultOpen = false }) {
   return (
-    <section className="document-section">
-      <h4>{title}</h4>
-      {children}
-    </section>
+    <details className="document-section" open={defaultOpen}>
+      <summary>{title}</summary>
+      <div className="document-section-body">{children}</div>
+    </details>
   );
 }
 
@@ -26,7 +26,7 @@ export function AnalyticalReportTab({ reportData }) {
       <div className="document-sheet">
         <h3>Аналитическая записка по итогам анкетирования</h3>
 
-        <ReportSection title="Раздел 1. Общая информация">
+        <ReportSection title="Раздел 1. Общая информация" defaultOpen>
           <p>{reportData.section1_general_info}</p>
         </ReportSection>
 

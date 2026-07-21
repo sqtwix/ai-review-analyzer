@@ -182,7 +182,15 @@ export function AppLayout({
                       <Settings size={16} strokeWidth={2.2} />
                       Настройки
                     </button>
-                    <button type="button" className="profile-menu-danger" role="menuitem" onClick={onLogout}>
+                    <button
+                      type="button"
+                      className="profile-menu-danger"
+                      role="menuitem"
+                      onClick={() => {
+                        setIsProfileMenuOpen(false);
+                        onLogout();
+                      }}
+                    >
                       <LogOutIcon size={16} strokeWidth={2.2} />
                       Выйти
                     </button>

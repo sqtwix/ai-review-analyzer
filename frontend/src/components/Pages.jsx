@@ -298,6 +298,11 @@ export function SettingsPage({
                         ? "Попробуйте изменить поисковый запрос."
                         : "Архивированные отчеты появятся здесь."}
                     </p>
+                    {!archiveQuery.trim() && (
+                      <a className="secondary-button state-action" href="#upload">
+                        Перейти к анализу
+                      </a>
+                    )}
                   </div>
                 )}
               </section>
@@ -599,6 +604,13 @@ export function CourseReportDetailPage({
 }) {
   const [activeTab, setActiveTab] = useState("dashboard"); // dashboard, qualitative, report
   const [qualActiveTab, setQualActiveTab] = useState("topics"); // topics, sentiment, problems, quotes, recommendations
+  const exportFormats = [
+    { key: "pdf", label: "PDF" },
+    { key: "docx", label: "DOCX" },
+    { key: "excel", label: "Excel" },
+    { key: "csv", label: "CSV" },
+    { key: "json", label: "JSON" },
+  ];
 
   const reportViewModel = buildCourseReportViewModel(report);
   const {
@@ -684,15 +696,14 @@ export function CourseReportDetailPage({
             </button>
             {isSaveMenuOpen && (
               <div className="save-menu" role="menu">
-                {["pdf", "docx", "excel", "csv", "json"].map((format) => (
+                {exportFormats.map((format) => (
                   <button
-                    key={format}
+                    key={format.key}
                     type="button"
                     role="menuitem"
-                    onClick={() => handleExportReport(report, format)}
-                    style={{ textTransform: "uppercase" }}
+                    onClick={() => handleExportReport(report, format.key)}
                   >
-                    {format}
+                    {format.label}
                   </button>
                 ))}
               </div>
@@ -702,7 +713,7 @@ export function CourseReportDetailPage({
       </div>
 
       {/* Main Tabs Navigation */}
-      <nav className="nav tabs" style={{ display: "flex", gap: "16px", borderBottom: "1px solid var(--border-color)", paddingBottom: "8px", marginBottom: "20px" }}>
+      <nav className="report-tabs" aria-label="Разделы отчета">
         {[
           { key: "dashboard", label: "Панель показателей", icon: BarChart3 },
           { key: "qualitative", label: "Качественный анализ отзывов", icon: MessageSquare },
@@ -715,12 +726,6 @@ export function CourseReportDetailPage({
               type="button"
               className={`tab-btn ${activeTab === t.key ? "active" : ""}`}
               onClick={() => setActiveTab(t.key)}
-              style={{
-                display: "inline-flex", alignItems: "center", gap: "6px", background: "none", border: "none", 
-                padding: "8px 12px", fontSize: "var(--font-size-base)", fontWeight: activeTab === t.key ? "var(--font-weight-strong)" : "var(--font-weight-secondary)",
-                color: activeTab === t.key ? "var(--accent-color)" : "var(--text-muted)", cursor: "pointer",
-                borderBottom: activeTab === t.key ? "2.5px solid var(--accent-color)" : "none"
-              }}
             >
               <Icon size={16} />
               {t.label}
