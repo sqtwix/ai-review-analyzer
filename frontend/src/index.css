@@ -3693,6 +3693,18 @@ body[data-density="minimal"] .state-panel {
   color: var(--accent);
 }
 
+.report-tabs .tab-btn {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 8px 14px;
+  text-align: center;
+  white-space: normal;
+}
+
+.report-tabs .tab-btn svg {
+  flex: 0 0 auto;
+}
+
 .save-menu button {
   text-transform: none;
 }
