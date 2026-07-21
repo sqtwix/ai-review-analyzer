@@ -3092,9 +3092,17 @@ body[data-density="minimal"] .state-panel {
   min-width: 0;
 }
 
+.students-intro .text-stack {
+  gap: 8px;
+}
+
+.students-intro .text-stack > :where(.eyebrow, h2, p) {
+  margin: 0;
+  line-height: 1.35;
+}
+
 .students-intro .muted {
   max-width: 100%;
-  margin-bottom: 0;
   overflow-wrap: anywhere;
 }
 
