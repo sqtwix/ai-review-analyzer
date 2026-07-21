@@ -3110,6 +3110,80 @@ body[data-density="minimal"] .state-panel {
   font-size: 0.75rem;
 }
 
+.document-panel {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 30px;
+  border: 1px solid var(--line);
+  background: var(--surface-soft);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
+}
+
+.document-sheet {
+  color: var(--text);
+  font-family: Georgia, "Times New Roman", serif;
+  line-height: 1.6;
+}
+
+.document-sheet > h3 {
+  margin: 0;
+  padding-bottom: 10px;
+  border-bottom: 2px solid var(--accent);
+  color: var(--accent);
+  font-family: var(--font-sans);
+  font-size: 1.2rem;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.document-section {
+  margin-top: 24px;
+}
+
+.document-section h4 {
+  margin: 0;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--line);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 1rem;
+}
+
+.document-section p {
+  margin: 8px 0 0;
+  white-space: pre-line;
+  font-size: 0.9rem;
+}
+
+.document-section ul {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 8px 0 0;
+  padding-left: 20px;
+  font-size: 0.9rem;
+}
+
+.document-prose-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.document-prose-group p {
+  margin: 0;
+}
+
+.document-conclusions {
+  margin-top: 10px;
+}
+
+.document-conclusions ul {
+  gap: 4px;
+  margin-top: 4px;
+}
+
 .controls-panel {
   padding: 14px;
   display: grid;

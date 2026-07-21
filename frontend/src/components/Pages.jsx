@@ -5,6 +5,7 @@ import {
   AlertTriangle, CheckCircle, HelpCircle, ChevronRight, ThumbsUp
 } from "lucide-react";
 import { buildCourseReportViewModel } from "../reportViewModel";
+import { AnalyticalReportTab } from "./report/AnalyticalReportTab";
 import { DashboardTab } from "./report/DashboardTab";
 import { QualitativeTab } from "./report/QualitativeTab";
 
@@ -742,83 +743,7 @@ export function CourseReportDetailPage({
       )}
 
       {/* Tab 3: Analytical Document View */}
-      {activeTab === "report" && reportData && (
-        <section className="panel" style={{ padding: "30px", background: "#fbfcfb", border: "1px solid var(--border-color)", boxShadow: "0 4px 12px rgba(0,0,0,0.02)", maxWidth: "800px", margin: "0 auto" }}>
-          <div className="document-sheet" style={{ fontFamily: "Georgia, serif", color: "#222", lineHeight: "1.6" }}>
-            <h3 style={{ borderBottom: "2px solid var(--accent-color)", paddingBottom: "10px", fontFamily: "var(--font-sans)", color: "var(--accent-color)", fontSize: "1.2rem", textTransform: "uppercase", letterSpacing: "0.5px" }}>
-              Аналитическая записка по итогам анкетирования
-            </h3>
-            
-            {/* Section 1 */}
-            <div style={{ marginTop: "24px" }}>
-              <h4 style={{ fontFamily: "var(--font-sans)", color: "#111", fontSize: "1rem", borderBottom: "1px solid var(--border-color)", paddingBottom: "4px" }}>
-                Раздел 1. Общая информация
-              </h4>
-              <p style={{ whiteSpace: "pre-line", fontSize: "0.9rem", marginTop: "8px" }}>
-                {reportData.section1_general_info}
-              </p>
-            </div>
-
-            {/* Section 2 */}
-            <div style={{ marginTop: "24px" }}>
-              <h4 style={{ fontFamily: "var(--font-sans)", color: "#111", fontSize: "1rem", borderBottom: "1px solid var(--border-color)", paddingBottom: "4px" }}>
-                Раздел 2. Анализ ключевых критериев программы
-              </h4>
-              <ul style={{ paddingLeft: "20px", fontSize: "0.9rem", marginTop: "8px", display: "flex", flexDirection: "column", gap: "8px" }}>
-                <li><b>Полезность курса:</b> {reportData.section2_key_criteria?.usefulness_summary}</li>
-                <li><b>Практическая применимость:</b> {reportData.section2_key_criteria?.practicality_summary}</li>
-                <li><b>Доступность материала:</b> {reportData.section2_key_criteria?.accessibility_summary}</li>
-                <li><b>Взаимодействие с организаторами КУ:</b> {reportData.section2_key_criteria?.interaction_summary}</li>
-                <li><b>Психологическая вовлеченность:</b> {reportData.section2_key_criteria?.involvement_summary}</li>
-              </ul>
-            </div>
-
-            {/* Section 3 */}
-            <div style={{ marginTop: "24px" }}>
-              <h4 style={{ fontFamily: "var(--font-sans)", color: "#111", fontSize: "1rem", borderBottom: "1px solid var(--border-color)", paddingBottom: "4px" }}>
-                Раздел 3. Предложения слушателей по изменению программы
-              </h4>
-              <div style={{ fontSize: "0.9rem", marginTop: "8px", display: "flex", flexDirection: "column", gap: "8px" }}>
-                {reportData.section3_suggestions?.unwanted_topics?.length > 0 && (
-                  <p><b>Темы к исключению:</b> {reportData.section3_suggestions.unwanted_topics.join(", ")}</p>
-                )}
-                {reportData.section3_suggestions?.added_topics?.length > 0 && (
-                  <p>
-                    <b>Темы к добавлению:</b>{" "}
-                    {reportData.section3_suggestions.added_topics.map(t => `${t.topic} (${t.count} запросов)`).join("; ")}
-                  </p>
-                )}
-                <p><b>Сводка по формату обучения:</b> {reportData.section3_suggestions?.preferred_format_summary}</p>
-              </div>
-            </div>
-
-            {/* Section 4 */}
-            <div style={{ marginTop: "24px" }}>
-              <h4 style={{ fontFamily: "var(--font-sans)", color: "#111", fontSize: "1rem", borderBottom: "1px solid var(--border-color)", paddingBottom: "4px" }}>
-                Раздел 4. Рекомендации по корректировке траектории программы
-              </h4>
-              <div style={{ fontSize: "0.9rem", marginTop: "8px", display: "flex", flexDirection: "column", gap: "8px" }}>
-                <p><b>Востребованность курса:</b> {reportData.section4_trajectory?.further_implementation_needed}</p>
-                <p><b>Рекомендации по отбору:</b> {reportData.section4_trajectory?.student_selection_correction}</p>
-                <p><b>Изменения по темам:</b> {reportData.section4_trajectory?.added_topics_recommendation}</p>
-                <p><b>Распределение часов:</b> {reportData.section4_trajectory?.hours_correction_needed}</p>
-                <p><b>Рекомендованный формат занятий:</b> {reportData.section4_trajectory?.format_correction_needed}</p>
-                
-                {reportData.section4_trajectory?.conclusions?.length > 0 && (
-                  <div style={{ marginTop: "10px" }}>
-                    <b>Выводы и заключения:</b>
-                    <ul style={{ paddingLeft: "20px", marginTop: "4px", display: "flex", flexDirection: "column", gap: "4px" }}>
-                      {reportData.section4_trajectory.conclusions.map((c, i) => (
-                        <li key={i}>{c}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </section>
-      )}
+      {activeTab === "report" && <AnalyticalReportTab reportData={reportData} />}
     </section>
   );
 }
