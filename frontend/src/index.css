@@ -1014,6 +1014,22 @@ p {
   padding: 22px;
 }
 
+.panel > .eyebrow:first-child {
+  margin: 0 0 8px;
+}
+
+.panel > .eyebrow:first-child + :where(h2, h3) {
+  margin: 0 0 12px;
+}
+
+.panel > :where(h2, h3) + .muted {
+  margin: 0;
+}
+
+.panel > .muted + .dropzone {
+  margin-top: 24px;
+}
+
 .metric-card {
   padding: 20px;
   min-height: 140px;
@@ -1199,6 +1215,10 @@ p {
 .dropzone {
   margin-top: 18px;
   padding: 28px;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 8px;
   background: var(--surface-soft);
   text-align: center;
   transition: background var(--motion-base) var(--ease-standard), border-color var(--motion-base) var(--ease-standard), color var(--motion-base) var(--ease-standard), transform var(--motion-fast) var(--ease-out), box-shadow var(--motion-base) var(--ease-standard);
@@ -1206,9 +1226,14 @@ p {
 
 .dropzone span {
   display: block;
-  margin-bottom: 12px;
+  margin: 0;
   font-size: var(--font-size-2xl);
   color: var(--accent);
+}
+
+.dropzone strong,
+.dropzone p {
+  margin: 0;
 }
 
 .dropzone p {
