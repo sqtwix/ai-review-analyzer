@@ -1954,6 +1954,18 @@ th {
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--surface);
+  transition:
+    background var(--motion-base) var(--ease-standard),
+    border-color var(--motion-base) var(--ease-standard),
+    box-shadow var(--motion-base) var(--ease-standard),
+    transform var(--motion-fast) var(--ease-out);
+}
+
+.search:hover,
+.search:focus {
+  transform: translateY(-1px);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px var(--mint);
 }
 
 .student-grid {
@@ -2386,10 +2398,16 @@ th {
   transition: background var(--motion-base) var(--ease-standard), border-color var(--motion-base) var(--ease-standard), color var(--motion-base) var(--ease-standard), box-shadow var(--motion-base) var(--ease-standard);
 }
 
+.sidebar-search:hover,
 .sidebar-search:focus-within {
   border-color: var(--accent);
   background: var(--surface);
   color: var(--accent);
+  box-shadow: 0 0 0 4px var(--mint);
+}
+
+.sidebar-search:hover {
+  transform: translateY(-1px);
 }
 
 .sidebar-search input {
@@ -3023,6 +3041,10 @@ body[data-density="minimal"] .state-panel {
   .save-menu button:hover,
   .profile-menu button:hover,
   .accessibility-tool-button:hover,
+  .search:hover,
+  .sidebar-search:hover,
+  .archive-search:hover,
+  .control-search:hover,
   .tab-btn:hover,
   .subtab-btn:hover,
   .archive-item:hover,
