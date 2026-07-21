@@ -10,7 +10,7 @@ function ReportSection({ title, children, defaultOpen = false }) {
 export function AnalyticalReportTab({ reportData }) {
   if (!reportData) {
     return (
-      <section className="panel qualitative-empty">
+      <section className="panel analysis-empty-state">
         <h3>Аналитическая справка</h3>
         <p className="muted">Backend не передал аналитическую справку для этого отчета.</p>
       </section>

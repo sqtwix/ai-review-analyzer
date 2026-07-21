@@ -3012,6 +3012,26 @@ body[data-density="minimal"] .state-panel {
   min-height: 220px;
 }
 
+.analysis-empty-state,
+.qualitative-empty {
+  min-height: 128px;
+  padding: 22px 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 10px;
+}
+
+.analysis-empty-state h3,
+.qualitative-empty h3 {
+  margin: 0;
+}
+
+.analysis-empty-state p,
+.qualitative-empty p {
+  margin: 0;
+}
+
 .chart-frame {
   width: 100%;
   height: 260px;
@@ -3142,10 +3162,6 @@ body[data-density="minimal"] .state-panel {
   background: var(--mint);
   color: var(--accent);
   font-weight: var(--font-weight-strong);
-}
-
-.qualitative-empty {
-  padding: 24px;
 }
 
 .problem-card {

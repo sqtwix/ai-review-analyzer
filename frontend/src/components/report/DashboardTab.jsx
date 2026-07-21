@@ -56,7 +56,7 @@ const getHeatColor = (value) => {
 
 function EmptyChartState({ title, message }) {
   return (
-    <section className="panel chart-panel chart-panel-empty">
+    <section className="panel analysis-empty-state">
       <h3>{title}</h3>
       <p className="muted">{message}</p>
     </section>

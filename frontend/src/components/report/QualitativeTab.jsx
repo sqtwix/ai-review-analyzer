@@ -18,7 +18,7 @@ function EvidenceLine({ children }) {
 
 function EmptyQualitativeState({ title }) {
   return (
-    <section className="panel qualitative-empty">
+    <section className="panel analysis-empty-state">
       <h3>{title}</h3>
       <p className="muted">Backend не передал данные для этого блока качественного анализа.</p>
     </section>
