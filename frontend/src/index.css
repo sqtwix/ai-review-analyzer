@@ -11,10 +11,10 @@
   --line: #dfe7e3;
   --mint: #e5f2ec;
   --peach: #f5e8df;
-  --blue: #e8eef6;
+  --blue: #dceee8;
   --accent: #2f6f65;
   --accent-2: #c96545;
-  --accent-3: #425f86;
+  --accent-3: #245a52;
   --danger: #a94435;
   --warning: #b1792b;
   --on-accent: #ffffff;
@@ -72,10 +72,10 @@
   --line: #38504a;
   --mint: #223d36;
   --peach: #3a2a22;
-  --blue: #202d3b;
+  --blue: #1f3933;
   --accent: #72b7a7;
   --accent-2: #de8b6d;
-  --accent-3: #91add4;
+  --accent-3: #9bd8ca;
   --danger: #e28578;
   --warning: #e0b060;
   --on-accent: #07140f;
@@ -702,6 +702,7 @@ th,
   width: 22px;
   text-align: center;
   color: var(--accent-3);
+  font-weight: var(--font-weight-strong);
 }
 
 .nav a.active,
@@ -741,7 +742,7 @@ p {
   margin-bottom: 6px;
   font-size: var(--font-size-xs);
   color: var(--accent-3);
-  font-weight: var(--font-weight-medium);
+  font-weight: var(--font-weight-strong);
   text-transform: uppercase;
 }
 
@@ -1791,6 +1792,7 @@ th {
 
 .student-row span {
   color: var(--accent-3);
+  font-weight: var(--font-weight-strong);
 }
 
 .student-row p {
@@ -3316,7 +3318,7 @@ body[data-density="minimal"] .state-panel {
   background: var(--blue);
   color: var(--accent-3);
   font-size: var(--font-size-xs);
-  font-weight: var(--font-weight-medium);
+  font-weight: var(--font-weight-strong);
 }
 
 .document-panel {
