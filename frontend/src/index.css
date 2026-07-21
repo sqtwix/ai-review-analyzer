@@ -1442,6 +1442,19 @@ p {
   align-items: center;
   background: var(--surface-soft);
   min-width: 0;
+  transition:
+    background var(--motion-base) var(--ease-standard),
+    border-color var(--motion-base) var(--ease-standard),
+    box-shadow var(--motion-base) var(--ease-standard),
+    transform var(--motion-fast) var(--ease-out);
+}
+
+.archive-item:hover,
+.archive-item:focus-within {
+  transform: translateY(-1px);
+  border-color: var(--accent);
+  background: var(--surface);
+  box-shadow: var(--shadow);
 }
 
 .archive-item strong,
@@ -2850,6 +2863,9 @@ body[data-density="minimal"] .state-panel {
   .save-menu button:hover,
   .profile-menu button:hover,
   .accessibility-tool-button:hover,
+  .tab-btn:hover,
+  .subtab-btn:hover,
+  .archive-item:hover,
   .metric-card:hover,
   .student-card:hover,
   .action-card:hover,
@@ -3802,6 +3818,12 @@ body[data-density="minimal"] .state-panel {
   color: var(--muted);
   cursor: pointer;
   white-space: nowrap;
+  transition:
+    background var(--motion-base) var(--ease-standard),
+    border-color var(--motion-base) var(--ease-standard),
+    color var(--motion-base) var(--ease-standard),
+    box-shadow var(--motion-base) var(--ease-standard),
+    transform var(--motion-fast) var(--ease-out);
 }
 
 .subtab-btn {
@@ -3823,6 +3845,15 @@ body[data-density="minimal"] .state-panel {
   color: var(--accent);
 }
 
+.tab-btn:hover,
+.subtab-btn:hover {
+  transform: translateY(-1px);
+  border-color: var(--accent);
+  background: var(--mint);
+  color: var(--accent);
+  box-shadow: var(--shadow);
+}
+
 .report-tabs .tab-btn {
   flex: 1 1 0;
   min-width: 0;
@@ -3839,6 +3870,14 @@ body[data-density="minimal"] .state-panel {
 
 .report-tabs .tab-btn.active {
   color: var(--accent);
+}
+
+.report-tabs .tab-btn:hover {
+  transform: translateY(-1px);
+  border-color: var(--accent);
+  background: var(--mint);
+  color: var(--accent);
+  box-shadow: var(--shadow);
 }
 
 .save-menu button {
@@ -3880,6 +3919,14 @@ body[data-density="minimal"] .state-panel {
   cursor: pointer;
   color: var(--text);
   border-bottom: 1px solid transparent;
+  transition:
+    background var(--motion-base) var(--ease-standard),
+    color var(--motion-base) var(--ease-standard);
+}
+
+.dashboard-section > summary:hover {
+  background: var(--surface-soft);
+  color: var(--accent);
 }
 
 .dashboard-section[open] > summary {
@@ -3935,6 +3982,14 @@ body[data-density="minimal"] .state-panel {
   cursor: pointer;
   color: var(--heading);
   font-weight: var(--font-weight-medium);
+  transition:
+    color var(--motion-base) var(--ease-standard),
+    padding-left var(--motion-base) var(--ease-standard);
+}
+
+.document-section > summary:hover {
+  padding-left: 4px;
+  color: var(--accent);
 }
 
 .document-section[open] > summary {
