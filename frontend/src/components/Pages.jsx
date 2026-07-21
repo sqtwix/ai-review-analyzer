@@ -726,9 +726,10 @@ export function CourseReportDetailPage({
               type="button"
               className={`tab-btn ${activeTab === t.key ? "active" : ""}`}
               onClick={() => setActiveTab(t.key)}
+              title={t.label}
             >
               <Icon size={16} />
-              {t.label}
+              <span className="tab-label">{t.label}</span>
             </button>
           );
         })}

@@ -47,8 +47,9 @@ export function QualitativeTab({ textAnalysis, activeTab, onTabChange, sourceLim
             type="button"
             className={`subtab-btn ${activeTab === subTab.key ? "active" : ""}`}
             onClick={() => onTabChange(subTab.key)}
+            title={subTab.label}
           >
-            {subTab.label}
+            <span className="subtab-label">{subTab.label}</span>
           </button>
         ))}
       </aside>

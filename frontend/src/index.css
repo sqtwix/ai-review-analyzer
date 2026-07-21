@@ -3902,3 +3902,215 @@ body[data-density="minimal"] .state-panel {
     padding: 12px;
   }
 }
+
+/* Minimal interface mode: keep workflows visible, remove explanatory chrome. */
+body[data-density="minimal"] .app-shell {
+  gap: 0;
+}
+
+body[data-density="minimal"] .sidebar {
+  padding: 12px;
+  gap: 12px;
+}
+
+body[data-density="minimal"] .brand {
+  min-height: 42px;
+  gap: 8px;
+}
+
+body[data-density="minimal"] .brand-mark {
+  width: 36px;
+  height: 36px;
+}
+
+body[data-density="minimal"] .brand small,
+body[data-density="minimal"] .eyebrow,
+body[data-density="minimal"] .topbar .eyebrow,
+body[data-density="minimal"] .report-header .muted,
+body[data-density="minimal"] .dropzone p,
+body[data-density="minimal"] .validation-box p,
+body[data-density="minimal"] .timeline p,
+body[data-density="minimal"] .settings-copy p,
+body[data-density="minimal"] .settings-content-heading,
+body[data-density="minimal"] .archive-description,
+body[data-density="minimal"] .state-panel p,
+body[data-density="minimal"] .toast p,
+body[data-density="minimal"] .chart-note,
+body[data-density="minimal"] .evidence-line,
+body[data-density="minimal"] .distribution-labels,
+body[data-density="minimal"] .document-prose-group b,
+body[data-density="minimal"] .accessibility-toolbar-label {
+  display: none;
+}
+
+body[data-density="minimal"] .workspace {
+  padding: 12px;
+}
+
+body[data-density="minimal"] .topbar,
+body[data-density="minimal"] .settings-topbar {
+  min-height: 38px;
+  margin-bottom: 10px;
+}
+
+body[data-density="minimal"] .topbar h1 {
+  font-size: var(--font-size-base);
+}
+
+body[data-density="minimal"] .panel,
+body[data-density="minimal"] .report-header,
+body[data-density="minimal"] .dashboard-section,
+body[data-density="minimal"] .document-panel {
+  padding: 12px;
+  border-radius: 6px;
+  box-shadow: none;
+}
+
+body[data-density="minimal"] .report-header {
+  gap: 8px;
+}
+
+body[data-density="minimal"] #report-title-heading {
+  font-size: var(--font-size-base);
+}
+
+body[data-density="minimal"] .export-actions {
+  gap: 6px;
+}
+
+body[data-density="minimal"] .report-tabs {
+  gap: 6px;
+  margin-bottom: 10px;
+  padding: 4px 0 8px;
+}
+
+body[data-density="minimal"] .report-tabs .tab-btn {
+  min-height: 36px;
+  padding: 6px;
+}
+
+body[data-density="minimal"] .report-tabs .tab-label {
+  display: none;
+}
+
+body[data-density="minimal"] .subtab-btn {
+  min-height: 32px;
+  padding: 6px 8px;
+}
+
+body[data-density="minimal"] .qualitative-layout {
+  grid-template-columns: 150px minmax(0, 1fr);
+  gap: 12px;
+}
+
+body[data-density="minimal"] .qualitative-subnav {
+  gap: 4px;
+  padding-right: 10px;
+}
+
+body[data-density="minimal"] .dashboard-tab,
+body[data-density="minimal"] .dashboard-section-body,
+body[data-density="minimal"] .qualitative-list,
+body[data-density="minimal"] .settings-screen {
+  gap: 10px;
+}
+
+body[data-density="minimal"] .dashboard-metrics-grid {
+  gap: 8px;
+}
+
+body[data-density="minimal"] .dashboard-metric-card {
+  min-height: 92px;
+  gap: 8px;
+}
+
+body[data-density="minimal"] .dashboard-metric-card small,
+body[data-density="minimal"] .dashboard-metric-card .muted:first-child {
+  display: none;
+}
+
+body[data-density="minimal"] .chart-panel {
+  min-height: 250px;
+  padding: 12px;
+}
+
+body[data-density="minimal"] .chart-frame {
+  height: 205px;
+}
+
+body[data-density="minimal"] .chart-frame-square {
+  height: 220px;
+}
+
+body[data-density="minimal"] .dashboard-section > summary,
+body[data-density="minimal"] .document-section > summary {
+  min-height: 34px;
+  padding: 8px 0;
+}
+
+body[data-density="minimal"] .qualitative-card,
+body[data-density="minimal"] .recommendation-card,
+body[data-density="minimal"] .sentiment-panel,
+body[data-density="minimal"] .compact-breakdown-panel,
+body[data-density="minimal"] .analysis-empty-state {
+  padding: 12px;
+}
+
+body[data-density="minimal"] .analysis-empty-state {
+  min-height: 84px;
+}
+
+body[data-density="minimal"] .sentiment-grid {
+  gap: 8px;
+}
+
+body[data-density="minimal"] .sentiment-card {
+  padding: 12px;
+}
+
+body[data-density="minimal"] .document-panel {
+  width: 100%;
+}
+
+body[data-density="minimal"] .document-sheet h3 {
+  margin-bottom: 8px;
+}
+
+body[data-density="minimal"] .document-section-body {
+  padding-bottom: 10px;
+}
+
+body[data-density="minimal"] .settings-panel {
+  min-height: auto;
+  align-items: center;
+}
+
+body[data-density="minimal"] .settings-copy {
+  gap: 8px;
+}
+
+body[data-density="minimal"] .theme-options {
+  gap: 6px;
+}
+
+body[data-density="minimal"] .accessibility-toolbar-inner {
+  gap: 8px;
+  padding: 6px 10px;
+}
+
+@media (max-width: 640px) {
+  body[data-density="minimal"] .qualitative-layout {
+    grid-template-columns: 1fr;
+  }
+
+  body[data-density="minimal"] .qualitative-subnav {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    display: grid;
+    padding-right: 0;
+    border-right: 0;
+  }
+
+  body[data-density="minimal"] .subtab-btn {
+    white-space: normal;
+  }
+}
