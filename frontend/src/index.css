@@ -4081,16 +4081,42 @@ body[data-density="minimal"] .document-section-body {
 }
 
 body[data-density="minimal"] .settings-panel {
+  width: fit-content;
+  max-width: 100%;
+  grid-template-columns: max-content max-content;
+  justify-content: start;
   min-height: auto;
   align-items: center;
+  gap: 18px;
 }
 
 body[data-density="minimal"] .settings-copy {
+  align-items: center;
   gap: 8px;
 }
 
+body[data-density="minimal"] .settings-copy > svg {
+  margin-top: 0;
+}
+
 body[data-density="minimal"] .theme-options {
+  width: fit-content;
+  grid-template-columns: repeat(3, max-content);
   gap: 6px;
+}
+
+body[data-density="minimal"] .theme-options button {
+  min-height: 36px;
+  width: max-content;
+  padding: 6px 12px;
+  justify-content: center;
+}
+
+body[data-density="minimal"] .toggle-switch {
+  justify-self: start;
+  min-height: 36px;
+  width: max-content;
+  padding: 4px;
 }
 
 body[data-density="minimal"] .accessibility-toolbar-inner {
