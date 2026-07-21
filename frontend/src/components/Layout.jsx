@@ -118,7 +118,8 @@ export function AppLayout({
         ></button>
       </aside>
 
-      <main className="workspace">
+      <main className="workspace" aria-labelledby="page-title">
+        <h1 id="page-title" className="sr-only">{pageTitle}</h1>
         <header className="topbar">
           <button
             className="menu-button"
@@ -141,10 +142,6 @@ export function AppLayout({
               <PanelLeftClose size={18} strokeWidth={2.2} />
             )}
           </button>
-          <div>
-            <p className="eyebrow">Кабинет методиста</p>
-            <h1 id="page-title">{pageTitle}</h1>
-          </div>
           <div className="top-actions">
             {token ? (
               <div className="profile-actions" ref={profileActionsRef}>

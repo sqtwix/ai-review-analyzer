@@ -2,8 +2,8 @@
   --bg: #f7f8f6;
   --surface: #ffffff;
   --surface-soft: #fbfcfb;
-  --text: #1e2926;
-  --muted: #697873;
+  --text: #000000;
+  --muted: #808080;
   --line: #dfe7e3;
   --mint: #e5f2ec;
   --peach: #f5e8df;
@@ -33,20 +33,22 @@
   --ease-out: cubic-bezier(0, 0, 0.2, 1);
   --ease-emphasis: cubic-bezier(0.2, 0, 0, 1.2);
   --font-sans: Inter, "Segoe UI", Arial, sans-serif;
-  --font-size-xs: 0.75rem;
-  --font-size-sm: 0.875rem;
-  --font-size-base: 1rem;
-  --font-size-lg: 1.125rem;
-  --font-size-xl: 1.5rem;
-  --font-size-2xl: 1.75rem;
-  --font-size-3xl: 2rem;
+  --font-size-primary: 1rem;
+  --font-size-secondary: 0.875rem;
+  --font-size-xs: var(--font-size-secondary);
+  --font-size-sm: var(--font-size-secondary);
+  --font-size-base: var(--font-size-primary);
+  --font-size-lg: var(--font-size-primary);
+  --font-size-xl: var(--font-size-primary);
+  --font-size-2xl: var(--font-size-primary);
+  --font-size-3xl: var(--font-size-primary);
   --line-height-tight: 1.2;
   --line-height-base: 1.5;
   --line-height-relaxed: 1.6;
-  --font-weight-secondary: 350;
+  --font-weight-secondary: 200;
   --font-weight-regular: 400;
-  --font-weight-medium: 500;
-  --font-weight-strong: 700;
+  --font-weight-medium: 400;
+  --font-weight-strong: 400;
   font-family: var(--font-sans);
 }
 
@@ -322,6 +324,35 @@ body {
   font-weight: var(--font-weight-regular);
   line-height: var(--line-height-base);
   letter-spacing: 0;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+b,
+strong,
+button,
+input,
+textarea,
+select {
+  color: var(--text);
+  font-size: var(--font-size-primary);
+  font-weight: var(--font-weight-regular);
 }
 
 :root[data-line-spacing="wide"] body {
@@ -604,6 +635,19 @@ th,
 .student-metrics,
 .reason-text,
 .action-card small {
+  color: var(--muted);
+  font-size: var(--font-size-secondary);
+  font-weight: var(--font-weight-secondary);
+}
+
+.muted b,
+.muted strong,
+.dashboard-metric-card strong,
+.hero-metrics strong,
+.metric-card strong,
+.sentiment-card strong,
+.student-metrics b {
+  color: var(--muted);
   font-weight: var(--font-weight-secondary);
 }
 
