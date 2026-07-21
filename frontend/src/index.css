@@ -42,6 +42,7 @@
   --font-sans: Inter, "Segoe UI", Arial, sans-serif;
   --font-size-primary: 1rem;
   --font-size-secondary: 0.875rem;
+  --font-size-accent: calc(var(--font-size-primary) + (var(--font-size-primary) - var(--font-size-secondary)));
   --font-size-xs: var(--font-size-secondary);
   --font-size-sm: var(--font-size-secondary);
   --font-size-base: var(--font-size-primary);
@@ -691,6 +692,21 @@ th,
 .student-metrics b {
   color: var(--value-text);
   font-weight: var(--font-weight-medium);
+}
+
+.new-chat-btn,
+.secondary-button,
+.settings-group-button.active,
+.theme-options button.selected,
+.table-link,
+.action-card strong,
+.tab-btn.active,
+.subtab-btn.active,
+.report-tabs .tab-btn.active,
+.badge.evidence-badge,
+.badge.recommendation-target,
+.students-intro .badge {
+  font-size: var(--font-size-accent);
 }
 
 .nav {
