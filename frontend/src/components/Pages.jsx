@@ -476,7 +476,7 @@ export function StudentsPage({ reports, onNewAnalysis }) {
             </div>
           </section>
 
-          <div className="grid two" style={{ marginTop: "24px" }}>
+          <div className="grid two students-breakdown-grid">
             <section className="panel">
               <h3>Категории слушателей</h3>
               <div className="stats-breakdown" style={{ display: "flex", flexDirection: "column", gap: "12px", marginTop: "14px" }}>

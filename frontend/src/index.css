@@ -3076,7 +3076,7 @@ body[data-density="minimal"] .state-panel {
 /* Student analytics styles */
 #students.page {
   display: grid;
-  gap: 18px;
+  gap: 20px;
 }
 
 .students-intro {
@@ -3723,7 +3723,6 @@ body[data-density="minimal"] .state-panel {
 }
 
 .students-course-panel {
-  margin-top: 24px;
   display: grid;
   gap: 16px;
 }
