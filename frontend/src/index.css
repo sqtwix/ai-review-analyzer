@@ -2062,7 +2062,7 @@ th {
   display: flex;
   flex: 1;
   flex-direction: column;
-  gap: 4px;
+  gap: 10px;
 }
 
 .sidebar-history {
@@ -2070,7 +2070,7 @@ th {
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 6px;
   margin-top: 0;
   max-height: calc(var(--app-viewport-height) - 320px);
 }
