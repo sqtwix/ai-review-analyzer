@@ -48,57 +48,59 @@ export function AppLayout({
 
         <div className="sidebar-divider"></div>
 
-        <div className="sidebar-section-title">История анализов</div>
-        <label className="sidebar-search">
-          <Search size={16} strokeWidth={2.2} />
-          <input
-            type="search"
-            value={historyQuery}
-            onChange={(e) => onHistoryQueryChange(e.target.value)}
-            placeholder="Найти отчет"
-            aria-label="Найти отчет в истории"
-          />
-        </label>
+        <div className="sidebar-history-section">
+          <div className="sidebar-section-title">История анализов</div>
+          <label className="sidebar-search">
+            <Search size={16} strokeWidth={2.2} />
+            <input
+              type="search"
+              value={historyQuery}
+              onChange={(e) => onHistoryQueryChange(e.target.value)}
+              placeholder="Найти отчет"
+              aria-label="Найти отчет в истории"
+            />
+          </label>
 
-        <div className="sidebar-history" id="reports-sidebar-list">
-          {reports.length ? (
-            reports.map((report) => (
-              <div
-                key={report.id}
-                className={`history-row ${route === `report-detail-${report.id}` ? "active" : ""}`}
-              >
-                <a
-                  href={`#report-detail-${report.id}`}
-                  className="history-item"
-                  title={report.title ? `${report.course}: ${report.title}` : report.course}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    window.location.hash = `report-detail-${report.id}`;
-                  }}
+          <div className="sidebar-history" id="reports-sidebar-list">
+            {reports.length ? (
+              reports.map((report) => (
+                <div
+                  key={report.id}
+                  className={`history-row ${route === `report-detail-${report.id}` ? "active" : ""}`}
                 >
-                  <FileText size={16} strokeWidth={2.2} />
-                  <span>{report.course}</span>
-                </a>
-                <button
-                  type="button"
-                  className="history-archive-button"
-                  aria-label={`Архивировать отчет ${report.course}`}
-                  title="Архивировать"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    onArchiveReport?.(report.id);
-                  }}
-                >
-                  <Archive size={15} strokeWidth={2.2} />
-                </button>
+                  <a
+                    href={`#report-detail-${report.id}`}
+                    className="history-item"
+                    title={report.title ? `${report.course}: ${report.title}` : report.course}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      window.location.hash = `report-detail-${report.id}`;
+                    }}
+                  >
+                    <FileText size={16} strokeWidth={2.2} />
+                    <span>{report.course}</span>
+                  </a>
+                  <button
+                    type="button"
+                    className="history-archive-button"
+                    aria-label={`Архивировать отчет ${report.course}`}
+                    title="Архивировать"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      onArchiveReport?.(report.id);
+                    }}
+                  >
+                    <Archive size={15} strokeWidth={2.2} />
+                  </button>
+                </div>
+              ))
+            ) : (
+              <div className="sidebar-empty">
+                {historyQuery ? "Ничего не найдено" : "История пока пуста"}
               </div>
-            ))
-          ) : (
-            <div className="sidebar-empty">
-              {historyQuery ? "Ничего не найдено" : "История пока пуста"}
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
         <div className="sidebar-divider"></div>
@@ -116,7 +118,8 @@ export function AppLayout({
         ></button>
       </aside>
 
-      <main className="workspace">
+      <main className="workspace" aria-labelledby="page-title">
+        <h1 id="page-title" className="sr-only">{pageTitle}</h1>
         <header className="topbar">
           <button
             className="menu-button"
@@ -139,10 +142,6 @@ export function AppLayout({
               <PanelLeftClose size={18} strokeWidth={2.2} />
             )}
           </button>
-          <div>
-            <p className="eyebrow">Кабинет методиста</p>
-            <h1 id="page-title">{pageTitle}</h1>
-          </div>
           <div className="top-actions">
             {token ? (
               <div className="profile-actions" ref={profileActionsRef}>
@@ -183,7 +182,15 @@ export function AppLayout({
                       <Settings size={16} strokeWidth={2.2} />
                       Настройки
                     </button>
-                    <button type="button" className="profile-menu-danger" role="menuitem" onClick={onLogout}>
+                    <button
+                      type="button"
+                      className="profile-menu-danger"
+                      role="menuitem"
+                      onClick={() => {
+                        setIsProfileMenuOpen(false);
+                        onLogout();
+                      }}
+                    >
                       <LogOutIcon size={16} strokeWidth={2.2} />
                       Выйти
                     </button>

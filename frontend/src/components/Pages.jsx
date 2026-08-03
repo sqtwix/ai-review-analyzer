@@ -2,8 +2,12 @@ import { useState, useMemo } from "react";
 import { 
   ArchiveRestore, ArrowLeft, Construction, Eye, Layers3, Monitor, Moon, PanelLeftClose, 
   PanelLeftOpen, Search, Sun, Pencil, Archive, Save, BookOpen, BarChart3, MessageSquare, 
-  AlertTriangle, CheckCircle, HelpCircle, ChevronRight, TrendingUp, ThumbsUp, Quote
+  AlertTriangle, CheckCircle, HelpCircle, ChevronRight, ThumbsUp
 } from "lucide-react";
+import { buildCourseReportViewModel } from "../reportViewModel";
+import { AnalyticalReportTab } from "./report/AnalyticalReportTab";
+import { DashboardTab } from "./report/DashboardTab";
+import { QualitativeTab } from "./report/QualitativeTab";
 
 // ========================= Auth Page Component =========================
 export function AuthPage({
@@ -294,6 +298,11 @@ export function SettingsPage({
                         ? "Попробуйте изменить поисковый запрос."
                         : "Архивированные отчеты появятся здесь."}
                     </p>
+                    {!archiveQuery.trim() && (
+                      <a className="secondary-button state-action" href="#upload">
+                        Перейти к анализу
+                      </a>
+                    )}
                   </div>
                 )}
               </section>
@@ -429,7 +438,7 @@ export function StudentsPage({ reports, onNewAnalysis }) {
   return (
     <section className="page active" id="students" data-title="Слушатели">
       <section className="panel students-intro">
-        <div>
+        <div className="text-stack">
           <p className="eyebrow">Кабинет методиста</p>
           <h2>Слушатели и курсы</h2>
           <p className="muted">
@@ -467,7 +476,7 @@ export function StudentsPage({ reports, onNewAnalysis }) {
             </div>
           </section>
 
-          <div className="grid two" style={{ marginTop: "24px" }}>
+          <div className="grid two students-breakdown-grid">
             <section className="panel">
               <h3>Категории слушателей</h3>
               <div className="stats-breakdown" style={{ display: "flex", flexDirection: "column", gap: "12px", marginTop: "14px" }}>
@@ -476,7 +485,7 @@ export function StudentsPage({ reports, onNewAnalysis }) {
                   const pct = Math.round((count / total) * 100);
                   return (
                     <div key={pos} className="breakdown-row">
-                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px", fontSize: "0.9rem" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px", fontSize: "var(--font-size-sm)" }}>
                         <span><b>{pos}</b></span>
                         <span className="muted">{count} чел. ({pct}%)</span>
                       </div>
@@ -497,7 +506,7 @@ export function StudentsPage({ reports, onNewAnalysis }) {
                   const pct = Math.round((count / total) * 100);
                   return (
                     <div key={format} className="breakdown-row">
-                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px", fontSize: "0.9rem" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px", fontSize: "var(--font-size-sm)" }}>
                         <span style={{ textTransform: "capitalize" }}><b>{format}</b></span>
                         <span className="muted">{pct}%</span>
                       </div>
@@ -511,10 +520,10 @@ export function StudentsPage({ reports, onNewAnalysis }) {
             </section>
           </div>
 
-          <section className="panel" style={{ marginTop: "24px" }}>
-            <div className="section-heading" style={{ marginBottom: "16px" }}>
+          <section className="panel students-course-panel">
+            <div className="section-heading students-course-heading">
               <h3>Базы опросов по курсам</h3>
-              <div className="control-search" style={{ margin: 0, width: "300px" }}>
+              <div className="control-search students-course-search">
                 <Search size={16} strokeWidth={2.2} />
                 <input
                   type="search"
@@ -525,38 +534,34 @@ export function StudentsPage({ reports, onNewAnalysis }) {
               </div>
             </div>
 
-            <div className="table-responsive" style={{ overflowX: "auto" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "0.9rem" }}>
+            <div className="table-wrap">
+              <table className="course-table">
                 <thead>
-                  <tr style={{ borderBottom: "1px solid var(--border-color)", paddingBottom: "10px" }}>
-                    <th style={{ padding: "12px 8px" }}>Название курса</th>
-                    <th style={{ padding: "12px 8px" }}>Период</th>
-                    <th style={{ padding: "12px 8px" }}>Анкет</th>
-                    <th style={{ padding: "12px 8px" }}>Ср. Оценка</th>
-                    <th style={{ padding: "12px 8px" }}>Отстраненные</th>
-                    <th style={{ padding: "12px 8px" }}>Ключевая тема</th>
-                    <th style={{ padding: "12px 8px" }}>Действия</th>
+                  <tr>
+                    <th>Название курса</th>
+                    <th>Период</th>
+                    <th>Анкет</th>
+                    <th>Ср. Оценка</th>
+                    <th>Отстраненные</th>
+                    <th>Ключевая тема</th>
+                    <th>Действия</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredCourses.map((c, i) => (
-                    <tr key={i} style={{ borderBottom: "1px solid var(--border-color)", verticalAlign: "middle" }}>
-                      <td style={{ padding: "12px 8px" }}><b>{c.name}</b></td>
-                      <td style={{ padding: "12px 8px" }}>{c.period}</td>
-                      <td style={{ padding: "12px 8px" }}>{c.students}</td>
-                      <td style={{ padding: "12px 8px" }}>
-                        <span style={{ 
-                          background: Number(c.avgScore) >= 8.0 ? "#e6f4ea" : "#fef7e0", 
-                          color: Number(c.avgScore) >= 8.0 ? "#137333" : "#b06000",
-                          padding: "3px 8px", borderRadius: "4px", fontWeight: "bold" 
-                        }}>
+                    <tr key={i}>
+                      <td><b>{c.name}</b></td>
+                      <td>{c.period}</td>
+                      <td>{c.students}</td>
+                      <td>
+                        <span className={`score-pill ${Number(c.avgScore) >= 8.0 ? "good" : "watch"}`}>
                           {c.avgScore}
                         </span>
                       </td>
-                      <td style={{ padding: "12px 8px" }}>{c.detached}%</td>
-                      <td style={{ padding: "12px 8px" }} className="muted">{c.topTopic}</td>
-                      <td style={{ padding: "12px 8px" }}>
-                        <a href={`#report-detail-${c.id}`} style={{ display: "inline-flex", alignItems: "center", gap: "2px", textDecoration: "none", color: "var(--accent-color)", fontWeight: "600" }}>
+                      <td>{c.detached}%</td>
+                      <td className="muted">{c.topTopic}</td>
+                      <td>
+                        <a href={`#report-detail-${c.id}`} className="table-link">
                           Открыть <ChevronRight size={14} />
                         </a>
                       </td>
@@ -564,7 +569,7 @@ export function StudentsPage({ reports, onNewAnalysis }) {
                   ))}
                   {filteredCourses.length === 0 && (
                     <tr>
-                      <td colSpan="7" style={{ textAlign: "center", padding: "20px", color: "var(--text-muted)" }}>Ничего не найдено.</td>
+                      <td colSpan="7" className="table-empty">Ничего не найдено.</td>
                     </tr>
                   )}
                 </tbody>
@@ -595,240 +600,22 @@ export function CourseReportDetailPage({
 }) {
   const [activeTab, setActiveTab] = useState("dashboard"); // dashboard, qualitative, report
   const [qualActiveTab, setQualActiveTab] = useState("topics"); // topics, sentiment, problems, quotes, recommendations
+  const exportFormats = [
+    { key: "pdf", label: "PDF" },
+    { key: "docx", label: "DOCX" },
+    { key: "excel", label: "Excel" },
+    { key: "csv", label: "CSV" },
+    { key: "json", label: "JSON" },
+  ];
 
-  const courseAnalysis = report.result?.courses_analysis?.[0];
-  const statistics = courseAnalysis?.statistics;
-  const preferredFormats = courseAnalysis?.preferred_formats || {};
-  const positionDistribution = courseAnalysis?.position_distribution || {};
-  const reportData = courseAnalysis?.analytical_report;
-  const textAnalysis = courseAnalysis?.text_analysis;
-  const dashboardData = courseAnalysis?.dashboard_data || {};
-
-  const courseName = courseAnalysis?.course_name || report.course || "Электронный курс";
-  const period = courseAnalysis?.period || "Не указан";
-  const studentsCount = courseAnalysis?.students_count || 0;
-
-  // Custom inline SVG Radar Chart generator
-  const renderRadarChart = () => {
-    if (!statistics) return null;
-    const metrics = [
-      { key: "usefulness", label: "Полезность", val: statistics.usefulness?.average || 0 },
-      { key: "practicality", label: "Практика", val: statistics.practicality?.average || 0 },
-      { key: "accessibility", label: "Доступность", val: statistics.accessibility?.average || 0 },
-      { key: "interaction", label: "Взаимодействие", val: statistics.interaction?.average || 0 }
-    ];
-
-    const size = 260;
-    const center = size / 2;
-    const maxVal = 10;
-    const radius = 80;
-
-    const getCoord = (index, value) => {
-      const angle = (Math.PI / 2) + (index * Math.PI / 2); // 4 axes
-      const r = (value / maxVal) * radius;
-      return {
-        x: center + r * Math.cos(angle),
-        y: center - r * Math.sin(angle)
-      };
-    };
-
-    const points = metrics.map((m, i) => getCoord(i, m.val));
-    const pathData = `M ${points[0].x} ${points[0].y} L ${points[1].x} ${points[1].y} L ${points[2].x} ${points[2].y} L ${points[3].x} ${points[3].y} Z`;
-
-    const circleGrid = [2.5, 5.0, 7.5, 10.0].map((v) => {
-      const pts = metrics.map((m, i) => getCoord(i, v));
-      return `M ${pts[0].x} ${pts[0].y} L ${pts[1].x} ${pts[1].y} L ${pts[2].x} ${pts[2].y} L ${pts[3].x} ${pts[3].y} Z`;
-    });
-
-    return (
-      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="svg-chart">
-        {/* Circle grids */}
-        {circleGrid.map((path, idx) => (
-          <path key={idx} d={path} fill="none" stroke="var(--border-color)" strokeWidth="0.8" strokeDasharray="3 3" />
-        ))}
-        {/* Grid values */}
-        {[2.5, 5.0, 7.5, 10.0].map((v, idx) => (
-          <text key={idx} x={center + 4} y={center - (v / maxVal) * radius + 3} fontSize="8" fill="var(--text-muted)">{v}</text>
-        ))}
-        {/* Axes lines */}
-        {metrics.map((m, i) => {
-          const pt = getCoord(i, maxVal);
-          return <line key={i} x1={center} y1={center} x2={pt.x} y2={pt.y} stroke="var(--border-color)" strokeWidth="1" />;
-        })}
-        {/* Axis Labels */}
-        {metrics.map((m, i) => {
-          const pt = getCoord(i, maxVal + 1.8);
-          let textAnchor = "middle";
-          if (i === 1) textAnchor = "start";
-          if (i === 3) textAnchor = "end";
-          return (
-            <text 
-              key={i} 
-              x={pt.x} 
-              y={i === 2 ? pt.y + 7 : i === 0 ? pt.y - 3 : pt.y + 3} 
-              fontSize="9.5" 
-              fontWeight="bold" 
-              fill="var(--text-color)" 
-              textAnchor={textAnchor}
-            >
-              {m.label} ({m.val.toFixed(1)})
-            </text>
-          );
-        })}
-        {/* Satisfaction polygon */}
-        <path d={pathData} fill="rgba(47, 111, 101, 0.25)" stroke="var(--accent-color)" strokeWidth="2.5" />
-        {/* Value dot markers */}
-        {points.map((pt, i) => (
-          <circle key={i} cx={pt.x} cy={pt.y} r="4.5" fill="var(--accent-color)" stroke="#fff" strokeWidth="1.5" />
-        ))}
-      </svg>
-    );
-  };
-
-  // Custom inline SVG Correlation Heatmap matrix generator
-  const renderCorrelationMatrix = () => {
-    const matrix = dashboardData.correlation_matrix;
-    if (!matrix) return <p className="muted text-center">Корреляционная матрица пуста</p>;
-
-    const keys = Object.keys(matrix);
-    const size = 260;
-    const paddingLeft = 75;
-    const paddingTop = 40;
-    const cellSize = (size - paddingLeft) / keys.length;
-
-    const getColor = (val) => {
-      if (val === 1.0) return "rgba(47, 111, 101, 0.95)";
-      if (val >= 0.7) return "rgba(47, 111, 101, 0.75)";
-      if (val >= 0.5) return "rgba(47, 111, 101, 0.50)";
-      if (val >= 0.3) return "rgba(47, 111, 101, 0.30)";
-      return "rgba(47, 111, 101, 0.15)";
-    };
-
-    return (
-      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="svg-heatmap">
-        {/* Horizontal axis labels */}
-        {keys.map((k, colIdx) => (
-          <text 
-            key={colIdx} 
-            x={paddingLeft + colIdx * cellSize + cellSize / 2} 
-            y={paddingTop - 8} 
-            fontSize="8" 
-            fontWeight="bold"
-            textAnchor="middle" 
-            fill="var(--text-color)"
-          >
-            {k.slice(0, 5)}...
-          </text>
-        ))}
-
-        {keys.map((rowKey, rowIdx) => (
-          <g key={rowKey}>
-            {/* Vertical axis labels */}
-            <text 
-              x={paddingLeft - 8} 
-              y={paddingTop + rowIdx * cellSize + cellSize / 2 + 3} 
-              fontSize="9" 
-              fontWeight="bold"
-              textAnchor="end" 
-              fill="var(--text-color)"
-            >
-              {rowKey}
-            </text>
-
-            {/* Matrix Cells */}
-            {keys.map((colKey, colIdx) => {
-              const val = matrix[rowKey][colKey] || 0.0;
-              return (
-                <g key={colKey}>
-                  <rect 
-                    x={paddingLeft + colIdx * cellSize} 
-                    y={paddingTop + rowIdx * cellSize} 
-                    width={cellSize - 1} 
-                    height={cellSize - 1} 
-                    fill={getColor(val)} 
-                    rx="2"
-                  />
-                  <text 
-                    x={paddingLeft + colIdx * cellSize + cellSize / 2} 
-                    y={paddingTop + rowIdx * cellSize + cellSize / 2 + 3.5} 
-                    fontSize="9.5" 
-                    fontWeight="bold"
-                    textAnchor="middle" 
-                    fill={val >= 0.7 ? "#fff" : "var(--text-color)"}
-                  >
-                    {val.toFixed(2)}
-                  </text>
-                </g>
-              );
-            })}
-          </g>
-        ))}
-      </svg>
-    );
-  };
-
-  // Custom inline SVG Trend Lines generator
-  const renderTrendLine = () => {
-    const trend = dashboardData.trend_data;
-    if (!trend || trend.length === 0) return <p className="muted text-center" style={{ padding: "40px" }}>История трендов отсутствует.</p>;
-
-    const width = 560;
-    const height = 180;
-    const paddingLeft = 30;
-    const paddingRight = 10;
-    const paddingTop = 20;
-    const paddingBottom = 30;
-
-    const chartWidth = width - paddingLeft - paddingRight;
-    const chartHeight = height - paddingTop - paddingBottom;
-    const maxVal = 10;
-
-    const getX = (idx) => paddingLeft + (idx / (trend.length - 1)) * chartWidth;
-    const getY = (val) => paddingTop + chartHeight - (val / maxVal) * chartHeight;
-
-    const usefulPts = trend.map((t, idx) => ({ x: getX(idx), y: getY(t.usefulness_avg) }));
-    const practicePts = trend.map((t, idx) => ({ x: getX(idx), y: getY(t.practicality_avg) }));
-
-    const buildPath = (pts) => `M ${pts[0].x} ${pts[0].y} ` + pts.slice(1).map(p => `L ${p.x} ${p.y}`).join(" ");
-
-    return (
-      <svg width="100%" height={height} viewBox={`0 0 ${width} ${height}`} className="svg-trend">
-        {/* Grid lines */}
-        {[0, 2.5, 5.0, 7.5, 10.0].map((v) => (
-          <g key={v}>
-            <line x1={paddingLeft} y1={getY(v)} x2={width - paddingRight} y2={getY(v)} stroke="var(--border-color)" strokeWidth="0.5" />
-            <text x={paddingLeft - 6} y={getY(v) + 3} fontSize="8" fill="var(--text-muted)" textAnchor="end">{v}</text>
-          </g>
-        ))}
-
-        {/* Labels for points */}
-        {trend.map((t, idx) => (
-          <text key={idx} x={getX(idx)} y={height - 8} fontSize="9.5" fontWeight="bold" fill="var(--text-color)" textAnchor="middle">
-            {t.period}
-          </text>
-        ))}
-
-        {/* Usefulness Line */}
-        <path d={buildPath(usefulPts)} fill="none" stroke="var(--accent-color)" strokeWidth="2.2" />
-        {usefulPts.map((p, i) => (
-          <circle key={i} cx={p.x} cy={p.y} r="4" fill="var(--accent-color)" stroke="#fff" strokeWidth="1" title={`Полезность: ${trend[i].usefulness_avg}`} />
-        ))}
-
-        {/* Practicality Line */}
-        <path d={buildPath(practicePts)} fill="none" stroke="#e07a5f" strokeWidth="2.2" />
-        {practicePts.map((p, i) => (
-          <circle key={i} cx={p.x} cy={p.y} r="4" fill="#e07a5f" stroke="#fff" strokeWidth="1" title={`Практика: ${trend[i].practicality_avg}`} />
-        ))}
-      </svg>
-    );
-  };
-
-  const getPriorityClass = (priority) => {
-    const p = String(priority).toLowerCase();
-    if (p === "high" || p === "высокий") return "risk";
-    if (p === "medium" || p === "средний") return "watch";
-    return "normal";
-  };
+  const reportViewModel = buildCourseReportViewModel(report);
+  const {
+    reportData,
+    textAnalysis,
+    courseName,
+    period,
+    studentsCount,
+  } = reportViewModel;
 
   return (
     <section className="page active" id="report-detail" data-title="Детали отчёта">
@@ -856,8 +643,8 @@ export function CourseReportDetailPage({
               </button>
             </form>
           ) : (
-            <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "4px" }}>
-              <p className="eyebrow" id="report-course-eyebrow" style={{ margin: 0 }}>{courseName}</p>
+            <div className="report-title-row">
+              <p className="eyebrow" id="report-course-eyebrow">{courseName}</p>
               <button
                 type="button"
                 className="inline-icon-button"
@@ -872,8 +659,8 @@ export function CourseReportDetailPage({
               </button>
             </div>
           )}
-          <h2 id="report-title-heading" style={{ margin: 0 }}>{report.title}</h2>
-          <p className="muted" style={{ fontSize: "0.85rem", marginTop: "3px" }}>
+          <h2 id="report-title-heading">{report.title}</h2>
+          <p className="muted report-meta-line">
             Период: <b>{period}</b> · Анкетировано слушателей: <b>{studentsCount} чел.</b>
           </p>
         </div>
@@ -905,15 +692,14 @@ export function CourseReportDetailPage({
             </button>
             {isSaveMenuOpen && (
               <div className="save-menu" role="menu">
-                {["pdf", "excel", "csv", "json"].map((format) => (
+                {exportFormats.map((format) => (
                   <button
-                    key={format}
+                    key={format.key}
                     type="button"
                     role="menuitem"
-                    onClick={() => handleExportReport(report, format)}
-                    style={{ textTransform: "uppercase" }}
+                    onClick={() => handleExportReport(report, format.key)}
                   >
-                    {format}
+                    {format.label}
                   </button>
                 ))}
               </div>
@@ -923,7 +709,7 @@ export function CourseReportDetailPage({
       </div>
 
       {/* Main Tabs Navigation */}
-      <nav className="nav tabs" style={{ display: "flex", gap: "16px", borderBottom: "1px solid var(--border-color)", paddingBottom: "8px", marginBottom: "20px" }}>
+      <nav className="report-tabs" aria-label="Разделы отчета">
         {[
           { key: "dashboard", label: "Панель показателей", icon: BarChart3 },
           { key: "qualitative", label: "Качественный анализ отзывов", icon: MessageSquare },
@@ -936,364 +722,30 @@ export function CourseReportDetailPage({
               type="button"
               className={`tab-btn ${activeTab === t.key ? "active" : ""}`}
               onClick={() => setActiveTab(t.key)}
-              style={{
-                display: "inline-flex", alignItems: "center", gap: "6px", background: "none", border: "none", 
-                padding: "8px 12px", fontSize: "0.95rem", fontWeight: activeTab === t.key ? "bold" : "normal",
-                color: activeTab === t.key ? "var(--accent-color)" : "var(--text-muted)", cursor: "pointer",
-                borderBottom: activeTab === t.key ? "2.5px solid var(--accent-color)" : "none"
-              }}
+              title={t.label}
             >
               <Icon size={16} />
-              {t.label}
+              <span className="tab-label">{t.label}</span>
             </button>
           );
         })}
       </nav>
 
       {/* Tab 1: Dashboard Panel */}
-      {activeTab === "dashboard" && statistics && (
-        <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-          {/* Numeric Scorecards Grid */}
-          <div className="grid two" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "16px" }}>
-            {[
-              { label: "Полезность программы", key: "usefulness", metric: statistics.usefulness },
-              { label: "Практичность навыков", key: "practicality", metric: statistics.practicality },
-              { label: "Доступность изложения", key: "accessibility", metric: statistics.accessibility },
-              { label: "Взаимодействие с КУ", key: "interaction", metric: statistics.interaction }
-            ].map((card) => (
-              <article key={card.key} className="panel metric-card" style={{ display: "flex", flexDirection: "column", padding: "16px" }}>
-                <span className="muted" style={{ fontSize: "0.85rem" }}>{card.label}</span>
-                <strong style={{ fontSize: "1.8rem", margin: "6px 0 2px 0", color: "var(--text-color)" }}>
-                  {card.metric?.average?.toFixed(1) || "-"} <span style={{ fontSize: "0.9rem", fontWeight: "normal" }}>/ 10</span>
-                </strong>
-                <small className="muted" style={{ fontSize: "0.75rem", marginBottom: "12px" }}>
-                  Медиана: {card.metric?.median} · Отклонение: {card.metric?.std_dev?.toFixed(1)}
-                </small>
-                {/* Distribution bars */}
-                {card.metric?.distribution && (
-                  <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                    <div style={{ height: "6px", display: "flex", borderRadius: "3px", overflow: "hidden", background: "var(--border-color)" }}>
-                      <div style={{ width: `${card.metric.distribution.low}%`, background: "#e07a5f" }} title={`Низкие (1-3): ${card.metric.distribution.low}%`}></div>
-                      <div style={{ width: `${card.metric.distribution.mid}%`, background: "#f4a261" }} title={`Средние (4-7): ${card.metric.distribution.mid}%`}></div>
-                      <div style={{ width: `${card.metric.distribution.high}%`, background: "var(--accent-color)" }} title={`Высокие (8-10): ${card.metric.distribution.high}%`}></div>
-                    </div>
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.7rem", color: "var(--text-muted)" }}>
-                      <span>1-3: {card.metric.distribution.low.toFixed(0)}%</span>
-                      <span>4-7: {card.metric.distribution.mid.toFixed(0)}%</span>
-                      <span>8-10: {card.metric.distribution.high.toFixed(0)}%</span>
-                    </div>
-                  </div>
-                )}
-              </article>
-            ))}
-
-            {statistics.involvement && (
-              <article className="panel metric-card" style={{ display: "flex", flexDirection: "column", padding: "16px" }}>
-                <span className="muted" style={{ fontSize: "0.85rem" }}>Вовлеченность слушателей</span>
-                <strong style={{ fontSize: "1.8rem", margin: "6px 0 2px 0", color: "var(--text-color)" }}>
-                  {statistics.involvement.involved_percent?.toFixed(0)}%
-                </strong>
-                <small className="muted" style={{ fontSize: "0.75rem", marginBottom: "12px" }}>
-                  Активно вовлечены: {statistics.involvement.no_count} чел.
-                </small>
-                <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                  <div style={{ height: "6px", display: "flex", borderRadius: "3px", overflow: "hidden", background: "var(--border-color)" }}>
-                    <div style={{ width: `${statistics.involvement.detached_percent}%`, background: "#e07a5f" }} title={`Отстраненные: ${statistics.involvement.detached_percent}%`}></div>
-                    <div style={{ width: `${statistics.involvement.involved_percent}%`, background: "var(--accent-color)" }} title={`Вовлеченные: ${statistics.involvement.involved_percent}%`}></div>
-                  </div>
-                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.7rem", color: "var(--text-muted)" }}>
-                    <span>Отстранены: {statistics.involvement.detached_percent.toFixed(0)}%</span>
-                    <span>Вовлечены: {statistics.involvement.involved_percent.toFixed(0)}%</span>
-                  </div>
-                </div>
-              </article>
-            )}
-          </div>
-
-          {/* SVG Charts Grid */}
-          <div className="grid two" style={{ gap: "24px" }}>
-            <section className="panel" style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "20px" }}>
-              <h3 style={{ marginBottom: "12px", fontSize: "0.95rem", width: "100%", textAlign: "left" }}>Удовлетворенность (профиль satisfaction)</h3>
-              {renderRadarChart()}
-            </section>
-
-            <section className="panel" style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "20px" }}>
-              <h3 style={{ marginBottom: "12px", fontSize: "0.95rem", width: "100%", textAlign: "left" }}>Матрица корреляции оценок</h3>
-              {renderCorrelationMatrix()}
-            </section>
-          </div>
-
-          {/* Trend chart */}
-          {dashboardData.trend_data && dashboardData.trend_data.length > 0 && (
-            <section className="panel" style={{ padding: "20px" }}>
-              <div className="section-heading" style={{ marginBottom: "14px" }}>
-                <h3>Динамика оценок по периодам</h3>
-                <span className="badge" style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
-                  <TrendingUp size={12} />
-                  Тенденция
-                </span>
-              </div>
-              <div style={{ padding: "10px 0" }}>
-                {renderTrendLine()}
-              </div>
-              <div style={{ display: "flex", gap: "16px", justifyContent: "center", marginTop: "8px", fontSize: "0.8rem" }}>
-                <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                  <span style={{ display: "inline-block", width: "12px", height: "4px", background: "var(--accent-color)" }}></span> Полезность
-                </span>
-                <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                  <span style={{ display: "inline-block", width: "12px", height: "4px", background: "#e07a5f" }}></span> Практико-ориентированность
-                </span>
-              </div>
-            </section>
-          )}
-
-          {/* Categories & Formats summaries */}
-          <div className="grid two" style={{ gap: "24px" }}>
-            <section className="panel">
-              <h3>Категории слушателей в партии</h3>
-              <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginTop: "12px" }}>
-                {Object.entries(positionDistribution).map(([pos, count]) => {
-                  const total = Math.max(Object.values(positionDistribution).reduce((a, b) => a + b, 0), 1);
-                  const pct = Math.round((count / total) * 100);
-                  return (
-                    <div key={pos} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.85rem" }}>
-                      <span><b>{pos}</b></span>
-                      <span className="muted">{count} чел. ({pct}%)</span>
-                    </div>
-                  );
-                })}
-              </div>
-            </section>
-
-            <section className="panel">
-              <h3>Предпочитаемые форматы обучения</h3>
-              <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginTop: "12px" }}>
-                {Object.entries(preferredFormats).map(([fmt, count]) => {
-                  const total = Math.max(Object.values(preferredFormats).reduce((a, b) => a + b, 0), 1);
-                  const pct = Math.round((count / total) * 100);
-                  return (
-                    <div key={fmt} style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.8rem" }}>
-                        <span style={{ maxWidth: "80%", textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap" }} title={fmt}>{fmt}</span>
-                        <span><b>{pct}%</b></span>
-                      </div>
-                      <div style={{ background: "var(--border-color)", height: "4px", borderRadius: "2px", overflow: "hidden" }}>
-                        <div style={{ width: `${pct}%`, background: "var(--accent-color)", height: "100%" }}></div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </section>
-          </div>
-        </div>
-      )}
+      {activeTab === "dashboard" && <DashboardTab viewModel={reportViewModel} />}
 
       {/* Tab 2: Qualitative Insights */}
-      {activeTab === "qualitative" && textAnalysis && (
-        <div style={{ display: "grid", gridTemplateColumns: "180px 1fr", gap: "24px" }}>
-          {/* Left Sub-nav */}
-          <aside style={{ display: "flex", flexDirection: "column", gap: "4px", borderRight: "1px solid var(--border-color)", paddingRight: "16px" }}>
-            {[
-              { key: "topics", label: "Темы отзывов" },
-              { key: "sentiment", label: "Тональность" },
-              { key: "problems", label: "Критичные проблемы" },
-              { key: "quotes", label: "Цитаты слушателей" },
-              { key: "recommendations", label: "Рекомендации" }
-            ].map((subTab) => (
-              <button
-                key={subTab.key}
-                type="button"
-                className={`subtab-btn ${qualActiveTab === subTab.key ? "active" : ""}`}
-                onClick={() => setQualActiveTab(subTab.key)}
-                style={{
-                  textAlign: "left", background: "none", border: "none", padding: "8px 10px", fontSize: "0.85rem",
-                  color: qualActiveTab === subTab.key ? "var(--accent-color)" : "var(--text-muted)", cursor: "pointer",
-                  fontWeight: qualActiveTab === subTab.key ? "bold" : "normal", borderRadius: "4px",
-                  background: qualActiveTab === subTab.key ? "var(--hover-color)" : "none"
-                }}
-              >
-                {subTab.label}
-              </button>
-            ))}
-          </aside>
-
-          {/* Right Content Area */}
-          <div style={{ minHeight: "300px" }}>
-            {/* Sub-tab: Topics */}
-            {qualActiveTab === "topics" && textAnalysis.top_topics && (
-              <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-                {textAnalysis.top_topics.map((t, idx) => (
-                  <article key={idx} className="panel" style={{ padding: "16px", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                    <div>
-                      <h4 style={{ fontSize: "1rem", margin: "0 0 6px 0", color: "var(--text-color)" }}>{t.topic}</h4>
-                      <p className="muted" style={{ fontSize: "0.85rem", margin: 0 }}>{t.description}</p>
-                    </div>
-                    <span className="badge" style={{ background: "var(--soft-green)", color: "var(--accent-color)", padding: "4px 10px", borderRadius: "10px", fontWeight: "bold" }}>
-                      Упоминаний: {t.frequency}
-                    </span>
-                  </article>
-                ))}
-              </div>
-            )}
-
-            {/* Sub-tab: Sentiment */}
-            {qualActiveTab === "sentiment" && textAnalysis.sentiment && (
-              <section className="panel" style={{ padding: "20px" }}>
-                <h3>Эмоциональная тональность отзывов</h3>
-                <p className="muted" style={{ fontSize: "0.85rem" }}>
-                  Распределение комментариев по тональности, определенное с помощью семантического ИИ-анализа.
-                </p>
-                <div style={{ display: "flex", gap: "16px", marginTop: "20px" }}>
-                  {[
-                    { label: "Позитивные отзывы", value: textAnalysis.sentiment.positive, color: "var(--accent-color)" },
-                    { label: "Нейтральные отзывы", value: textAnalysis.sentiment.neutral, color: "#f4a261" },
-                    { label: "Негативные отзывы", value: textAnalysis.sentiment.negative, color: "#e07a5f" }
-                  ].map((s, idx) => (
-                    <div key={idx} style={{ flex: 1, textAlign: "center", padding: "16px", background: "var(--hover-color)", borderRadius: "6px" }}>
-                      <strong style={{ fontSize: "1.8rem", color: s.color }}>{s.value.toFixed(0)}%</strong>
-                      <p className="muted" style={{ fontSize: "0.8rem", marginTop: "6px", marginBottom: 0 }}>{s.label}</p>
-                    </div>
-                  ))}
-                </div>
-              </section>
-            )}
-
-            {/* Sub-tab: Problems */}
-            {qualActiveTab === "problems" && textAnalysis.key_problems && (
-              <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-                {textAnalysis.key_problems.map((p, idx) => (
-                  <article key={idx} className="panel" style={{ display: "flex", alignItems: "center", gap: "16px", padding: "16px" }}>
-                    <span className={`risk-pill ${getPriorityClass(p.severity)}`} style={{ minWidth: "70px", textAlign: "center", padding: "4px 8px", fontSize: "0.75rem", borderRadius: "4px", fontWeight: "bold" }}>
-                      {p.severity}
-                    </span>
-                    <div style={{ flex: 1 }}>
-                      <strong style={{ fontSize: "0.95rem" }}>{p.problem}</strong>
-                    </div>
-                    <span className="muted" style={{ fontSize: "0.85rem" }}>
-                      Встречается в <b>{p.frequency_percent.toFixed(0)}%</b> отзывов
-                    </span>
-                  </article>
-                ))}
-              </div>
-            )}
-
-            {/* Sub-tab: Quotes */}
-            {qualActiveTab === "quotes" && textAnalysis.quotes && (
-              <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-                {textAnalysis.quotes.map((q, idx) => (
-                  <article key={idx} className="panel quote-card" style={{ padding: "16px", borderLeft: "4px solid var(--accent-color)" }}>
-                    <Quote size={20} className="muted" style={{ opacity: 0.3, marginBottom: "8px" }} />
-                    <p style={{ fontStyle: "italic", fontSize: "0.95rem", margin: "0 0 8px 0" }}>«{q.quote}»</p>
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.8rem", color: "var(--text-muted)" }}>
-                      <span>Слушатель курса</span>
-                      <span>Частота схожих отзывов: <b>{q.frequency}</b></span>
-                    </div>
-                  </article>
-                ))}
-              </div>
-            )}
-
-            {/* Sub-tab: Recommendations */}
-            {qualActiveTab === "recommendations" && textAnalysis.recommendations && (
-              <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-                {textAnalysis.recommendations.map((r, idx) => (
-                  <article key={idx} className="panel" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px" }}>
-                    <div>
-                      <span className="badge" style={{ fontSize: "0.75rem", background: "var(--border-color)", color: "var(--text-color)", padding: "2px 6px", borderRadius: "3px", marginRight: "8px" }}>
-                        Объект: {r.target}
-                      </span>
-                      <strong style={{ fontSize: "0.95rem" }}>{r.action_item}</strong>
-                    </div>
-                    <span className={`risk-pill ${getPriorityClass(r.priority)}`} style={{ padding: "4px 10px", fontSize: "0.75rem", borderRadius: "4px", fontWeight: "bold" }}>
-                      Приоритет: {r.priority}
-                    </span>
-                  </article>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
+      {activeTab === "qualitative" && (
+        <QualitativeTab
+          textAnalysis={textAnalysis}
+          activeTab={qualActiveTab}
+          onTabChange={setQualActiveTab}
+          sourceLimitation={reportViewModel.limitations.sourceEvidence}
+        />
       )}
 
       {/* Tab 3: Analytical Document View */}
-      {activeTab === "report" && reportData && (
-        <section className="panel" style={{ padding: "30px", background: "#fbfcfb", border: "1px solid var(--border-color)", boxShadow: "0 4px 12px rgba(0,0,0,0.02)", maxWidth: "800px", margin: "0 auto" }}>
-          <div className="document-sheet" style={{ fontFamily: "Georgia, serif", color: "#222", lineHeight: "1.6" }}>
-            <h3 style={{ borderBottom: "2px solid var(--accent-color)", paddingBottom: "10px", fontFamily: "var(--font-sans)", color: "var(--accent-color)", fontSize: "1.2rem", textTransform: "uppercase", letterSpacing: "0.5px" }}>
-              Аналитическая записка по итогам анкетирования
-            </h3>
-            
-            {/* Section 1 */}
-            <div style={{ marginTop: "24px" }}>
-              <h4 style={{ fontFamily: "var(--font-sans)", color: "#111", fontSize: "1rem", borderBottom: "1px solid var(--border-color)", paddingBottom: "4px" }}>
-                Раздел 1. Общая информация
-              </h4>
-              <p style={{ whiteSpace: "pre-line", fontSize: "0.9rem", marginTop: "8px" }}>
-                {reportData.section1_general_info}
-              </p>
-            </div>
-
-            {/* Section 2 */}
-            <div style={{ marginTop: "24px" }}>
-              <h4 style={{ fontFamily: "var(--font-sans)", color: "#111", fontSize: "1rem", borderBottom: "1px solid var(--border-color)", paddingBottom: "4px" }}>
-                Раздел 2. Анализ ключевых критериев программы
-              </h4>
-              <ul style={{ paddingLeft: "20px", fontSize: "0.9rem", marginTop: "8px", display: "flex", flexDirection: "column", gap: "8px" }}>
-                <li><b>Полезность курса:</b> {reportData.section2_key_criteria?.usefulness_summary}</li>
-                <li><b>Практическая применимость:</b> {reportData.section2_key_criteria?.practicality_summary}</li>
-                <li><b>Доступность материала:</b> {reportData.section2_key_criteria?.accessibility_summary}</li>
-                <li><b>Взаимодействие с организаторами КУ:</b> {reportData.section2_key_criteria?.interaction_summary}</li>
-                <li><b>Психологическая вовлеченность:</b> {reportData.section2_key_criteria?.involvement_summary}</li>
-              </ul>
-            </div>
-
-            {/* Section 3 */}
-            <div style={{ marginTop: "24px" }}>
-              <h4 style={{ fontFamily: "var(--font-sans)", color: "#111", fontSize: "1rem", borderBottom: "1px solid var(--border-color)", paddingBottom: "4px" }}>
-                Раздел 3. Предложения слушателей по изменению программы
-              </h4>
-              <div style={{ fontSize: "0.9rem", marginTop: "8px", display: "flex", flexDirection: "column", gap: "8px" }}>
-                {reportData.section3_suggestions?.unwanted_topics?.length > 0 && (
-                  <p><b>Темы к исключению:</b> {reportData.section3_suggestions.unwanted_topics.join(", ")}</p>
-                )}
-                {reportData.section3_suggestions?.added_topics?.length > 0 && (
-                  <p>
-                    <b>Темы к добавлению:</b>{" "}
-                    {reportData.section3_suggestions.added_topics.map(t => `${t.topic} (${t.count} запросов)`).join("; ")}
-                  </p>
-                )}
-                <p><b>Сводка по формату обучения:</b> {reportData.section3_suggestions?.preferred_format_summary}</p>
-              </div>
-            </div>
-
-            {/* Section 4 */}
-            <div style={{ marginTop: "24px" }}>
-              <h4 style={{ fontFamily: "var(--font-sans)", color: "#111", fontSize: "1rem", borderBottom: "1px solid var(--border-color)", paddingBottom: "4px" }}>
-                Раздел 4. Рекомендации по корректировке траектории программы
-              </h4>
-              <div style={{ fontSize: "0.9rem", marginTop: "8px", display: "flex", flexDirection: "column", gap: "8px" }}>
-                <p><b>Востребованность курса:</b> {reportData.section4_trajectory?.further_implementation_needed}</p>
-                <p><b>Рекомендации по отбору:</b> {reportData.section4_trajectory?.student_selection_correction}</p>
-                <p><b>Изменения по темам:</b> {reportData.section4_trajectory?.added_topics_recommendation}</p>
-                <p><b>Распределение часов:</b> {reportData.section4_trajectory?.hours_correction_needed}</p>
-                <p><b>Рекомендованный формат занятий:</b> {reportData.section4_trajectory?.format_correction_needed}</p>
-                
-                {reportData.section4_trajectory?.conclusions?.length > 0 && (
-                  <div style={{ marginTop: "10px" }}>
-                    <b>Выводы и заключения:</b>
-                    <ul style={{ paddingLeft: "20px", marginTop: "4px", display: "flex", flexDirection: "column", gap: "4px" }}>
-                      {reportData.section4_trajectory.conclusions.map((c, i) => (
-                        <li key={i}>{c}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </section>
-      )}
+      {activeTab === "report" && <AnalyticalReportTab reportData={reportData} />}
     </section>
   );
 }

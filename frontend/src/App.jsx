@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { Archive, Clock3, Files, Pencil, Save, Upload, XCircle } from "lucide-react";
 import {
   login,
@@ -22,6 +22,7 @@ import { loadUserSettings, persistUserSettings, readLocalSettings } from "./sett
 import { getSidebarMaxWidth, layoutLimits, readLayoutPreferences, writeLayoutPreferences } from "./layoutPreferences";
 import {
   exportReportToCsv,
+  exportReportToDocx,
   exportReportToJson,
   exportReportToPdf,
   exportReportToXlsx,
@@ -651,6 +652,45 @@ function App() {
     }
   };
 
+  const uploadValidation = useMemo(() => {
+    if (selectedResponseFiles.length === 0) {
+      return {
+        status: "idle",
+        title: "Файлы не выбраны",
+        message: "Выберите Excel, CSV или ZIP-архив с анкетами.",
+      };
+    }
+
+    const allowedExtensions = new Set(["csv", "xlsx", "zip"]);
+    const invalidFiles = selectedResponseFiles.filter((file) => {
+      const extension = file.name.split(".").pop()?.toLowerCase();
+      return !allowedExtensions.has(extension);
+    });
+    const emptyFiles = selectedResponseFiles.filter((file) => file.size === 0);
+
+    if (invalidFiles.length > 0) {
+      return {
+        status: "error",
+        title: "Неподдерживаемый формат",
+        message: `Проверьте файлы: ${invalidFiles.map((file) => file.name).join(", ")}. Поддерживаются только .xlsx, .csv и .zip.`,
+      };
+    }
+
+    if (emptyFiles.length > 0) {
+      return {
+        status: "error",
+        title: "Пустой файл",
+        message: `Файлы без данных не будут обработаны: ${emptyFiles.map((file) => file.name).join(", ")}.`,
+      };
+    }
+
+    return {
+      status: "pending",
+      title: "Базовая проверка пройдена",
+      message: "Расширения и размер файлов корректны. Наличие обязательных колонок проверит сервер при запуске анализа.",
+    };
+  }, [selectedResponseFiles]);
+
   // Trigger validation banner visibility
   useEffect(() => {
     if (selectedResponseFiles.length > 0) {
@@ -669,12 +709,26 @@ function App() {
     if (intervalRef.current) clearInterval(intervalRef.current);
   };
 
+  const handleNewAnalysis = () => {
+    resetUploadForm();
+    window.location.hash = "upload";
+  };
+
   const startAnalysis = async () => {
     if (selectedResponseFiles.length === 0) {
       notify({
         type: "warning",
         title: "Не хватает файлов",
         message: "Выберите файлы анкет опросов перед запуском анализа.",
+      });
+      return;
+    }
+
+    if (uploadValidation.status === "error") {
+      notify({
+        type: "error",
+        title: uploadValidation.title,
+        message: uploadValidation.message,
       });
       return;
     }
@@ -987,6 +1041,11 @@ function App() {
         notify({ type: "success", title: "Excel сохранен" });
         return;
       }
+      if (format === "docx") {
+        await exportReportToDocx(report);
+        notify({ type: "success", title: "DOCX сохранен" });
+        return;
+      }
       if (format === "csv") {
         exportReportToCsv(report);
         notify({ type: "success", title: "CSV сохранен" });
@@ -1081,9 +1140,13 @@ function App() {
                 </div>
 
                 {showValidation && (
-                  <div className="validation-box" id="upload-validation-box" style={{ marginTop: "20px" }}>
-                    <b>Проверка пройдена</b>
-                    <p>Колонки распознаны успешно. Формат корректен.</p>
+                  <div
+                    className={`validation-box validation-box-${uploadValidation.status}`}
+                    id="upload-validation-box"
+                    style={{ marginTop: "20px" }}
+                  >
+                    <b>{uploadValidation.title}</b>
+                    <p>{uploadValidation.message}</p>
                   </div>
                 )}
 
@@ -1092,6 +1155,7 @@ function App() {
                   id="start-analysis-btn"
                   style={{ marginTop: "20px", width: "100%" }}
                   onClick={startAnalysis}
+                  disabled={uploadValidation.status === "error"}
                 >
                   Запустить анализ
                 </button>
@@ -1164,15 +1228,18 @@ function App() {
       const report = mockReports.find((r) => r.id === reportId);
 
       if (!report) {
-      return (
-        <section className="page active">
-          <div className="state-panel">
-            <span className="state-icon state-icon-warm">
-              <XCircle size={28} strokeWidth={2.2} />
-            </span>
-            <h2>Отчёт не найден</h2>
-            <p className="muted">Пожалуйста, выберите существующий отчёт из истории в левой панели.</p>
-          </div>
+        return (
+          <section className="page active">
+            <div className="state-panel">
+              <span className="state-icon state-icon-warm">
+                <XCircle size={28} strokeWidth={2.2} />
+              </span>
+              <h2>Отчёт не найден</h2>
+              <p className="muted">Пожалуйста, выберите существующий отчёт из истории в левой панели.</p>
+              <button className="primary-button state-action" type="button" onClick={handleNewAnalysis}>
+                Новый анализ
+              </button>
+            </div>
           </section>
         );
       }
@@ -1186,6 +1253,9 @@ function App() {
               </span>
               <h2>Анализ в процессе...</h2>
               <p className="muted">ИИ-агенты в данный момент обрабатывают файлы ответов студентов. Пожалуйста, подождите.</p>
+              <button className="secondary-button state-action" type="button" onClick={() => { window.location.hash = "upload"; }}>
+                Вернуться к загрузке
+              </button>
             </div>
           </section>
         );
@@ -1202,6 +1272,9 @@ function App() {
               <p className="muted">
                 Ошибка: {report.error || "Неизвестная ошибка на стороне сервера."}
               </p>
+              <button className="primary-button state-action" type="button" onClick={handleNewAnalysis}>
+                Запустить новый анализ
+              </button>
             </div>
           </section>
         );
@@ -1302,7 +1375,9 @@ function App() {
             <XCircle size={28} strokeWidth={2.2} />
           </span>
           <h2>Страница не найдена</h2>
-          <a href="#upload" className="primary-button state-action">Назад на главную</a>
+          <button className="primary-button state-action" type="button" onClick={handleNewAnalysis}>
+            Новый анализ
+          </button>
         </div>
       </section>
     );

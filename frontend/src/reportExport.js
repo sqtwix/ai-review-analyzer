@@ -484,6 +484,185 @@ export async function exportReportToXlsx(report) {
   );
 }
 
+const createTextParagraphs = (value) => {
+  const lines = String(value || "Нет данных").split("\n");
+  return lines.map((line) =>
+    new docx.Paragraph({
+      children: [
+        new docx.TextRun({
+          text: line || " ",
+          size: 22,
+        }),
+      ],
+      spacing: { after: 120 },
+    })
+  );
+};
+
+const createBulletParagraph = (text) =>
+  new docx.Paragraph({
+    children: [new docx.TextRun({ text, size: 22 })],
+    bullet: { level: 0 },
+    spacing: { after: 100 },
+  });
+
+let docx = null;
+
+async function loadDocx() {
+  if (!docx) {
+    docx = await import("docx");
+  }
+  return docx;
+}
+
+const createDocxHeading = (text, level = 1) =>
+  new docx.Paragraph({
+    text,
+    heading: level === 1 ? docx.HeadingLevel.HEADING_1 : docx.HeadingLevel.HEADING_2,
+    spacing: { before: 240, after: 160 },
+  });
+
+const createDocxTable = (headers, rows) =>
+  new docx.Table({
+    width: { size: 100, type: docx.WidthType.PERCENTAGE },
+    rows: [
+      new docx.TableRow({
+        children: headers.map((header) =>
+          new docx.TableCell({
+            children: [
+              new docx.Paragraph({
+                children: [new docx.TextRun({ text: header, bold: true, size: 20 })],
+              }),
+            ],
+            shading: { fill: "E5F2EC" },
+          })
+        ),
+      }),
+      ...rows.map((row) =>
+        new docx.TableRow({
+          children: row.map((cell) =>
+            new docx.TableCell({
+              children: [
+                new docx.Paragraph({
+                  children: [new docx.TextRun({ text: String(cell ?? "-"), size: 20 })],
+                }),
+              ],
+            })
+          ),
+        })
+      ),
+    ],
+  });
+
+export async function exportReportToDocx(report) {
+  await loadDocx();
+
+  const courseAnalysis = report.result?.courses_analysis?.[0];
+  const courseName = courseAnalysis?.course_name || report.course || "Электронный курс";
+  const period = courseAnalysis?.period || "Не указан";
+  const studentsCount = courseAnalysis?.students_count || 0;
+  const stats = courseAnalysis?.statistics;
+  const reportData = courseAnalysis?.analytical_report;
+
+  const statisticRows = [];
+  const addMetricRow = (name, metric) => {
+    if (!metric) return;
+    statisticRows.push([
+      name,
+      metric.average?.toFixed?.(1) || "-",
+      metric.median?.toFixed?.(1) || "-",
+      metric.std_dev?.toFixed?.(1) || "-",
+      metric.distribution
+        ? `1-3: ${metric.distribution.low?.toFixed?.(0) || 0}%; 4-7: ${metric.distribution.mid?.toFixed?.(0) || 0}%; 8-10: ${metric.distribution.high?.toFixed?.(0) || 0}%`
+        : "-",
+    ]);
+  };
+
+  addMetricRow("Полезность", stats?.usefulness);
+  addMetricRow("Практико-ориентированность", stats?.practicality);
+  addMetricRow("Доступность", stats?.accessibility);
+  addMetricRow("Взаимодействие с КУ", stats?.interaction);
+  if (stats?.involvement) {
+    statisticRows.push([
+      "Вовлеченность",
+      `${stats.involvement.involved_percent?.toFixed?.(0) || 0}%`,
+      "-",
+      "-",
+      `Отстранены: ${stats.involvement.detached_percent?.toFixed?.(0) || 0}%; да: ${stats.involvement.yes_count}; нет: ${stats.involvement.no_count}`,
+    ]);
+  }
+
+  const keyCriteria = reportData?.section2_key_criteria;
+  const suggestions = reportData?.section3_suggestions;
+  const trajectory = reportData?.section4_trajectory;
+
+  const children = [
+    new docx.Paragraph({
+      children: [
+        new docx.TextRun({
+          text: "Аналитическая справка по итогам анкетирования",
+          bold: true,
+          size: 32,
+        }),
+      ],
+      spacing: { after: 160 },
+    }),
+    new docx.Paragraph({
+      children: [
+        new docx.TextRun({
+          text: `${courseName} | Период: ${period} | Слушателей: ${studentsCount} | Выгружено: ${formatExportDate()}`,
+          size: 20,
+        }),
+      ],
+      spacing: { after: 240 },
+    }),
+    createDocxHeading("1. Общая информация о программе"),
+    ...createTextParagraphs(reportData?.section1_general_info),
+    createDocxHeading("2. Ключевые критерии по программе"),
+    createDocxTable(
+      ["Критерий", "Средний балл", "Медиана", "Станд. отклонение", "Распределение"],
+      statisticRows.length ? statisticRows : [["Нет данных", "-", "-", "-", "-"]]
+    ),
+    createBulletParagraph(`Полезность: ${keyCriteria?.usefulness_summary || "Нет данных"}`),
+    createBulletParagraph(`Практико-ориентированность: ${keyCriteria?.practicality_summary || "Нет данных"}`),
+    createBulletParagraph(`Доступность: ${keyCriteria?.accessibility_summary || "Нет данных"}`),
+    createBulletParagraph(`Взаимодействие с КУ: ${keyCriteria?.interaction_summary || "Нет данных"}`),
+    createBulletParagraph(`Вовлеченность: ${keyCriteria?.involvement_summary || "Нет данных"}`),
+    createDocxHeading("3. Предложения слушателей"),
+    createBulletParagraph(`Темы к исключению: ${suggestions?.unwanted_topics?.join(", ") || "нет"}`),
+    createBulletParagraph(
+      `Темы к добавлению: ${
+        suggestions?.added_topics?.map((topic) => `${topic.topic} (${topic.count})`).join("; ") || "нет"
+      }`
+    ),
+    createBulletParagraph(`Предпочтительный формат: ${suggestions?.preferred_format_summary || "Нет данных"}`),
+    createDocxHeading("4. Траектория изменения программы"),
+    createBulletParagraph(`Потребность в дальнейшей реализации: ${trajectory?.further_implementation_needed || "Нет данных"}`),
+    createBulletParagraph(`Корректировка отбора слушателей: ${trajectory?.student_selection_correction || "Нет данных"}`),
+    createBulletParagraph(`Дополнение программы учебными вопросами: ${trajectory?.added_topics_recommendation || "Нет данных"}`),
+    createBulletParagraph(`Изменение количества часов: ${trajectory?.hours_correction_needed || "Нет данных"}`),
+    createBulletParagraph(`Изменение формы обучения: ${trajectory?.format_correction_needed || "Нет данных"}`),
+    createDocxHeading("Выводы", 2),
+    ...(trajectory?.conclusions?.length
+      ? trajectory.conclusions.map((conclusion) => createBulletParagraph(conclusion))
+      : [createBulletParagraph("Нет данных")]),
+  ];
+
+  const document = new docx.Document({
+    creator: "НейроЭксперт",
+    title: courseName,
+    sections: [
+      {
+        properties: {},
+        children,
+      },
+    ],
+  });
+
+  const blob = await docx.Packer.toBlob(document);
+  downloadBlob(blob, safeFileName(courseName, "docx"));
+}
+
 export function exportReportToCsv(report) {
   const courseAnalysis = report.result?.courses_analysis?.[0];
   const exportDate = formatExportDate();
