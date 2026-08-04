@@ -49,28 +49,44 @@ const averageNumbers = (values) => {
   return validValues.reduce((sum, value) => sum + value, 0) / validValues.length;
 };
 
-export const getCourseAnalysis = (report) => report?.result?.courses_analysis?.[0] || null;
+export const getCourseAnalysis = (report) => {
+  if (!report) return null;
+  let res = report.result || report;
+  if (typeof res === "string") {
+    try {
+      res = JSON.parse(res);
+    } catch (e) {
+      console.error("Failed to parse report.result JSON string:", e);
+      return null;
+    }
+  }
+  if (res?.courses_analysis?.[0]) return res.courses_analysis[0];
+  if (res?.CoursesAnalysis?.[0]) return res.CoursesAnalysis[0];
+  if (res?.coursesAnalysis?.[0]) return res.coursesAnalysis[0];
+  if (res?.statistics || res?.Statistics) return res;
+  return null;
+};
 
 export function buildCourseReportViewModel(report) {
   const courseAnalysis = getCourseAnalysis(report);
-  const statistics = courseAnalysis?.statistics || null;
-  const reportData = courseAnalysis?.analytical_report || null;
-  const textAnalysis = courseAnalysis?.text_analysis || null;
-  const dashboardData = courseAnalysis?.dashboard_data || {};
-  const involvement = statistics?.involvement || null;
+  const statistics = courseAnalysis?.statistics || courseAnalysis?.Statistics || null;
+  const reportData = courseAnalysis?.analytical_report || courseAnalysis?.AnalyticalReport || null;
+  const textAnalysis = courseAnalysis?.text_analysis || courseAnalysis?.TextAnalysis || null;
+  const dashboardData = courseAnalysis?.dashboard_data || courseAnalysis?.DashboardData || {};
+  const involvement = statistics?.involvement || statistics?.Involvement || null;
 
   const metricCards = numericMetricKeys.map((metricDefinition) => {
-    const metric = statistics?.[metricDefinition.key] || null;
-    const distribution = normalizeDistribution(metric?.distribution);
+    const metric = statistics?.[metricDefinition.key] || statistics?.[metricDefinition.key.charAt(0).toUpperCase() + metricDefinition.key.slice(1)] || null;
+    const distribution = normalizeDistribution(metric?.distribution || metric?.Distribution);
 
     return {
       ...metricDefinition,
       metric,
-      average: getMetricValue(metric, "average"),
-      median: getMetricValue(metric, "median"),
-      stdDev: getMetricValue(metric, "std_dev"),
+      average: getMetricValue(metric, "average") ?? getMetricValue(metric, "Average"),
+      median: getMetricValue(metric, "median") ?? getMetricValue(metric, "Median"),
+      stdDev: getMetricValue(metric, "std_dev") ?? getMetricValue(metric, "StdDev"),
       distribution,
-      summary: reportData?.section2_key_criteria?.[metricDefinition.summaryKey] || "",
+      summary: reportData?.section2_key_criteria?.[metricDefinition.summaryKey] || reportData?.Section2KeyCriteria?.[metricDefinition.summaryKey] || "",
     };
   });
 

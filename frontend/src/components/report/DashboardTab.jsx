@@ -124,8 +124,8 @@ function AverageBarChart({ criteria }) {
   return (
     <section className="panel chart-panel">
       <h3>Средние баллы по 5 критериям</h3>
-      <div className="chart-frame">
-        <ResponsiveContainer width="100%" height="100%">
+      <div className="chart-frame" style={{ minHeight: "260px", height: "260px" }}>
+        <ResponsiveContainer width="100%" height={260}>
           <BarChart data={data} layout="vertical" margin={{ top: 8, right: 18, left: 16, bottom: 8 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--line)" />
             <XAxis type="number" domain={[0, 10]} tick={mutedAxisTick} />
@@ -145,8 +145,8 @@ function SatisfactionRadarChart({ criteria }) {
   return (
     <section className="panel chart-panel">
       <h3>Профиль удовлетворенности</h3>
-      <div className="chart-frame chart-frame-square">
-        <ResponsiveContainer width="100%" height="100%">
+      <div className="chart-frame chart-frame-square" style={{ minHeight: "280px", height: "280px" }}>
+        <ResponsiveContainer width="100%" height={280}>
           <RadarChart data={data} outerRadius="70%">
             <PolarGrid stroke="var(--line)" />
             <PolarAngleAxis dataKey="label" tick={axisTick} />
@@ -183,8 +183,8 @@ function CorrelationHeatmap({ matrix }) {
   return (
     <section className="panel chart-panel">
       <h3>Тепловая карта корреляций</h3>
-      <div className="chart-frame chart-frame-square">
-        <ResponsiveContainer width="100%" height="100%">
+      <div className="chart-frame chart-frame-square" style={{ minHeight: "280px", height: "280px" }}>
+        <ResponsiveContainer width="100%" height={280}>
           <ScatterChart margin={{ top: 16, right: 24, bottom: 18, left: 28 }}>
             <XAxis dataKey="x" type="category" allowDuplicatedCategory={false} tick={axisTick} />
             <YAxis dataKey="y" type="category" tick={axisTick} width={76} />
@@ -212,8 +212,8 @@ function OverallDistributionChart({ distribution, limitation }) {
   return (
     <section className="panel chart-panel">
       <h3>Распределение общей оценки</h3>
-      <div className="chart-frame">
-        <ResponsiveContainer width="100%" height="100%">
+      <div className="chart-frame" style={{ minHeight: "260px", height: "260px" }}>
+        <ResponsiveContainer width="100%" height={260}>
           <BarChart data={data} margin={{ top: 8, right: 18, left: 8, bottom: 8 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--line)" />
             <XAxis dataKey="label" tick={axisTick} />
@@ -251,8 +251,8 @@ function TrendChart({ trendData }) {
           Тенденция
         </span>
       </div>
-      <div className="chart-frame">
-        <ResponsiveContainer width="100%" height="100%">
+      <div className="chart-frame" style={{ minHeight: "280px", height: "280px" }}>
+        <ResponsiveContainer width="100%" height={280}>
           <LineChart data={trendData} margin={{ top: 8, right: 18, left: 8, bottom: 8 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--line)" />
             <XAxis dataKey="period" tick={axisTick} />
