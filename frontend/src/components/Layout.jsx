@@ -1,4 +1,4 @@
-﻿import { Archive, FileText, LogOutIcon, Menu, PanelLeftClose, PanelLeftOpen, Plus, Search, Settings, User, Users } from "lucide-react";
+import { Archive, FileText, LogOutIcon, Menu, PanelLeftClose, PanelLeftOpen, Plus, Search, Settings, User, Users } from "lucide-react";
 import logo from "../assets/logo.png";
 
 export function AppLayout({
@@ -34,10 +34,10 @@ export function AppLayout({
       data-density={settings?.minimalUi ? "minimal" : "comfortable"}
     >
       <aside className="sidebar" aria-label="Основная навигация">
-        <a className="brand" href="#upload" aria-label="НейроЭксперт">
-          <img className="brand-logo" src={logo} alt="НейроЭксперт" />
+        <a className="brand" href="#upload" aria-label="Анализ отзывов студентов">
+          <img className="brand-logo" src={logo} alt="Анализ отзывов студентов" />
           <span>
-            <strong>НейроЭксперт</strong>
+            <strong>Анализ отзывов студентов</strong>
             <small>анализ ответов</small>
           </span>
         </a>

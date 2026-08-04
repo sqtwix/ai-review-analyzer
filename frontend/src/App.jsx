@@ -233,7 +233,7 @@ function App() {
     return window.location.hash.replace("#", "") || "upload";
   });
   const [mockReports, setMockReports] = useState([]);
-  const [selectedModel, setSelectedModel] = useState("DeepSeek");
+  const [selectedModel, setSelectedModel] = useState("Qwen_Local");
   const [selectedResponseFiles, setSelectedResponseFiles] = useState([]);
   const [showValidation, setShowValidation] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -421,6 +421,24 @@ function App() {
   }, [token]);
 
   useEffect(() => {
+    const handleUnauthorized = () => {
+      setToken("");
+      setUser("");
+      setUserEmail("");
+      setRoute("login");
+      window.location.hash = "login";
+      notify({
+        type: "warning",
+        title: "Сессия истекла",
+        message: "Пожалуйста, войдите в систему заново.",
+      });
+    };
+
+    window.addEventListener("auth:unauthorized", handleUnauthorized);
+    return () => window.removeEventListener("auth:unauthorized", handleUnauthorized);
+  }, []);
+
+  useEffect(() => {
     let ignore = false;
 
     const syncSettings = async () => {
@@ -533,7 +551,7 @@ function App() {
 
   // Update document title dynamically
   useEffect(() => {
-    document.title = "НейроЭксперт — личный кабинет";
+    document.title = "Анализ отзывов студентов — личный кабинет";
   }, []);
 
   useEffect(() => {
@@ -640,7 +658,7 @@ function App() {
     if (currentRoute === "settings") return "Настройки";
     if (currentRoute === "login") return "Авторизация";
     if (currentRoute === "register") return "Регистрация";
-    return "НейроЭксперт";
+    return "Анализ отзывов студентов";
   };
 
   const handleFileChange = (e, type) => {
@@ -1118,15 +1136,29 @@ function App() {
                 <div className="segmented" id="model-selector-container">
                   <button
                     type="button"
-                    className={selectedModel === "DeepSeek" ? "selected" : ""}
-                    onClick={() => setSelectedModel("DeepSeek")}
+                    style={{ textDecoration: "line-through", textDecorationColor: "#dc2626", textDecorationThickness: "2px", color: "var(--text-muted)", opacity: 0.75 }}
+                    onClick={() => {
+                      notify({
+                        type: "info",
+                        title: "Информация",
+                        message: "Данные модели в разработке",
+                      });
+                    }}
+                    title="Данные модели в разработке"
                   >
                     DeepSeek
                   </button>
                   <button
                     type="button"
-                    className={selectedModel === "GigaChat" ? "selected" : ""}
-                    onClick={() => setSelectedModel("GigaChat")}
+                    style={{ textDecoration: "line-through", textDecorationColor: "#dc2626", textDecorationThickness: "2px", color: "var(--text-muted)", opacity: 0.75 }}
+                    onClick={() => {
+                      notify({
+                        type: "info",
+                        title: "Информация",
+                        message: "Данные модели в разработке",
+                      });
+                    }}
+                    title="Данные модели в разработке"
                   >
                     GigaChat
                   </button>

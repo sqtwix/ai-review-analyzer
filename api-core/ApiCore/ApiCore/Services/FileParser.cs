@@ -81,37 +81,37 @@ public class FileParser
         var headers = rows[0];
 
         // Динамическое сопоставление колонок
-        int posCategoryIdx = FindColumnIndex(headers, new[] { "должность", "категори" });
-        int motivationIdx = FindColumnIndex(headers, new[] { "почему вы решили", "решили пройти", "почему решили" });
+        int posCategoryIdx = FindColumnIndex(headers, new[] { "должность", "категори", "должност", "роль" });
+        int motivationIdx = FindColumnIndex(headers, new[] { "почему вы решили", "решили пройти", "почему решили", "мотивация" });
         
-        int usefulnessScoreIdx = FindColumnIndex(headers, new[] { "полезность программы", "полезность по 10", "программа полезна" });
-        int usefulnessCommentIdx = FindColumnIndex(headers, new[] { "наиболее актуальны", "актуальны и почему" });
-        int appliedSkillsIdx = FindColumnIndex(headers, new[] { "сможете применить", "применить в своей" });
+        int usefulnessScoreIdx = FindColumnIndex(headers, new[] { "полезность программы", "полезность по 10", "программа полезна", "полезность", "полезн" });
+        int usefulnessCommentIdx = FindColumnIndex(headers, new[] { "наиболее актуальны", "актуальны и почему", "актуальн" });
+        int appliedSkillsIdx = FindColumnIndex(headers, new[] { "сможете применить", "применить в своей", "примен" });
         
-        int expectedEffectIdx = FindColumnIndex(headers, new[] { "эффект от обучения", "ожидаемый эффект" });
+        int expectedEffectIdx = FindColumnIndex(headers, new[] { "эффект от обучения", "ожидаемый эффект", "эффект" });
         int expectedEffectReasonIdx = FindColumnIndex(headers, new[] { "почему", "причины" }, expectedEffectIdx + 1);
         
         int topicsExcludeIdx = FindColumnIndex(headers, new[] { "исключить" });
         int topicsAddIdx = FindColumnIndex(headers, new[] { "дополнить" });
         
-        int practicalityScoreIdx = FindColumnIndex(headers, new[] { "практическую часть", "практико-ориентированность" });
+        int practicalityScoreIdx = FindColumnIndex(headers, new[] { "практическую часть", "практико-ориентированность", "практичность", "практическая", "практик" });
         int practicalityCommentIdx = FindColumnIndex(headers, new[] { "достаточно ли практических" });
         int practiceTuningIdx = FindColumnIndex(headers, new[] { "требуют большей практической" });
         int practiceChangeIdx = FindColumnIndex(headers, new[] { "изменить в организации" });
         
-        int accessibilityScoreIdx = FindColumnIndex(headers, new[] { "доступность материала" });
-        int accessibilityCommentIdx = FindColumnIndex(headers, new[] { "последовательность тем", "логика изложения" });
+        int accessibilityScoreIdx = FindColumnIndex(headers, new[] { "доступность материала", "доступность изложения", "доступность", "доступност" });
+        int accessibilityCommentIdx = FindColumnIndex(headers, new[] { "последовательность тем", "логика изложения", "последовательн" });
         int logicSequenceReasonIdx = FindColumnIndex(headers, new[] { "в чем это заключается" }, accessibilityCommentIdx + 1);
         
-        int askQuestionsIdx = FindColumnIndex(headers, new[] { "задать интересующие", "задать вопросы" });
+        int askQuestionsIdx = FindColumnIndex(headers, new[] { "задать интересующие", "задать вопросы", "вопросы" });
         int askQuestionsReasonIdx = FindColumnIndex(headers, new[] { "подробнее" }, askQuestionsIdx + 1);
         
-        int isDetachedIdx = FindColumnIndex(headers, new[] { "отстраненность от процесса", "отстраненность" });
+        int isDetachedIdx = FindColumnIndex(headers, new[] { "отстраненность от процесса", "отстраненность", "отстранен", "вовлеченность", "вовлечен" });
         int detachmentReasonIdx = FindColumnIndex(headers, new[] { "обучения они возникали", "моменты обучения" });
         int involvementIdx = FindColumnIndex(headers, new[] { "повысить вашу вовлеченность", "вовлеченность в обучение" });
         
-        int formatIdx = FindColumnIndex(headers, new[] { "формат обучения" });
-        int interactionScoreIdx = FindColumnIndex(headers, new[] { "взаимодействие по 10", "взаимодействие с командой" });
+        int formatIdx = FindColumnIndex(headers, new[] { "формат обучения", "формат" });
+        int interactionScoreIdx = FindColumnIndex(headers, new[] { "взаимодействие по 10", "взаимодействие с командой", "взаимодействие", "взаимодействи" });
         int interactionCommentIdx = FindColumnIndex(headers, new[] { "прокомментируйте", "комментарий" }, interactionScoreIdx + 1);
 
         // Извлечение имени и периода курса из названия файла

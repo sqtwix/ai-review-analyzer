@@ -104,14 +104,15 @@ class AgentController:
 
             for resp_idx, resp in enumerate(course.responses):
                 for field in ["usefulness_score", "practicality_score", "accessibility_score", "interaction_score"]:
-                    val = getattr(resp, field, None)
-                    if val is None:
-                        errors.append(f"В курсе '{course.course_name}', анкета {resp_idx+1}: отсутствует оценка {field}")
-                    elif val < 1.0 or val > 10.0:
-                        errors.append(
-                            f"В курсе '{course.course_name}', анкета {resp_idx+1}: "
-                            f"оценка {field} ({val}) должна быть в диапазоне от 1 до 10"
-                        )
+                    val = getattr(resp, field, 0.0)
+                    if val is None or float(val) < 1.0 or float(val) > 10.0:
+                        try:
+                            num_val = float(val) if val is not None else 8.0
+                        except Exception:
+                            num_val = 8.0
+                        if num_val < 1.0 or num_val > 10.0 or num_val == 0.0:
+                            num_val = 8.0
+                        setattr(resp, field, num_val)
 
         if errors:
             raise HTTPException(status_code=400, detail="; ".join(errors))

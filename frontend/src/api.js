@@ -246,6 +246,13 @@ export async function request(endpoint, options = {}) {
   });
 
   if (!response.ok) {
+    if (response.status === 401) {
+      localStorage.removeItem("token");
+      localStorage.removeItem("username");
+      localStorage.removeItem("userEmail");
+      window.location.hash = "login";
+      window.dispatchEvent(new Event("auth:unauthorized"));
+    }
     let errorMsg = "Произошла ошибка при выполнении запроса";
     try {
       const errData = await response.json();

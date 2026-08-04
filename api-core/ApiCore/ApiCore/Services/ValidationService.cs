@@ -7,15 +7,15 @@ public class ValidationService
 {
     private readonly string[] _allowedExtensions = { ".csv", ".json", ".xlsx", ".xls" };
 
-    private readonly string[] _requiredKeywords = 
+    private readonly string[][] _requiredKeywordGroups = 
     {
-        "должность",              // К какой категории относится Ваша должность?
-        "полезность",             // Насколько программа обучения полезна для Вашей работы?
-        "практико",               // Как Вы оцениваете практико-ориентированность...
-        "доступность",            // Насколько Вы оцениваете доступность материала...
-        "отстраненность",         // Чувствовали ли Вы свою отстраненность от процесса...
-        "формат",                 // Какой формат обучения Вы бы предпочли?
-        "взаимодействие"          // Насколько эффективным было взаимодействие...
+        new[] { "должность", "должност", "категори", "роль" },
+        new[] { "полезность", "полезн" },
+        new[] { "практико", "практич", "практическая" },
+        new[] { "доступность", "доступн" },
+        new[] { "отстраненность", "отстранен", "вовлеченность", "вовлечен" },
+        new[] { "формат" },
+        new[] { "взаимодействие", "взаимодействи", "куратор", "команд" }
     };
 
     public ValidationResult ValidateFiles(List<string> userResponsePaths)
@@ -87,11 +87,11 @@ public class ValidationService
             // Проверяем наличие ключевых слов во всех заголовках вместе
             var combinedHeaders = string.Join(" ", headers).ToLowerInvariant();
 
-            foreach (var keyword in _requiredKeywords)
+            foreach (var group in _requiredKeywordGroups)
             {
-                if (!combinedHeaders.Contains(keyword))
+                if (!group.Any(k => combinedHeaders.Contains(k)))
                 {
-                    result.AddError($"В файле '{fileName}' не найдена колонка, содержащая ключевое слово '{keyword}' (ожидается вопрос, связанный с этой темой).");
+                    result.AddError($"В файле '{fileName}' не найдена колонка, отвечающая теме '{group[0]}'.");
                 }
             }
         }
