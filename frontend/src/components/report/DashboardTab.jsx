@@ -23,10 +23,33 @@ function EmptyChartState({ title, message }) {
 function DashboardSection({ title, children }) {
   return (
     <div className="dashboard-section" style={{ marginBottom: "28px" }}>
-      <h3 className="dashboard-section-title" style={{ fontSize: "1.1rem", fontWeight: 700, marginBottom: "16px", color: "var(--text)" }}>
-        {title}
-      </h3>
-      <div className="dashboard-section-body">{children}</div>
+      <div 
+        className="dashboard-section-header" 
+        style={{ 
+          padding: "12px 18px", 
+          borderBottom: "1px solid var(--line, #e2e8f0)", 
+          background: "var(--surface-soft, #f8fafc)",
+          borderTopLeftRadius: "var(--radius, 12px)",
+          borderTopRightRadius: "var(--radius, 12px)"
+        }}
+      >
+        <h3 
+          className="dashboard-section-title" 
+          style={{ 
+            margin: 0, 
+            fontSize: "1.05rem", 
+            fontWeight: 700, 
+            color: "var(--text, #1e293b)",
+            lineHeight: 1.35,
+            wordBreak: "break-word"
+          }}
+        >
+          {title}
+        </h3>
+      </div>
+      <div className="dashboard-section-body" style={{ padding: "18px" }}>
+        {children}
+      </div>
     </div>
   );
 }
@@ -86,18 +109,20 @@ function SvgAverageBarChart({ criteria }) {
     return <EmptyChartState title="Средние баллы по 5 критериям" message="Данные отсутствуют." />;
   }
 
-  const svgWidth = 480;
-  const rowHeight = 44;
-  const svgHeight = data.length * rowHeight + 36;
-  const labelWidth = 140;
-  const chartWidth = 260;
+  const svgWidth = 500;
+  const rowHeight = 46;
+  const svgHeight = data.length * rowHeight + 40;
+  const labelWidth = 160; // Extra room for long labels
+  const chartWidth = 240;
 
   return (
     <section className="panel chart-panel">
-      <h3>Средние баллы по 5 критериям</h3>
+      <h3 style={{ fontSize: "0.95rem", fontWeight: 700, marginBottom: "14px", color: "var(--text, #1e293b)" }}>
+        Средние баллы по 5 критериям
+      </h3>
       <div className="chart-frame" style={{ minHeight: `${svgHeight}px`, height: "auto", display: "flex", justifyContent: "center" }}>
-        <svg viewBox={`0 0 ${svgWidth} ${svgHeight}`} style={{ width: "100%", maxHeight: "320px" }}>
-          {/* Background grid lines for 0, 2.5, 5.0, 7.5, 10 */}
+        <svg viewBox={`0 0 ${svgWidth} ${svgHeight}`} style={{ width: "100%", maxHeight: "330px" }}>
+          {/* Grid lines */}
           {[0, 2.5, 5, 7.5, 10].map((val) => {
             const x = labelWidth + (val / 10) * chartWidth;
             return (
@@ -112,22 +137,22 @@ function SvgAverageBarChart({ criteria }) {
 
           {/* Criteria Horizontal Bars */}
           {data.map((item, idx) => {
-            const y = 20 + idx * rowHeight;
+            const y = 16 + idx * rowHeight;
             const barWidth = Math.max(4, (Math.min(10, item.value) / 10) * chartWidth);
             return (
               <g key={item.key || idx}>
                 {/* Y-Axis Label */}
-                <text x={labelWidth - 10} y={y + 20} fill="var(--text, #1e293b)" fontSize="12" fontWeight="600" textAnchor="end">
+                <text x={labelWidth - 12} y={y + 20} fill="var(--text, #1e293b)" fontSize="12" fontWeight="600" textAnchor="end">
                   {item.label}
                 </text>
 
-                {/* Background Track */}
+                {/* Track */}
                 <rect x={labelWidth} y={y + 6} width={chartWidth} height={20} rx={4} fill="var(--panel-border, #f1f5f9)" />
 
-                {/* Filled Bar */}
+                {/* Bar */}
                 <rect x={labelWidth} y={y + 6} width={barWidth} height={20} rx={4} fill="url(#barGradient)" />
 
-                {/* Score Text Badge */}
+                {/* Score Badge */}
                 <text x={labelWidth + barWidth + 8} y={y + 20} fill="var(--accent, #2f6f65)" fontSize="12" fontWeight="700">
                   {formatNumber(item.value, 1)} / 10
                 </text>
@@ -135,7 +160,6 @@ function SvgAverageBarChart({ criteria }) {
             );
           })}
 
-          {/* Bar Gradient Definition */}
           <defs>
             <linearGradient id="barGradient" x1="0%" y1="0%" x2="100%" y2="0%">
               <stop offset="0%" stopColor="#2f6f65" />
@@ -157,12 +181,11 @@ function SvgSatisfactionRadarChart({ criteria }) {
     return <EmptyChartState title="Профиль удовлетворенности" message="Данные отсутствуют." />;
   }
 
-  const cx = 170;
-  const cy = 150;
-  const radius = 100;
+  const cx = 180;
+  const cy = 160;
+  const radius = 95;
   const total = data.length;
 
-  // Compute vertex point for an angle index and scale (0 to 1)
   const getCoordinates = (index, scale) => {
     const angle = (Math.PI * 2 * index) / total - Math.PI / 2;
     return {
@@ -171,10 +194,8 @@ function SvgSatisfactionRadarChart({ criteria }) {
     };
   };
 
-  // Web rings at 0.2, 0.4, 0.6, 0.8, 1.0 (scales corresponding to scores 2, 4, 6, 8, 10)
   const rings = [0.2, 0.4, 0.6, 0.8, 1.0];
 
-  // Compute data polygon points
   const points = data
     .map((item, i) => {
       const scoreScale = Math.max(0, Math.min(10, item.value)) / 10;
@@ -185,9 +206,11 @@ function SvgSatisfactionRadarChart({ criteria }) {
 
   return (
     <section className="panel chart-panel">
-      <h3>Профиль удовлетворенности</h3>
-      <div className="chart-frame chart-frame-square" style={{ minHeight: "310px", height: "auto", display: "flex", justifyContent: "center" }}>
-        <svg viewBox="0 0 340 310" style={{ width: "100%", maxHeight: "310px" }}>
+      <h3 style={{ fontSize: "0.95rem", fontWeight: 700, marginBottom: "14px", color: "var(--text, #1e293b)" }}>
+        Профиль удовлетворенности
+      </h3>
+      <div className="chart-frame chart-frame-square" style={{ minHeight: "330px", height: "auto", display: "flex", justifyContent: "center" }}>
+        <svg viewBox="0 0 360 330" style={{ width: "100%", maxHeight: "330px" }}>
           {/* Concentric Web Rings */}
           {rings.map((ringScale) => {
             const ringPoints = Array.from({ length: total })
@@ -208,10 +231,10 @@ function SvgSatisfactionRadarChart({ criteria }) {
             );
           })}
 
-          {/* Radial Axis Lines & Outer Labels */}
+          {/* Radial Lines & Well-Spaced Outer Labels */}
           {data.map((item, i) => {
             const outerPt = getCoordinates(i, 1.0);
-            const labelPt = getCoordinates(i, 1.22);
+            const labelPt = getCoordinates(i, 1.26);
             return (
               <g key={item.key || i}>
                 <line x1={cx} y1={cy} x2={outerPt.x} y2={outerPt.y} stroke="var(--line, #cbd5e1)" strokeWidth="1" />
@@ -221,7 +244,7 @@ function SvgSatisfactionRadarChart({ criteria }) {
                   fill="var(--text, #1e293b)"
                   fontSize="11"
                   fontWeight="600"
-                  textAnchor={labelPt.x > cx + 10 ? "start" : labelPt.x < cx - 10 ? "end" : "middle"}
+                  textAnchor={labelPt.x > cx + 12 ? "start" : labelPt.x < cx - 12 ? "end" : "middle"}
                   dominantBaseline="middle"
                 >
                   {item.label} ({formatNumber(item.value, 1)})
@@ -230,10 +253,10 @@ function SvgSatisfactionRadarChart({ criteria }) {
             );
           })}
 
-          {/* Data Polygon Fill & Outline */}
-          <polygon points={points} fill="rgba(47, 111, 101, 0.3)" stroke="#2f6f65" strokeWidth="2.5" />
+          {/* Radar Polygon */}
+          <polygon points={points} fill="rgba(47, 111, 101, 0.28)" stroke="#2f6f65" strokeWidth="2.5" />
 
-          {/* Data Vertex Dots */}
+          {/* Radar Dots */}
           {data.map((item, i) => {
             const scoreScale = Math.max(0, Math.min(10, item.value)) / 10;
             const pt = getCoordinates(i, scoreScale);
@@ -241,7 +264,9 @@ function SvgSatisfactionRadarChart({ criteria }) {
           })}
         </svg>
       </div>
-      <p className="chart-note muted">Вовлеченность приведена к шкале 0–10 через процент вовлеченных слушателей.</p>
+      <p className="chart-note muted" style={{ fontSize: "11px", marginTop: "4px" }}>
+        Вовлеченность приведена к шкале 0–10 через процент вовлеченных слушателей.
+      </p>
     </section>
   );
 }
@@ -255,9 +280,9 @@ function SvgCorrelationHeatmap({ matrix }) {
   }
 
   const keys = Object.keys(matrix);
-  const cellSize = 54;
-  const paddingLeft = 110;
-  const paddingTop = 34;
+  const cellSize = 60;
+  const paddingLeft = 120;
+  const paddingTop = 40;
   const svgWidth = paddingLeft + keys.length * cellSize + 20;
   const svgHeight = paddingTop + keys.length * cellSize + 20;
 
@@ -272,15 +297,17 @@ function SvgCorrelationHeatmap({ matrix }) {
 
   return (
     <section className="panel chart-panel">
-      <h3>Тепловая карта корреляций</h3>
+      <h3 style={{ fontSize: "0.95rem", fontWeight: 700, marginBottom: "14px", color: "var(--text, #1e293b)" }}>
+        Тепловая карта корреляций
+      </h3>
       <div className="chart-frame chart-frame-square" style={{ minHeight: `${svgHeight}px`, height: "auto", display: "flex", justifyContent: "center" }}>
-        <svg viewBox={`0 0 ${svgWidth} ${svgHeight}`} style={{ width: "100%", maxHeight: "310px" }}>
-          {/* Top Column Headers */}
+        <svg viewBox={`0 0 ${svgWidth} ${svgHeight}`} style={{ width: "100%", maxHeight: "330px" }}>
+          {/* Column Headers */}
           {keys.map((colKey, colIdx) => (
             <text
               key={colKey}
               x={paddingLeft + colIdx * cellSize + cellSize / 2}
-              y={paddingTop - 10}
+              y={paddingTop - 12}
               fill="var(--text, #1e293b)"
               fontSize="11"
               fontWeight="600"
@@ -290,12 +317,12 @@ function SvgCorrelationHeatmap({ matrix }) {
             </text>
           ))}
 
-          {/* Matrix Rows */}
+          {/* Rows */}
           {keys.map((rowKey, rowIdx) => (
             <g key={rowKey}>
               {/* Row Label */}
               <text
-                x={paddingLeft - 10}
+                x={paddingLeft - 12}
                 y={paddingTop + rowIdx * cellSize + cellSize / 2 + 4}
                 fill="var(--text, #1e293b)"
                 fontSize="11"
@@ -305,7 +332,7 @@ function SvgCorrelationHeatmap({ matrix }) {
                 {rowKey}
               </text>
 
-              {/* Row Cell Quadrants */}
+              {/* Cell Quadrants */}
               {keys.map((colKey, colIdx) => {
                 const val = Number(matrix[rowKey]?.[colKey] ?? 0);
                 const x = paddingLeft + colIdx * cellSize;
@@ -329,7 +356,7 @@ function SvgCorrelationHeatmap({ matrix }) {
 }
 
 /* =========================================================================
-   4. SVG Overall Distribution Column Chart — Распределение общей оценки (1-3, 4-7, 8-10)
+   4. SVG Overall Distribution Column Chart — Распределение общей оценки
    ========================================================================= */
 function SvgOverallDistributionChart({ distribution, limitation }) {
   const buckets = [
@@ -338,18 +365,20 @@ function SvgOverallDistributionChart({ distribution, limitation }) {
     { label: "8–10 (Высокая)", value: Number(distribution?.high || 0), color: "#2f6f65" },
   ];
 
-  const svgWidth = 360;
-  const svgHeight = 220;
+  const svgWidth = 380;
+  const svgHeight = 230;
   const chartHeight = 150;
-  const startY = 170;
-  const colWidth = 70;
-  const gap = 35;
+  const startY = 175;
+  const colWidth = 75;
+  const gap = 30;
 
   return (
     <section className="panel chart-panel">
-      <h3>Распределение общей оценки</h3>
+      <h3 style={{ fontSize: "0.95rem", fontWeight: 700, marginBottom: "14px", color: "var(--text, #1e293b)" }}>
+        Распределение общей оценки
+      </h3>
       <div className="chart-frame" style={{ minHeight: `${svgHeight}px`, height: "auto", display: "flex", justifyContent: "center" }}>
-        <svg viewBox={`0 0 ${svgWidth} ${svgHeight}`} style={{ width: "100%", maxHeight: "240px" }}>
+        <svg viewBox={`0 0 ${svgWidth} ${svgHeight}`} style={{ width: "100%", maxHeight: "250px" }}>
           {/* Y Ticks (0%, 25%, 50%, 75%, 100%) */}
           {[0, 25, 50, 75, 100].map((pct) => {
             const y = startY - (pct / 100) * chartHeight;
@@ -363,23 +392,18 @@ function SvgOverallDistributionChart({ distribution, limitation }) {
             );
           })}
 
-          {/* Vertical Columns */}
+          {/* Columns */}
           {buckets.map((b, i) => {
-            const x = 70 + i * (colWidth + gap);
+            const x = 65 + i * (colWidth + gap);
             const height = Math.max(4, (Math.min(100, b.value) / 100) * chartHeight);
             const y = startY - height;
 
             return (
               <g key={b.label}>
-                {/* Column Rect */}
                 <rect x={x} y={y} width={colWidth} height={height} rx={6} fill={b.color} opacity={0.9} />
-
-                {/* Top Percentage Label */}
                 <text x={x + colWidth / 2} y={y - 6} fill="var(--text, #1e293b)" fontSize="12" fontWeight="700" textAnchor="middle">
                   {b.value.toFixed(0)}%
                 </text>
-
-                {/* X-Axis Label */}
                 <text x={x + colWidth / 2} y={startY + 18} fill="var(--text, #1e293b)" fontSize="11" fontWeight="600" textAnchor="middle">
                   {b.label}
                 </text>
@@ -388,7 +412,7 @@ function SvgOverallDistributionChart({ distribution, limitation }) {
           })}
         </svg>
       </div>
-      <p className="chart-note muted">{limitation}</p>
+      <p className="chart-note muted" style={{ fontSize: "11px", marginTop: "4px" }}>{limitation}</p>
     </section>
   );
 }
@@ -406,7 +430,7 @@ function SvgTrendChart({ trendData }) {
     );
   }
 
-  const svgWidth = 560;
+  const svgWidth = 580;
   const svgHeight = 250;
   const startX = 60;
   const endX = svgWidth - 30;
@@ -424,27 +448,45 @@ function SvgTrendChart({ trendData }) {
 
   return (
     <section className="panel chart-panel chart-panel-wide">
-      <div className="section-heading" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-        <h3>Динамика оценок по периодам</h3>
-        <span className="badge trend-badge" style={{ display: "inline-flex", alignItems: "center", gap: "4px", background: "var(--soft-accent, #e5f2ec)", color: "var(--accent, #2f6f65)", padding: "4px 8px", borderRadius: "12px", fontSize: "12px", fontWeight: 600 }}>
+      <div className="section-heading" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px" }}>
+        <h3 style={{ fontSize: "0.95rem", fontWeight: 700, color: "var(--text, #1e293b)", margin: 0 }}>
+          Динамика оценок по периодам
+        </h3>
+        <span className="badge trend-badge" style={{ display: "inline-flex", alignItems: "center", gap: "4px", background: "var(--soft-accent, #e5f2ec)", color: "var(--accent, #2f6f65)", padding: "4px 10px", borderRadius: "12px", fontSize: "12px", fontWeight: 600 }}>
           <TrendingUp size={14} />
           Тенденция
         </span>
       </div>
 
-      {/* Criteria Color Legend */}
-      <div style={{ display: "flex", gap: "16px", marginBottom: "12px", flexWrap: "wrap" }}>
+      {/* NON-OVERLAPPING Individual Legend Pills */}
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", marginBottom: "16px", padding: "10px 14px", background: "var(--surface-soft, #f8fafc)", borderRadius: "8px", border: "1px solid var(--line, #e2e8f0)" }}>
         {series.map((s) => (
-          <div key={s.key} style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", color: "var(--text)" }}>
-            <span style={{ width: "12px", height: "12px", borderRadius: "3px", backgroundColor: s.color }}></span>
+          <div 
+            key={s.key} 
+            style={{ 
+              display: "inline-flex", 
+              alignItems: "center", 
+              gap: "6px", 
+              fontSize: "12px", 
+              fontWeight: 600, 
+              color: "var(--text, #1e293b)", 
+              whiteSpace: "nowrap",
+              padding: "4px 10px",
+              borderRadius: "6px",
+              background: "var(--surface, #ffffff)",
+              border: "1px solid var(--line, #cbd5e1)",
+              boxShadow: "0 1px 2px rgba(0, 0, 0, 0.04)"
+            }}
+          >
+            <span style={{ width: "10px", height: "10px", borderRadius: "50%", backgroundColor: s.color, flexShrink: 0 }}></span>
             <span>{s.name}</span>
           </div>
         ))}
       </div>
 
       <div className="chart-frame" style={{ minHeight: `${svgHeight}px`, height: "auto", display: "flex", justifyContent: "center" }}>
-        <svg viewBox={`0 0 ${svgWidth} ${svgHeight}`} style={{ width: "100%", maxHeight: "260px" }}>
-          {/* Y Ticks (0, 2.5, 5.0, 7.5, 10.0) */}
+        <svg viewBox={`0 0 ${svgWidth} ${svgHeight}`} style={{ width: "100%", maxHeight: "270px" }}>
+          {/* Y Ticks */}
           {[0, 2.5, 5, 7.5, 10].map((score) => {
             const y = startY - (score / 10) * chartHeight;
             return (
@@ -457,7 +499,7 @@ function SvgTrendChart({ trendData }) {
             );
           })}
 
-          {/* Period Ticks on X-Axis */}
+          {/* Period Ticks */}
           {trendData.map((pt, idx) => {
             const x = startX + idx * periodStep;
             return (
@@ -467,7 +509,7 @@ function SvgTrendChart({ trendData }) {
             );
           })}
 
-          {/* Trend Lines */}
+          {/* Lines */}
           {series.map((s) => {
             const pathPoints = trendData.map((pt, idx) => {
               const x = startX + idx * periodStep;
@@ -541,13 +583,16 @@ export function DashboardTab({ viewModel }) {
       <DashboardSection title="Состав группы и форматы обучения">
         <div className="dashboard-chart-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "20px" }}>
           <section className="panel compact-breakdown-panel">
-            <h3><Layers size={18} style={{ display: "inline", verticalAlign: "sub", marginRight: "6px" }} />Категории слушателей в группе</h3>
+            <h3 style={{ fontSize: "0.95rem", fontWeight: 700, marginBottom: "14px", color: "var(--text, #1e293b)" }}>
+              <Layers size={18} style={{ display: "inline", verticalAlign: "sub", marginRight: "6px" }} />
+              Категории слушателей в группе
+            </h3>
             {Object.entries(viewModel.positionDistribution).length > 0 ? (
               Object.entries(viewModel.positionDistribution).map(([position, count]) => {
                 const total = Math.max(Object.values(viewModel.positionDistribution).reduce((sum, value) => sum + value, 0), 1);
                 const percent = Math.round((count / total) * 100);
                 return (
-                  <div className="breakdown-row" key={position} style={{ marginBottom: "8px" }}>
+                  <div className="breakdown-row" key={position} style={{ marginBottom: "10px" }}>
                     <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
                       <span>{position}</span>
                       <strong>{count} чел. ({percent}%)</strong>
@@ -564,13 +609,16 @@ export function DashboardTab({ viewModel }) {
           </section>
 
           <section className="panel compact-breakdown-panel">
-            <h3><PieChart size={18} style={{ display: "inline", verticalAlign: "sub", marginRight: "6px" }} />Предпочитаемые форматы обучения</h3>
+            <h3 style={{ fontSize: "0.95rem", fontWeight: 700, marginBottom: "14px", color: "var(--text, #1e293b)" }}>
+              <PieChart size={18} style={{ display: "inline", verticalAlign: "sub", marginRight: "6px" }} />
+              Предпочитаемые форматы обучения
+            </h3>
             {Object.entries(viewModel.preferredFormats).length > 0 ? (
               Object.entries(viewModel.preferredFormats).map(([format, count]) => {
                 const total = Math.max(Object.values(viewModel.preferredFormats).reduce((sum, value) => sum + value, 0), 1);
                 const percent = Math.round((count / total) * 100);
                 return (
-                  <div className="format-breakdown-row" key={format} style={{ marginBottom: "8px" }}>
+                  <div className="format-breakdown-row" key={format} style={{ marginBottom: "10px" }}>
                     <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
                       <span>{format}</span>
                       <strong>{percent}%</strong>
