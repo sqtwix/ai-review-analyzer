@@ -1,4 +1,5 @@
-import { Quote } from "lucide-react";
+import { Quote, Search } from "lucide-react";
+import { useState } from "react";
 
 const formatPercent = (value) => {
   const number = Number(value);
@@ -26,6 +27,8 @@ function EmptyQualitativeState({ title }) {
 }
 
 export function QualitativeTab({ textAnalysis, activeTab, onTabChange, sourceLimitation }) {
+  const [searchQuery, setSearchQuery] = useState("");
+
   const tabs = [
     { key: "topics", label: "Темы отзывов" },
     { key: "sentiment", label: "Тональность" },
@@ -38,9 +41,40 @@ export function QualitativeTab({ textAnalysis, activeTab, onTabChange, sourceLim
     return <EmptyQualitativeState title="Качественный анализ отзывов" />;
   }
 
+  const query = searchQuery.trim().toLowerCase();
+
+  const filteredTopics = (textAnalysis.top_topics || []).filter(
+    (t) => !query || t.topic?.toLowerCase().includes(query) || t.description?.toLowerCase().includes(query)
+  );
+
+  const filteredProblems = (textAnalysis.key_problems || []).filter(
+    (p) => !query || p.problem?.toLowerCase().includes(query) || p.severity?.toLowerCase().includes(query)
+  );
+
+  const filteredQuotes = (textAnalysis.quotes || []).filter(
+    (q) => !query || q.quote?.toLowerCase().includes(query)
+  );
+
+  const filteredRecommendations = (textAnalysis.recommendations || []).filter(
+    (r) => !query || r.target?.toLowerCase().includes(query) || r.action_item?.toLowerCase().includes(query)
+  );
+
   return (
     <div className="qualitative-layout">
       <aside className="qualitative-subnav" aria-label="Разделы качественного анализа">
+        <div className="search-filter-box" style={{ padding: "10px", marginBottom: "12px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "6px", background: "var(--surface, #ffffff)", border: "1px solid var(--line, #cbd5e1)", borderRadius: "6px", padding: "6px 10px" }}>
+            <Search size={14} className="muted" />
+            <input
+              type="text"
+              placeholder="Поиск по отзывам..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{ border: "none", outline: "none", width: "100%", fontSize: "12px", background: "transparent", color: "var(--text)" }}
+            />
+          </div>
+        </div>
+
         {tabs.map((subTab) => (
           <button
             key={subTab.key}
@@ -56,9 +90,9 @@ export function QualitativeTab({ textAnalysis, activeTab, onTabChange, sourceLim
 
       <div className="qualitative-content">
         {activeTab === "topics" && (
-          textAnalysis.top_topics?.length ? (
+          filteredTopics.length ? (
             <div className="qualitative-list">
-              {textAnalysis.top_topics.map((topic, index) => (
+              {filteredTopics.map((topic, index) => (
                 <article key={`${topic.topic}-${index}`} className="panel qualitative-card">
                   <div>
                     <h4>{topic.topic}</h4>
@@ -98,9 +132,9 @@ export function QualitativeTab({ textAnalysis, activeTab, onTabChange, sourceLim
         )}
 
         {activeTab === "problems" && (
-          textAnalysis.key_problems?.length ? (
+          filteredProblems.length ? (
             <div className="qualitative-list">
-              {textAnalysis.key_problems.map((problem, index) => (
+              {filteredProblems.map((problem, index) => (
                 <article key={`${problem.problem}-${index}`} className="panel qualitative-card problem-card">
                   <span className={`risk-pill ${getPriorityClass(problem.severity)}`}>{problem.severity}</span>
                   <div>
@@ -118,9 +152,9 @@ export function QualitativeTab({ textAnalysis, activeTab, onTabChange, sourceLim
         )}
 
         {activeTab === "quotes" && (
-          textAnalysis.quotes?.length ? (
+          filteredQuotes.length ? (
             <div className="qualitative-list">
-              {textAnalysis.quotes.map((quote, index) => (
+              {filteredQuotes.map((quote, index) => (
                 <article key={`${quote.quote}-${index}`} className="panel quote-card qualitative-quote-card">
                   <Quote size={20} className="muted" />
                   <p>«{quote.quote}»</p>
@@ -134,9 +168,9 @@ export function QualitativeTab({ textAnalysis, activeTab, onTabChange, sourceLim
         )}
 
         {activeTab === "recommendations" && (
-          textAnalysis.recommendations?.length ? (
+          filteredRecommendations.length ? (
             <div className="qualitative-list">
-              {textAnalysis.recommendations.map((recommendation, index) => (
+              {filteredRecommendations.map((recommendation, index) => (
                 <article key={`${recommendation.target}-${index}`} className="panel qualitative-card recommendation-card">
                   <div>
                     <span className="badge recommendation-target">Объект: {recommendation.target}</span>

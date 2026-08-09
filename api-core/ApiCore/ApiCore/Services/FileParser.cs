@@ -189,9 +189,23 @@ public class FileParser
     {
         if (index >= 0 && index < row.Count)
         {
-            return row[index].Trim();
+            return AnonymizeText(row[index]);
         }
         return string.Empty;
+    }
+
+    private static string AnonymizeText(string input)
+    {
+        if (string.IsNullOrWhiteSpace(input)) return string.Empty;
+        var text = input.Trim();
+
+        // Strip email addresses
+        text = Regex.Replace(text, @"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}", "[email]");
+
+        // Strip phone numbers (+7, 8-9xx, etc.)
+        text = Regex.Replace(text, @"(?:\+7|8)[\s\-\(\)]*\d{3}[\s\-\(\)]*\d{3}[\s\-]*\d{2}[\s\-]*\d{2}", "[телефон]");
+
+        return text;
     }
 
     private static int FindColumnIndex(List<string> headers, string[] keywords, int startIdx = 0)
