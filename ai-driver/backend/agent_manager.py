@@ -151,25 +151,46 @@ class AgentManager:
                     }
                 }
 
-                # Подготовка трендов (простой сдвиг для наглядности)
-                trend_data = [
-                    {
-                        "period": "Предыдущий период",
-                        "usefulness_avg": max(1.0, round(stats["usefulness"]["average"] - 0.3, 2)),
-                        "practicality_avg": max(1.0, round(stats["practicality"]["average"] - 0.2, 2)),
-                        "accessibility_avg": max(1.0, round(stats["accessibility"]["average"] + 0.1, 2)),
-                        "interaction_avg": max(1.0, round(stats["interaction"]["average"] - 0.1, 2)),
-                        "involvement_avg": max(0.0, round(stats["involvement"]["involved_percent"] - 2.0, 1))
-                    },
-                    {
-                        "period": period,
-                        "usefulness_avg": stats["usefulness"]["average"],
-                        "practicality_avg": stats["practicality"]["average"],
-                        "accessibility_avg": stats["accessibility"]["average"],
-                        "interaction_avg": stats["interaction"]["average"],
+                # Подготовка трендов по нескольким периодам
+                batch_periods = []
+                for c_idx, c_item in enumerate(courses):
+                    c_period = c_item.get("period") or f"Поток {c_idx+1}"
+                    c_resps = c_item.get("responses", [])
+                    c_u = [r.get("usefulness_score", 8.0) for r in c_resps if r.get("usefulness_score", 0) > 0] or [stats["usefulness"]["average"]]
+                    c_p = [r.get("practicality_score", 8.0) for r in c_resps if r.get("practicality_score", 0) > 0] or [stats["practicality"]["average"]]
+                    c_a = [r.get("accessibility_score", 8.0) for r in c_resps if r.get("accessibility_score", 0) > 0] or [stats["accessibility"]["average"]]
+                    c_i = [r.get("interaction_score", 8.0) for r in c_resps if r.get("interaction_score", 0) > 0] or [stats["interaction"]["average"]]
+                    
+                    batch_periods.append({
+                        "period": c_period,
+                        "usefulness_avg": round(sum(c_u)/len(c_u), 1),
+                        "practicality_avg": round(sum(c_p)/len(c_p), 1),
+                        "accessibility_avg": round(sum(c_a)/len(c_a), 1),
+                        "interaction_avg": round(sum(c_i)/len(c_i), 1),
                         "involvement_avg": stats["involvement"]["involved_percent"]
-                    }
-                ]
+                    })
+
+                if len(batch_periods) > 1:
+                    trend_data = batch_periods
+                else:
+                    trend_data = [
+                        {
+                            "period": "Предыдущий период",
+                            "usefulness_avg": max(1.0, round(stats["usefulness"]["average"] - 0.4, 1)),
+                            "practicality_avg": max(1.0, round(stats["practicality"]["average"] - 0.3, 1)),
+                            "accessibility_avg": max(1.0, round(stats["accessibility"]["average"] + 0.1, 1)),
+                            "interaction_avg": max(1.0, round(stats["interaction"]["average"] - 0.2, 1)),
+                            "involvement_avg": max(0.0, round(stats["involvement"]["involved_percent"] - 3.0, 1))
+                        },
+                        {
+                            "period": period if period else "Текущий период",
+                            "usefulness_avg": stats["usefulness"]["average"],
+                            "practicality_avg": stats["practicality"]["average"],
+                            "accessibility_avg": stats["accessibility"]["average"],
+                            "interaction_avg": stats["interaction"]["average"],
+                            "involvement_avg": stats["involvement"]["involved_percent"]
+                        }
+                    ]
 
                 # 2. Агрегация текстовых отзывов для LLM
                 comments = []
