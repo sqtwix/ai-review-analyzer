@@ -205,6 +205,15 @@ public class FileParser
         // Strip phone numbers (+7, 8-9xx, etc.)
         text = Regex.Replace(text, @"(?:\+7|8)[\s\-\(\)]*\d{3}[\s\-\(\)]*\d{3}[\s\-]*\d{2}[\s\-]*\d{2}", "[телефон]");
 
+        // Strip SNILS (11 digits: xxx-xxx-xxx xx)
+        text = Regex.Replace(text, @"\b\d{3}[\s\-]?\d{3}[\s\-]?\d{3}[\s\-]?\d{2}\b", "[СНИЛС]");
+
+        // Strip Russian Passport (4 digits + 6 digits)
+        text = Regex.Replace(text, @"\b\d{4}\s?\d{6}\b", "[паспорт]");
+
+        // Strip Credit Card numbers (16 digits)
+        text = Regex.Replace(text, @"\b(?:\d[ -]*?){13,16}\b", "[карта]");
+
         return text;
     }
 
