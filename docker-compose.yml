@@ -43,10 +43,10 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
-      interval: 3s  # Проверять каждые 3 секунды
-      timeout: 3s   # Таймаут на ответ
-      retries: 10   # Сколько раз пытаться до того, как признать контейнер упавшим
+      test: [ "CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}" ]
+      interval: 3s # Проверять каждые 3 секунды
+      timeout: 3s # Таймаут на ответ
+      retries: 10 # Сколько раз пытаться до того, как признать контейнер упавшим
     networks:
       - saas-network
 
@@ -78,29 +78,19 @@ services:
 
   # Сервис с локальной моделью через llama.cpp
   qwen-local:
-    build:
-      context: ./llama-cpp
-      dockerfile: Dockerfile
+    image: ghcr.io/ggml-org/llama.cpp:server
     ports:
       - "8001:8080"
     volumes:
       - ./models:/models:ro
-    environment:
-      - MODEL_PATH=/models/Qwen3.5-0.8B-Q8_0.gguf
-      - SERVER_HOST=0.0.0.0
-      - SERVER_PORT=8080
-      - N_CTX=8192
-      - N_GPU_LAYERS=0
-      - N_THREADS=4
-      - BATCH_SIZE=512
-      - MODEL_ALIAS=local-model
-    # НАСТРОЙКА HEALTHCHECK (чтобы ai-driver не стучался в не прогретую модель)
+    command: >
+      -m /models/Qwen3.5-0.8B-Q8_0.gguf --host 0.0.0.0 --port 8080 -c 8192 --threads 4 -b 512 --alias local-model
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/health" ]
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 30s # Даем модели время загрузиться в оперативную память при старте
+      start_period: 30s
     networks:
       - saas-network
     restart: unless-stopped
@@ -115,7 +105,7 @@ services:
       - saas-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: [ "CMD", "redis-cli", "ping" ]
       interval: 10s
       timeout: 5s
       retries: 5
