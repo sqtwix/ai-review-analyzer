@@ -1671,6 +1671,13 @@ p {
   line-height: var(--line-height-base);
 }
 
+.action-helper {
+  margin: 8px 0 0;
+  color: var(--text-subtle);
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-base);
+}
+
 .validation-box-pending {
   border-color: var(--warning);
   background: var(--warning-soft);

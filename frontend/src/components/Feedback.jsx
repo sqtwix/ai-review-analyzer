@@ -90,7 +90,7 @@ export function NamingDialog({
         </div>
         <div>
           <h3 id="naming-dialog-title">Назовите ваш анализ</h3>
-          <p>Сохраните анализ под понятным именем, чтобы легко находить его позже.</p>
+          <p>Отчет уже создан и открыт. Сохраните понятное название или пропустите этот шаг.</p>
         </div>
         <form onSubmit={onSubmit} className="dialog-form">
           <input

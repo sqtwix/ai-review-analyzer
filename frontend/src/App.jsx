@@ -810,6 +810,12 @@ function App() {
 
             setMockReports((prev) => [completedReport, ...prev]);
             resetUploadForm();
+            window.location.hash = `report-detail-${serverTaskId}`;
+            notify({
+              type: "success",
+              title: "Анализ завершен",
+              message: "Отчет открыт. Назовите его или пропустите этот шаг.",
+            });
           } else if (statusRes.status === "Failed") {
             clearInterval(intervalRef.current);
             setIsAnalyzing(false);
@@ -1012,6 +1018,7 @@ function App() {
       const archivedRoute = `report-detail-${archiveTargetId}`;
       setArchiveTargetId("");
       if (route === archivedRoute) {
+        resetUploadForm();
         window.location.hash = "upload";
       }
       notify({
@@ -1188,9 +1195,15 @@ function App() {
                   style={{ marginTop: "20px", width: "100%" }}
                   onClick={startAnalysis}
                   disabled={uploadValidation.status === "error"}
+                  aria-describedby={selectedResponseFiles.length === 0 ? "start-analysis-helper" : undefined}
                 >
                   Запустить анализ
                 </button>
+                {selectedResponseFiles.length === 0 && (
+                  <p className="action-helper" id="start-analysis-helper">
+                    Чтобы запустить анализ, сначала выберите файл анкет.
+                  </p>
+                )}
 
                 {isOfflineMode && (
                   <form className="offline-create-form" onSubmit={handleCreateManualReport}>
