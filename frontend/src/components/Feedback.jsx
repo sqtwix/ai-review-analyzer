@@ -90,14 +90,19 @@ export function NamingDialog({
         </div>
         <div>
           <h3 id="naming-dialog-title">Назовите ваш анализ</h3>
-          <p>Отчет уже создан и открыт. Сохраните понятное название или пропустите этот шаг.</p>
+          <p id="naming-dialog-description">Отчет уже создан и открыт. Сохраните понятное название или пропустите этот шаг.</p>
         </div>
         <form onSubmit={onSubmit} className="dialog-form">
+          <label className="dialog-field-label" htmlFor="analysis-name-input">
+            Название анализа
+          </label>
           <input
+            id="analysis-name-input"
             type="text"
             value={value}
             onChange={(e) => onChange(e.target.value)}
             placeholder="Например, Контрольная работа 1"
+            aria-describedby="naming-dialog-description"
             required
             autoFocus
           />

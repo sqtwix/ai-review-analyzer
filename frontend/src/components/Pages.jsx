@@ -190,9 +190,9 @@ export function SettingsPage({
                 </div>
                 <div className="theme-options" role="radiogroup" aria-label="Тема интерфейса">
                   {[
-                    { value: "system", label: "Системная", icon: Monitor },
-                    { value: "light", label: "Светлая", icon: Sun },
-                    { value: "dark", label: "Темная", icon: Moon },
+                    { value: "system", label: "Системная", ariaLabel: "Использовать системную тему", icon: Monitor },
+                    { value: "light", label: "Светлая", ariaLabel: "Использовать светлую тему", icon: Sun },
+                    { value: "dark", label: "Темная", ariaLabel: "Использовать темную тему", icon: Moon },
                   ].map((option) => {
                     const Icon = option.icon;
                     return (
@@ -202,6 +202,7 @@ export function SettingsPage({
                         className={settings.theme === option.value ? "selected" : ""}
                         role="radio"
                         aria-checked={settings.theme === option.value}
+                        aria-label={option.ariaLabel}
                         onClick={() => onSettingsChange({ theme: option.value })}
                       >
                         <Icon size={17} strokeWidth={2.2} />

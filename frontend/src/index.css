@@ -1281,7 +1281,8 @@ p {
 }
 
 .dropzone:hover,
-.dropzone:focus-within {
+.dropzone:focus-within,
+.dropzone:focus-visible {
   transform: translateY(-1px);
   border-color: var(--accent);
   box-shadow: var(--shadow);
@@ -2151,6 +2152,11 @@ th {
 .dialog-form {
   display: grid;
   gap: 14px;
+}
+
+.dialog-field-label {
+  color: var(--text);
+  font-weight: var(--font-weight-secondary);
 }
 
 .dialog-form input {

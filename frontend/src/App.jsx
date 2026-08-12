@@ -1109,13 +1109,19 @@ function App() {
                 <h2>Загрузите файлы опросов слушателей</h2>
                 <p className="muted">Поддерживаются файлы Excel (.xlsx), CSV или ZIP-архивы с таблицами опросов. Если в файлах не хватает колонок или они повреждены, система сообщит об этом до запуска анализа.</p>
 
-                <div
+                <label
                   className="dropzone"
                   id="responses-dropzone"
-                  style={{ cursor: "pointer" }}
-                  onClick={() => responsesInputRef.current.click()}
+                  htmlFor="responses-input"
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(event) => {
+                    if (event.key !== "Enter" && event.key !== " ") return;
+                    event.preventDefault();
+                    responsesInputRef.current?.click();
+                  }}
                 >
-                  <span><Files size={30} strokeWidth={2.2} /></span>
+                  <span aria-hidden="true"><Files size={30} strokeWidth={2.2} /></span>
                   <strong id="responses-file-name">
                     {selectedResponseFiles.length === 0
                       ? "Выберите файлы анкет"
@@ -1123,17 +1129,19 @@ function App() {
                       ? selectedResponseFiles[0].name
                       : `Выбрано файлов: ${selectedResponseFiles.length}`}
                   </strong>
-                  <p>Нажмите для выбора файлов анкет (.csv, .xlsx) или ZIP-архива</p>
+                  <p id="responses-upload-help">Нажмите Enter или Space для выбора файлов анкет (.csv, .xlsx) или ZIP-архива</p>
                   <input
                     type="file"
                     id="responses-input"
                     ref={responsesInputRef}
-                    style={{ display: "none" }}
+                    className="sr-only"
                     multiple
                     accept=".csv,.xlsx,.zip"
+                    aria-label="Файлы анкет для анализа"
+                    aria-describedby="responses-upload-help"
                     onChange={(e) => handleFileChange(e, "responses")}
                   />
-                </div>
+                </label>
               </section>
 
               <section className="panel">
