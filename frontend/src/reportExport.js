@@ -1,5 +1,6 @@
 import verdanaBoldUrl from "./assets/fonts/Verdana-Bold.ttf?url";
 import verdanaUrl from "./assets/fonts/Verdana.ttf?url";
+import { buildCourseReportViewModel } from "./reportViewModel";
 
 const BRAND_GREEN = [47, 111, 101];
 const SOFT_GREEN = [229, 242, 236];
@@ -62,6 +63,7 @@ export async function exportReportToPdf(report) {
   const courseName = courseAnalysis?.course_name || report.course || "Электронный курс";
   const period = courseAnalysis?.period || "Не указан";
   const studentsCount = courseAnalysis?.students_count || 0;
+  const decisionSupport = getDecisionSupport(report);
 
   // Header Banner
   doc.setFillColor(...SOFT_GREEN);
@@ -199,6 +201,35 @@ export async function exportReportToPdf(report) {
     margin: { left: 14, right: 14 },
   });
 
+  const decisionY = (doc.lastAutoTable?.finalY || textAnalysisY + 42) + 8;
+  doc.setFont(PDF_FONT, "bold");
+  doc.setFontSize(11);
+  doc.text("3. Решение и план действий", 14, decisionY);
+
+  autoTable(doc, {
+    startY: decisionY + 4,
+    head: [["Тип", "Содержание", "Статус", "Детали"]],
+    body: buildDecisionExportRows(decisionSupport),
+    styles: {
+      font: PDF_FONT,
+      fontSize: 7.5,
+      cellPadding: 2,
+      textColor: TEXT_COLOR,
+    },
+    headStyles: {
+      fillColor: BRAND_GREEN,
+      textColor: [255, 255, 255],
+      fontStyle: "bold",
+    },
+    columnStyles: {
+      0: { cellWidth: 28 },
+      1: { cellWidth: 58 },
+      2: { cellWidth: 30 },
+      3: { cellWidth: 66 },
+    },
+    margin: { left: 14, right: 14 },
+  });
+
   // Page Break for Report
   doc.addPage();
   
@@ -315,6 +346,35 @@ const styleWorksheetHeader = (worksheet) => {
   headerRow.alignment = { vertical: "middle", wrapText: true };
 };
 
+const checklistStatusLabels = {
+  done: "Готово",
+  warning: "Проверить",
+  info: "К сведению",
+};
+
+const getDecisionSupport = (report) => buildCourseReportViewModel(report).decisionSupport;
+
+const buildDecisionExportRows = (decisionSupport) => {
+  if (!decisionSupport) return [];
+
+  return [
+    ["Решение", decisionSupport.decision.title, `${decisionSupport.confidenceScore}% · ${decisionSupport.confidenceLabel}`, decisionSupport.decision.summary],
+    ...decisionSupport.decisionReasons.map((reason) => ["Причина", reason, "", ""]),
+    ...decisionSupport.actionPlan.map((action) => [
+      "Действие",
+      action.title,
+      action.priorityLabel,
+      `${action.detail} ${action.owner}. ${action.timing}.`,
+    ]),
+    ...decisionSupport.qualityChecklist.map((item) => [
+      "Контроль качества",
+      item.label,
+      checklistStatusLabels[item.status] || item.status,
+      item.detail,
+    ]),
+  ];
+};
+
 export async function exportReportToXlsx(report) {
   const ExcelJS = (await import("exceljs")).default;
   const courseAnalysis = report.result?.courses_analysis?.[0];
@@ -326,6 +386,7 @@ export async function exportReportToXlsx(report) {
   const courseName = courseAnalysis?.course_name || report.course || "Электронный курс";
   const period = courseAnalysis?.period || "Не указан";
   const studentsCount = courseAnalysis?.students_count || 0;
+  const decisionSupport = getDecisionSupport(report);
 
   // Sheet 1: Summary
   const summarySheet = workbook.addWorksheet("Общая сводка");
@@ -426,7 +487,19 @@ export async function exportReportToXlsx(report) {
     });
   }
 
-  // Sheet 4: Analytical report
+  // Sheet 4: Decision support
+  const decisionSheet = workbook.addWorksheet("Решение и план");
+  decisionSheet.columns = [
+    { header: "Тип", key: "type", width: 22 },
+    { header: "Содержание", key: "title", width: 52 },
+    { header: "Статус / Приоритет", key: "status", width: 22 },
+    { header: "Детали", key: "details", width: 82 },
+  ];
+  buildDecisionExportRows(decisionSupport).forEach(([type, title, status, details]) => {
+    decisionSheet.addRow({ type, title, status, details });
+  });
+
+  // Sheet 5: Analytical report
   const repSheet = workbook.addWorksheet("Аналитическая справка");
   repSheet.columns = [
     { header: "Раздел", key: "section", width: 30 },
@@ -476,7 +549,7 @@ export async function exportReportToXlsx(report) {
     });
   }
 
-  [summarySheet, statsSheet, qualSheet, repSheet].forEach((worksheet) => {
+  [summarySheet, statsSheet, qualSheet, decisionSheet, repSheet].forEach((worksheet) => {
     styleWorksheetHeader(worksheet);
     worksheet.eachRow((row) => {
       row.alignment = { vertical: "top", wrapText: true };
@@ -571,6 +644,7 @@ export async function exportReportToDocx(report) {
   const studentsCount = courseAnalysis?.students_count || 0;
   const stats = courseAnalysis?.statistics;
   const reportData = courseAnalysis?.analytical_report;
+  const decisionSupport = getDecisionSupport(report);
 
   const statisticRows = [];
   const addMetricRow = (name, metric) => {
@@ -603,6 +677,21 @@ export async function exportReportToDocx(report) {
   const keyCriteria = reportData?.section2_key_criteria;
   const suggestions = reportData?.section3_suggestions;
   const trajectory = reportData?.section4_trajectory;
+  const decisionChildren = decisionSupport
+    ? [
+        createDocxHeading("0. Решение и план действий"),
+        createBulletParagraph(`Решение: ${decisionSupport.decision.title}`),
+        createBulletParagraph(`Надежность анализа: ${decisionSupport.confidenceScore}% (${decisionSupport.confidenceLabel})`),
+        ...decisionSupport.decisionReasons.map((reason) => createBulletParagraph(`Причина: ${reason}`)),
+        ...decisionSupport.actionPlan.map((action) =>
+          createBulletParagraph(`${action.priorityLabel}: ${action.title}. ${action.detail} ${action.owner}. ${action.timing}.`)
+        ),
+        createDocxHeading("Контроль качества", 2),
+        ...decisionSupport.qualityChecklist.map((item) =>
+          createBulletParagraph(`${checklistStatusLabels[item.status] || item.status}: ${item.label}. ${item.detail}`)
+        ),
+      ]
+    : [];
 
   const children = [
     new docx.Paragraph({
@@ -624,6 +713,7 @@ export async function exportReportToDocx(report) {
       ],
       spacing: { after: 240 },
     }),
+    ...decisionChildren,
     createDocxHeading("1. Общая информация о программе"),
     ...createTextParagraphs(reportData?.section1_general_info),
     createDocxHeading("2. Ключевые критерии по программе"),
@@ -677,6 +767,7 @@ export function exportReportToCsv(report) {
   const courseName = courseAnalysis?.course_name || report.course || "Электронный курс";
   const period = courseAnalysis?.period || "Не указан";
   const studentsCount = courseAnalysis?.students_count || 0;
+  const decisionSupport = getDecisionSupport(report);
 
   const rows = [
     ["Общая сводка по опросу"],
@@ -685,6 +776,10 @@ export function exportReportToCsv(report) {
     ["Период", period],
     ["Слушатели", studentsCount],
     ["Выгружено", exportDate],
+    [],
+    ["Решение и план действий"],
+    ["Тип", "Содержание", "Статус / Приоритет", "Детали"],
+    ...buildDecisionExportRows(decisionSupport),
     [],
     ["Количественные показатели"],
     ["Критерий", "Средний балл", "Медиана", "Отклонение"],
@@ -707,8 +802,9 @@ export function exportReportToCsv(report) {
 }
 
 export function exportReportToJson(report) {
+  const decisionSupport = getDecisionSupport(report);
   return downloadBlob(
-    new Blob([JSON.stringify(report, null, 2)], { type: "application/json;charset=utf-8" }),
+    new Blob([JSON.stringify({ ...report, decisionSupport }, null, 2)], { type: "application/json;charset=utf-8" }),
     safeFileName(report.course, "json")
   );
 }

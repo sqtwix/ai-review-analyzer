@@ -2,11 +2,12 @@ import { useEffect, useState, useMemo } from "react";
 import { 
   ArchiveRestore, ArrowLeft, Construction, Eye, Layers3, Monitor, Moon, PanelLeftClose, 
   PanelLeftOpen, Search, Sun, Pencil, Archive, Save, BookOpen, BarChart3, MessageSquare, 
-  AlertTriangle, CheckCircle, HelpCircle, ChevronRight, ThumbsUp, X
+  AlertTriangle, CheckCircle, HelpCircle, ChevronRight, ThumbsUp, X, ClipboardCheck
 } from "lucide-react";
 import { buildCourseReportViewModel } from "../reportViewModel";
 import { AnalyticalReportTab } from "./report/AnalyticalReportTab";
 import { DashboardTab } from "./report/DashboardTab";
+import { DecisionSupportTab } from "./report/DecisionSupportTab";
 import { QualitativeTab } from "./report/QualitativeTab";
 
 // ========================= Auth Page Component =========================
@@ -650,7 +651,7 @@ export function CourseReportDetailPage({
   exportStatus,
   onDismissExportStatus,
 }) {
-  const [activeTab, setActiveTab] = useState("dashboard"); // dashboard, qualitative, report
+  const [activeTab, setActiveTab] = useState("decision"); // decision, dashboard, qualitative, report
   const [qualActiveTab, setQualActiveTab] = useState("topics"); // topics, sentiment, problems, quotes, recommendations
   const exportFormats = [
     { key: "pdf", label: "PDF" },
@@ -792,6 +793,7 @@ export function CourseReportDetailPage({
       {/* Main Tabs Navigation */}
       <nav className="report-tabs" aria-label="Разделы отчета">
         {[
+          { key: "decision", label: "Решение и план", icon: ClipboardCheck },
           { key: "dashboard", label: "Панель показателей", icon: BarChart3 },
           { key: "qualitative", label: "Качественный анализ отзывов", icon: MessageSquare },
           { key: "report", label: "Аналитическая справка", icon: BookOpen }
@@ -811,6 +813,9 @@ export function CourseReportDetailPage({
           );
         })}
       </nav>
+
+      {/* Tab 0: Decision Support */}
+      {activeTab === "decision" && <DecisionSupportTab decisionSupport={reportViewModel.decisionSupport} />}
 
       {/* Tab 1: Dashboard Panel */}
       {activeTab === "dashboard" && <DashboardTab viewModel={reportViewModel} />}
