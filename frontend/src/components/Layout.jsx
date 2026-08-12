@@ -123,6 +123,12 @@ export function AppLayout({
           <a href="#students" className={`secondary-nav-link ${route === "students" ? "active" : ""}`}>
             <Users size={17} strokeWidth={2.2} /> Студенты
           </a>
+          <a href="#settings-archive" className={`secondary-nav-link ${route === "settings-archive" ? "active" : ""}`}>
+            <Archive size={17} strokeWidth={2.2} /> Архив
+          </a>
+          <a href="#settings" className={`secondary-nav-link ${route === "settings" ? "active" : ""}`}>
+            <Settings size={17} strokeWidth={2.2} /> Настройки
+          </a>
         </nav>
         <button
           type="button"

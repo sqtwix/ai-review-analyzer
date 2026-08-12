@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { 
   ArchiveRestore, ArrowLeft, Construction, Eye, Layers3, Monitor, Moon, PanelLeftClose, 
   PanelLeftOpen, Search, Sun, Pencil, Archive, Save, BookOpen, BarChart3, MessageSquare, 
@@ -106,8 +106,9 @@ export function SettingsPage({
   onSidebarResizeStart,
   archivedReports = [],
   onUnarchiveReport,
+  initialGroup = "interface",
 }) {
-  const [activeGroup, setActiveGroup] = useState("interface");
+  const [activeGroup, setActiveGroup] = useState(initialGroup);
   const [archiveQuery, setArchiveQuery] = useState("");
   const accessibility = settings.accessibility || {};
   const recommendedAccessibility = {
@@ -122,6 +123,10 @@ export function SettingsPage({
       `${report.course || ""} ${report.title || ""}`.toLowerCase().includes(query)
     );
   }, [archivedReports, archiveQuery]);
+
+  useEffect(() => {
+    setActiveGroup(initialGroup);
+  }, [initialGroup]);
 
   return (
     <section
@@ -154,14 +159,20 @@ export function SettingsPage({
           <button
             type="button"
             className={`settings-group-button ${activeGroup === "interface" ? "active" : ""}`}
-            onClick={() => setActiveGroup("interface")}
+            onClick={() => {
+              setActiveGroup("interface");
+              window.location.hash = "settings";
+            }}
           >
             Интерфейс
           </button>
           <button
             type="button"
             className={`settings-group-button ${activeGroup === "archive" ? "active" : ""}`}
-            onClick={() => setActiveGroup("archive")}
+            onClick={() => {
+              setActiveGroup("archive");
+              window.location.hash = "settings-archive";
+            }}
           >
             Архив
           </button>
@@ -281,12 +292,13 @@ export function SettingsPage({
                         </div>
                         <button
                           type="button"
-                          className="icon-action-button archive-restore-button"
+                          className="secondary-button archive-restore-button"
                           onClick={() => onUnarchiveReport?.(report.id)}
-                          aria-label={`Разархивировать отчет ${report.course}`}
-                          title="Разархивировать"
+                          aria-label={`Восстановить отчет ${report.course} из архива`}
+                          title="Вернуть отчет из архива"
                         >
                           <ArchiveRestore size={17} strokeWidth={2.2} />
+                          Восстановить
                         </button>
                       </article>
                     ))}

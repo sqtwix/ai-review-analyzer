@@ -719,7 +719,7 @@ function App() {
     if (currentRoute === "upload") return "Загрузка данных";
     if (currentRoute.startsWith("report-detail-")) return "Детали отчёта";
     if (currentRoute === "students") return "Студенты";
-    if (currentRoute === "settings") return "Настройки";
+    if (currentRoute === "settings" || currentRoute === "settings-archive") return "Настройки";
     if (currentRoute === "login") return "Авторизация";
     if (currentRoute === "register") return "Регистрация";
     return "Анализ отзывов студентов";
@@ -1120,7 +1120,7 @@ function App() {
       await fetchArchivedHistory();
       notify({
         type: "success",
-        title: "Отчет разархивирован",
+        title: "Отчет восстановлен",
         message: "Он снова доступен в основной истории.",
       });
     } catch (err) {
@@ -1501,7 +1501,7 @@ function App() {
       );
     }
 
-    if (route === "settings") {
+    if (route === "settings" || route === "settings-archive") {
       return (
         <SettingsPage
           settings={userSettings}
@@ -1512,6 +1512,7 @@ function App() {
           onSidebarResizeStart={(event) => handleSidebarResizeStart("settings", event)}
           archivedReports={archivedReports}
           onUnarchiveReport={handleUnarchiveReport}
+          initialGroup={route === "settings-archive" ? "archive" : "interface"}
         />
       );
     }
@@ -1594,7 +1595,7 @@ function App() {
     );
   }
 
-  if (route === "settings") {
+  if (route === "settings" || route === "settings-archive") {
     return (
       <>
         <AccessibilityToolbar settings={userSettings} onSettingsChange={handleSettingsChange} />
@@ -1648,7 +1649,7 @@ function App() {
       <ConfirmDialog
         open={!!archiveTargetId}
         title="Архивировать отчет?"
-        message={`Отчет ${archiveTargetReport ? `«${archiveTargetReport.course}»` : ""} будет перемещен в архив. Его можно вернуть в настройках.`}
+        message={`Отчет ${archiveTargetReport ? `«${archiveTargetReport.course}»` : ""} будет перемещен в архив. Его можно восстановить из раздела «Архив».`}
         confirmLabel="Архивировать"
         onConfirm={confirmArchiveReport}
         onCancel={() => setArchiveTargetId("")}
