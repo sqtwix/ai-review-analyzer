@@ -3807,6 +3807,103 @@ body[data-density="minimal"] .state-panel {
   margin-top: 0;
 }
 
+.students-breakdown-grid .breakdown-row {
+  display: grid;
+  gap: 6px;
+}
+
+.breakdown-header {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) max-content;
+  gap: 10px;
+  align-items: start;
+  font-size: var(--font-size-sm);
+}
+
+.breakdown-header span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.breakdown-header .muted {
+  justify-self: end;
+  white-space: nowrap;
+}
+
+.breakdown-track {
+  height: 8px;
+  overflow: hidden;
+  border-radius: 4px;
+  background: var(--line);
+}
+
+.breakdown-track div {
+  height: 100%;
+  background: var(--accent);
+}
+
+.course-mobile-list {
+  display: none;
+}
+
+.course-mobile-card {
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  display: grid;
+  gap: 12px;
+  background: var(--surface-soft);
+}
+
+.course-mobile-card-title {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) max-content;
+  gap: 10px;
+  align-items: start;
+}
+
+.course-mobile-card-title strong {
+  min-width: 0;
+  color: var(--heading);
+  overflow-wrap: anywhere;
+}
+
+.course-mobile-metrics {
+  margin: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.course-mobile-metrics div {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 112px) minmax(0, 1fr);
+  gap: 8px;
+}
+
+.course-mobile-metrics dt,
+.course-mobile-metrics dd {
+  min-width: 0;
+  margin: 0;
+}
+
+.course-mobile-metrics dt {
+  color: var(--text-subtle);
+  font-size: var(--font-size-sm);
+}
+
+.course-mobile-metrics dd {
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+.course-mobile-link {
+  width: 100%;
+}
+
 .students-list {
   display: grid;
   gap: 14px;
@@ -4396,6 +4493,24 @@ body[data-density="minimal"] .state-panel {
 
   .workspace {
     padding: 12px;
+  }
+
+  .students-course-panel .table-wrap {
+    display: none;
+  }
+
+  .course-mobile-list {
+    display: grid;
+    gap: 12px;
+  }
+
+  .breakdown-header {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .breakdown-header .muted {
+    justify-self: start;
+    white-space: normal;
   }
 
   .topbar {

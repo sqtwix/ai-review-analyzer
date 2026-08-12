@@ -486,12 +486,12 @@ export function StudentsPage({ reports, onNewAnalysis }) {
                   const pct = Math.round((count / total) * 100);
                   return (
                     <div key={pos} className="breakdown-row">
-                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px", fontSize: "var(--font-size-sm)" }}>
+                      <div className="breakdown-header">
                         <span><b>{pos}</b></span>
                         <span className="muted">{count} чел. ({pct}%)</span>
                       </div>
-                      <div style={{ background: "var(--border-color)", height: "8px", borderRadius: "4px", overflow: "hidden" }}>
-                        <div style={{ width: `${pct}%`, background: "var(--accent-color)", height: "100%" }}></div>
+                      <div className="breakdown-track">
+                        <div style={{ width: `${pct}%` }}></div>
                       </div>
                     </div>
                   );
@@ -507,12 +507,12 @@ export function StudentsPage({ reports, onNewAnalysis }) {
                   const pct = Math.round((count / total) * 100);
                   return (
                     <div key={format} className="breakdown-row">
-                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px", fontSize: "var(--font-size-sm)" }}>
+                      <div className="breakdown-header">
                         <span style={{ textTransform: "capitalize" }}><b>{format}</b></span>
                         <span className="muted">{pct}%</span>
                       </div>
-                      <div style={{ background: "var(--border-color)", height: "8px", borderRadius: "4px", overflow: "hidden" }}>
-                        <div style={{ width: `${pct}%`, background: "var(--accent-color)", height: "100%" }}></div>
+                      <div className="breakdown-track">
+                        <div style={{ width: `${pct}%` }}></div>
                       </div>
                     </div>
                   );
@@ -575,6 +575,43 @@ export function StudentsPage({ reports, onNewAnalysis }) {
                   )}
                 </tbody>
               </table>
+            </div>
+
+            <div className="course-mobile-list" aria-label="Базы опросов по курсам">
+              {filteredCourses.map((course) => (
+                <article className="course-mobile-card" key={`${course.id}-${course.name}`}>
+                  <div className="course-mobile-card-title">
+                    <strong>{course.name}</strong>
+                    <span className={`score-pill ${Number(course.avgScore) >= 8.0 ? "good" : "watch"}`}>
+                      {course.avgScore}
+                    </span>
+                  </div>
+                  <dl className="course-mobile-metrics">
+                    <div>
+                      <dt>Период</dt>
+                      <dd>{course.period}</dd>
+                    </div>
+                    <div>
+                      <dt>Анкет</dt>
+                      <dd>{course.students}</dd>
+                    </div>
+                    <div>
+                      <dt>Отстраненные</dt>
+                      <dd>{course.detached}%</dd>
+                    </div>
+                    <div>
+                      <dt>Ключевая тема</dt>
+                      <dd>{course.topTopic}</dd>
+                    </div>
+                  </dl>
+                  <a href={`#report-detail-${course.id}`} className="secondary-button course-mobile-link">
+                    Открыть отчет
+                  </a>
+                </article>
+              ))}
+              {filteredCourses.length === 0 && (
+                <div className="table-empty">Ничего не найдено.</div>
+              )}
             </div>
           </section>
         </>
