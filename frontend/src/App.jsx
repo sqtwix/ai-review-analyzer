@@ -262,6 +262,14 @@ const getUploadFileStatus = (file) => {
   };
 };
 
+const exportFormatLabels = {
+  pdf: "PDF",
+  docx: "DOCX",
+  excel: "Excel",
+  csv: "CSV",
+  json: "JSON",
+};
+
 function App() {
   const [route, setRoute] = useState(() => {
     return window.location.hash.replace("#", "") || "upload";
@@ -301,6 +309,7 @@ function App() {
   const intervalRef = useRef(null);
   const saveActionsRef = useRef(null);
   const profileActionsRef = useRef(null);
+  const exportDownloadUrlRef = useRef("");
 
   // Naming & Renaming states
   const [showNamingModal, setShowNamingModal] = useState(false);
@@ -373,6 +382,7 @@ function App() {
   };
   const [isSaveMenuOpen, setIsSaveMenuOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const [exportStatus, setExportStatus] = useState(null);
   const [manualCourse, setManualCourse] = useState("Новый локальный курс");
   const [manualTitle, setManualTitle] = useState("Черновик offline-отчета");
 
@@ -387,6 +397,26 @@ function App() {
   const dismissToast = (toastId) => {
     setToasts((currentToasts) => currentToasts.filter((toast) => toast.id !== toastId));
   };
+
+  const updateExportStatus = (nextStatus) => {
+    if (exportDownloadUrlRef.current && exportDownloadUrlRef.current !== nextStatus?.download?.url) {
+      URL.revokeObjectURL(exportDownloadUrlRef.current);
+    }
+    exportDownloadUrlRef.current = nextStatus?.download?.url || "";
+    setExportStatus(nextStatus);
+  };
+
+  const clearExportStatus = () => {
+    updateExportStatus(null);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (exportDownloadUrlRef.current) {
+        URL.revokeObjectURL(exportDownloadUrlRef.current);
+      }
+    };
+  }, []);
 
   const handleSettingsChange = async (patch) => {
     const nextSettings = {
@@ -1104,34 +1134,48 @@ function App() {
 
   const handleExportReport = async (report, format) => {
     setIsSaveMenuOpen(false);
+    const formatLabel = exportFormatLabels[format] || "файл";
+    updateExportStatus({
+      status: "loading",
+      title: `Готовим ${formatLabel}`,
+      message: "Файл формируется локально. Это может занять несколько секунд.",
+    });
     try {
+      let download = null;
       if (format === "pdf") {
-        await exportReportToPdf(report);
-        notify({ type: "success", title: "PDF сохранен" });
-        return;
+        download = await exportReportToPdf(report);
+      } else if (format === "excel") {
+        download = await exportReportToXlsx(report);
+      } else if (format === "docx") {
+        download = await exportReportToDocx(report);
+      } else if (format === "csv") {
+        download = exportReportToCsv(report);
+      } else {
+        download = exportReportToJson(report);
       }
-      if (format === "excel") {
-        await exportReportToXlsx(report);
-        notify({ type: "success", title: "Excel сохранен" });
-        return;
-      }
-      if (format === "docx") {
-        await exportReportToDocx(report);
-        notify({ type: "success", title: "DOCX сохранен" });
-        return;
-      }
-      if (format === "csv") {
-        exportReportToCsv(report);
-        notify({ type: "success", title: "CSV сохранен" });
-        return;
-      }
-      exportReportToJson(report);
-      notify({ type: "success", title: "JSON сохранен" });
+
+      updateExportStatus({
+        status: "success",
+        title: "Файл создан",
+        message: `${download.fileName} · ${formatFileSize(download.size)}`,
+        download,
+      });
+      notify({
+        type: "success",
+        title: `${formatLabel} готов`,
+        message: "Если скачивание не началось автоматически, используйте ссылку под кнопками экспорта.",
+      });
     } catch (err) {
       console.error("Failed to export report:", err);
+      updateExportStatus({
+        status: "error",
+        title: `Не удалось скачать ${formatLabel}`,
+        message: `${err.message || "Повторите позже."} Попробуйте другой формат или запустите экспорт еще раз.`,
+      });
       notify({
         type: "error",
-        title: "Не удалось сохранить файл",
+        title: `Не удалось скачать ${formatLabel}`,
+        message: "Попробуйте другой формат или повторите позже.",
       });
     }
   };
@@ -1439,6 +1483,8 @@ function App() {
           setIsProfileMenuOpen={setIsProfileMenuOpen}
           handleExportReport={handleExportReport}
           saveActionsRef={saveActionsRef}
+          exportStatus={exportStatus}
+          onDismissExportStatus={clearExportStatus}
         />
       );
     }

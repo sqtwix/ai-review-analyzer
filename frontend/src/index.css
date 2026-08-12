@@ -2770,6 +2770,58 @@ th {
   align-items: center;
 }
 
+.export-status {
+  margin: 12px 0 18px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) max-content max-content;
+  gap: 10px;
+  align-items: center;
+  background: var(--surface-soft);
+}
+
+.export-status strong,
+.export-status p {
+  margin: 0;
+}
+
+.export-status p {
+  margin-top: 4px;
+  color: var(--text-subtle);
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-base);
+  overflow-wrap: anywhere;
+}
+
+.export-status-loading {
+  border-color: var(--warning);
+  background: var(--warning-soft);
+}
+
+.export-status-success {
+  border-color: var(--accent);
+  background: var(--mint);
+}
+
+.export-status-error {
+  border-color: var(--danger);
+  background: var(--danger-soft);
+}
+
+.export-download-link {
+  min-height: 36px;
+  padding: 7px 10px;
+}
+
+.export-status-dismiss {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  min-height: 36px;
+}
+
 .icon-action-button {
   width: 42px;
   height: 42px;
@@ -4640,6 +4692,15 @@ body[data-density="minimal"] .state-panel {
   .export-actions {
     width: auto;
     justify-content: flex-start;
+  }
+
+  .export-status {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .export-download-link,
+  .export-status-dismiss {
+    justify-self: start;
   }
 
   .report-header {

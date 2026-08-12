@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { 
   ArchiveRestore, ArrowLeft, Construction, Eye, Layers3, Monitor, Moon, PanelLeftClose, 
   PanelLeftOpen, Search, Sun, Pencil, Archive, Save, BookOpen, BarChart3, MessageSquare, 
-  AlertTriangle, CheckCircle, HelpCircle, ChevronRight, ThumbsUp
+  AlertTriangle, CheckCircle, HelpCircle, ChevronRight, ThumbsUp, X
 } from "lucide-react";
 import { buildCourseReportViewModel } from "../reportViewModel";
 import { AnalyticalReportTab } from "./report/AnalyticalReportTab";
@@ -635,6 +635,8 @@ export function CourseReportDetailPage({
   setIsProfileMenuOpen,
   handleExportReport,
   saveActionsRef,
+  exportStatus,
+  onDismissExportStatus,
 }) {
   const [activeTab, setActiveTab] = useState("dashboard"); // dashboard, qualitative, report
   const [qualActiveTab, setQualActiveTab] = useState("topics"); // topics, sentiment, problems, quotes, recommendations
@@ -745,6 +747,33 @@ export function CourseReportDetailPage({
           </div>
         </div>
       </div>
+
+      {exportStatus && (
+        <section className={`export-status export-status-${exportStatus.status}`} role="status" aria-live="polite">
+          <div>
+            <strong>{exportStatus.title}</strong>
+            {exportStatus.message && <p>{exportStatus.message}</p>}
+          </div>
+          {exportStatus.download?.url && (
+            <a
+              className="secondary-button export-download-link"
+              href={exportStatus.download.url}
+              download={exportStatus.download.fileName}
+            >
+              Скачать еще раз
+            </a>
+          )}
+          <button
+            type="button"
+            className="icon-action-button export-status-dismiss"
+            onClick={onDismissExportStatus}
+            aria-label="Скрыть состояние экспорта"
+            title="Скрыть"
+          >
+            <X size={16} strokeWidth={2.2} />
+          </button>
+        </section>
+      )}
 
       {/* Main Tabs Navigation */}
       <nav className="report-tabs" aria-label="Разделы отчета">

@@ -275,7 +275,7 @@ export async function exportReportToPdf(report) {
     writeReportSection("Раздел 4. Траектория изменения программы (рекомендации)", trajectoryText);
   }
 
-  doc.save(safeFileName(courseName, "pdf"));
+  return downloadBlob(doc.output("blob"), safeFileName(courseName, "pdf"));
 }
 
 const downloadBlob = (blob, fileName) => {
@@ -283,10 +283,18 @@ const downloadBlob = (blob, fileName) => {
   const link = document.createElement("a");
   link.href = url;
   link.download = fileName;
+  link.rel = "noopener";
   document.body.appendChild(link);
   link.click();
   link.remove();
-  URL.revokeObjectURL(url);
+  const download = {
+    fileName,
+    url,
+    size: blob.size,
+    type: blob.type || "application/octet-stream",
+  };
+  window.dispatchEvent(new CustomEvent("educheck:export-download", { detail: download }));
+  return download;
 };
 
 const escapeCsvCell = (value) => {
@@ -476,7 +484,7 @@ export async function exportReportToXlsx(report) {
   });
 
   const buffer = await workbook.xlsx.writeBuffer();
-  downloadBlob(
+  return downloadBlob(
     new Blob([buffer], {
       type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     }),
@@ -660,7 +668,7 @@ export async function exportReportToDocx(report) {
   });
 
   const blob = await docx.Packer.toBlob(document);
-  downloadBlob(blob, safeFileName(courseName, "docx"));
+  return downloadBlob(blob, safeFileName(courseName, "docx"));
 }
 
 export function exportReportToCsv(report) {
@@ -695,11 +703,11 @@ export function exportReportToCsv(report) {
   }
 
   const csv = `\uFEFF${rows.map(toCsvRow).join("\n")}`;
-  downloadBlob(new Blob([csv], { type: "text/csv;charset=utf-8" }), safeFileName(courseName, "csv"));
+  return downloadBlob(new Blob([csv], { type: "text/csv;charset=utf-8" }), safeFileName(courseName, "csv"));
 }
 
 export function exportReportToJson(report) {
-  downloadBlob(
+  return downloadBlob(
     new Blob([JSON.stringify(report, null, 2)], { type: "application/json;charset=utf-8" }),
     safeFileName(report.course, "json")
   );
