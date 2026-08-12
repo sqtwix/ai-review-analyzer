@@ -71,3 +71,15 @@ Checked flows:
 - Sidebar history keeps full accessible names and shows enough metadata to distinguish reports.
 - Settings and archive are reachable from the main sidebar and profile menu.
 - Accessibility toolbar labels controls clearly and allows reset to defaults.
+
+## Priority Cards Acceptance
+
+Use this list as the post-fix gate for `09-priority-cards.md`.
+
+- P1 Export: PDF, DOCX, Excel, CSV, and JSON create non-empty blobs, show loading/success/error state, and expose a fallback download link with the correct filename extension.
+- P2 Mobile Students: viewport `390x844` shows course cards instead of a clipped table, with no horizontal page overflow.
+- P3 File Choice: selected files show name, size, extension, validation status, per-file remove action, and `Очистить все`.
+- P4 File Upload A11Y: the upload control has a visible keyboard-focusable target, label/description, Enter/Space activation, and a named file input.
+- P5 Save Actions: inline rename uses `Сохранить название`; report export is named `Экспортировать отчет`.
+- P6 Settings Visibility: `Студенты`, `Архив`, and `Настройки` are visible in the main sidebar; `#settings-archive` opens the archive tab directly.
+- P7 Accessibility Toolbar: groups are labeled, controls have specific aria labels, active state is visible beyond color, and reset is available.
