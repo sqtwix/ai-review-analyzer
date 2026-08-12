@@ -51,7 +51,7 @@ export function AppLayout({
               <span className="brand-full">Анализ отзывов студентов</span>
               <span className="brand-short">Анализ отзывов</span>
             </strong>
-            <small>анализ ответов</small>
+            <small>Отзывы в отчет</small>
           </span>
         </a>
 

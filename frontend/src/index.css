@@ -42,18 +42,18 @@
   --font-sans: Inter, "Segoe UI", Arial, sans-serif;
   --font-size-primary: 1rem;
   --font-size-secondary: 0.875rem;
-  --font-size-accent: calc(var(--font-size-primary) + (var(--font-size-primary) - var(--font-size-secondary)));
-  --font-size-xs: var(--font-size-secondary);
-  --font-size-sm: var(--font-size-secondary);
+  --font-size-accent: var(--font-size-primary);
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
   --font-size-base: var(--font-size-primary);
-  --font-size-lg: var(--font-size-primary);
-  --font-size-xl: var(--font-size-primary);
-  --font-size-2xl: var(--font-size-primary);
-  --font-size-3xl: var(--font-size-primary);
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.25rem;
+  --font-size-2xl: 1.5rem;
+  --font-size-3xl: 1.75rem;
   --line-height-tight: 1.2;
   --line-height-base: 1.5;
   --line-height-relaxed: 1.6;
-  --font-weight-secondary: 200;
+  --font-weight-secondary: 400;
   --font-weight-regular: 400;
   --font-weight-medium: 500;
   --font-weight-strong: 600;
@@ -375,6 +375,24 @@ select {
   font-weight: var(--font-weight-medium);
 }
 
+h1 {
+  font-size: var(--font-size-2xl);
+}
+
+h2 {
+  font-size: var(--font-size-xl);
+}
+
+h3 {
+  font-size: var(--font-size-lg);
+}
+
+h4,
+h5,
+h6 {
+  font-size: var(--font-size-base);
+}
+
 h1,
 h2,
 h3,
@@ -615,8 +633,11 @@ body.is-resizing-sidebar {
 .brand {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   min-width: 0;
+  min-height: 58px;
+  padding: 8px 10px;
+  border-radius: var(--radius);
   color: var(--heading);
   white-space: nowrap;
 }
@@ -624,9 +645,19 @@ body.is-resizing-sidebar {
 .brand-logo {
   width: 42px;
   height: 42px;
+  flex: 0 0 42px;
+  padding: 4px;
   object-fit: contain;
   border-radius: var(--radius);
+  border: 1px solid var(--line);
   background: var(--surface);
+}
+
+.brand > span {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+  line-height: 1.2;
 }
 
 .brand strong,
@@ -634,6 +665,14 @@ body.is-resizing-sidebar {
   display: block;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.brand strong {
+  font-size: var(--font-size-base);
+}
+
+.brand small {
+  font-size: var(--font-size-xs);
 }
 
 .brand small,
@@ -3976,7 +4015,7 @@ body[data-density="minimal"] .state-panel {
 
 .confidence-card strong {
   color: var(--value-text);
-  font-size: clamp(2rem, 8vw, 3.25rem);
+  font-size: var(--font-size-3xl);
   line-height: 1;
 }
 

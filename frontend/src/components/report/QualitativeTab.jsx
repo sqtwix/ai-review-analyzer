@@ -70,7 +70,7 @@ export function QualitativeTab({ textAnalysis, activeTab, onTabChange, sourceLim
               placeholder="Поиск по отзывам..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              style={{ border: "none", outline: "none", width: "100%", fontSize: "12px", background: "transparent", color: "var(--text)" }}
+              style={{ border: "none", outline: "none", width: "100%", fontSize: "var(--font-size-xs)", background: "transparent", color: "var(--text)" }}
             />
           </div>
         </div>
