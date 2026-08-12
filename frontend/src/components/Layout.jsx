@@ -1,6 +1,14 @@
 import { Archive, FileText, LogOutIcon, Menu, PanelLeftClose, PanelLeftOpen, Plus, Search, Settings, User, Users } from "lucide-react";
 import logo from "../assets/logo.png";
 
+const formatHistoryMeta = (report) => {
+  const createdAt = report.createdAt
+    ? new Intl.DateTimeFormat("ru-RU", { day: "2-digit", month: "2-digit", year: "numeric" }).format(new Date(report.createdAt))
+    : "";
+  const title = report.title || "Без названия";
+  return createdAt ? `${title} · ${createdAt}` : title;
+};
+
 export function AppLayout({
   route,
   pageTitle,
@@ -37,7 +45,10 @@ export function AppLayout({
         <a className="brand" href="#upload" aria-label="Анализ отзывов студентов">
           <img className="brand-logo" src={logo} alt="Анализ отзывов студентов" />
           <span>
-            <strong>Анализ отзывов студентов</strong>
+            <strong>
+              <span className="brand-full">Анализ отзывов студентов</span>
+              <span className="brand-short">Анализ отзывов</span>
+            </strong>
             <small>анализ ответов</small>
           </span>
         </a>
@@ -78,7 +89,10 @@ export function AppLayout({
                     }}
                   >
                     <FileText size={16} strokeWidth={2.2} />
-                    <span>{report.course}</span>
+                    <span className="history-item-copy">
+                      <span className="history-item-title">{report.course}</span>
+                      <small className="history-item-meta">{formatHistoryMeta(report)}</small>
+                    </span>
                   </a>
                   <button
                     type="button"

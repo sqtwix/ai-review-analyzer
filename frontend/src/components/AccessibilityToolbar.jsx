@@ -1,4 +1,4 @@
-﻿import { Eye, Settings } from "lucide-react";
+﻿import { Eye, RotateCcw, Settings } from "lucide-react";
 
 const defaultAccessibility = {
   enabled: false,
@@ -7,15 +7,15 @@ const defaultAccessibility = {
 };
 
 const fontOptions = [
-  { value: "large", label: "A", title: "Крупный шрифт" },
-  { value: "xlarge", label: "A", title: "Очень крупный шрифт" },
-  { value: "xxlarge", label: "A", title: "Максимальный шрифт" },
+  { value: "large", label: "A", title: "Крупный шрифт", ariaLabel: "Выбрать крупный шрифт" },
+  { value: "xlarge", label: "A", title: "Очень крупный шрифт", ariaLabel: "Выбрать очень крупный шрифт" },
+  { value: "xxlarge", label: "A", title: "Максимальный шрифт", ariaLabel: "Выбрать максимальный шрифт" },
 ];
 
 const colorOptions = [
-  { value: "light", label: "Ц", title: "Черный текст на белом фоне" },
-  { value: "dark", label: "Ц", title: "Белый текст на черном фоне" },
-  { value: "blue", label: "Ц", title: "Синий контраст" },
+  { value: "light", label: "Ц", title: "Черный текст на белом фоне", ariaLabel: "Выбрать обычную светлую схему" },
+  { value: "dark", label: "Ц", title: "Белый текст на черном фоне", ariaLabel: "Выбрать контрастную темную схему" },
+  { value: "blue", label: "Ц", title: "Синий контраст", ariaLabel: "Выбрать синюю контрастную схему" },
 ];
 
 export function AccessibilityToolbar({ settings, onSettingsChange }) {
@@ -45,17 +45,27 @@ export function AccessibilityToolbar({ settings, onSettingsChange }) {
     });
   };
 
+  const resetAccessibility = () => {
+    onSettingsChange({
+      accessibility: {
+        ...defaultAccessibility,
+        enabled: true,
+      },
+    });
+  };
+
   return (
     <nav className="accessibility-toolbar" aria-label="Панель режима для слабовидящих">
       <div className="accessibility-toolbar-inner">
         <div className="accessibility-toolbar-group">
-          <span className="accessibility-toolbar-label">Шрифт:</span>
+          <span className="accessibility-toolbar-label">Размер текста</span>
           {fontOptions.map((option, index) => (
             <button
               key={option.value}
               type="button"
               className={`accessibility-tool-button font-size-${index + 1} ${accessibility.fontSize === option.value ? "active" : ""}`}
               aria-pressed={accessibility.fontSize === option.value}
+              aria-label={option.ariaLabel}
               title={option.title}
               onClick={() => updateAccessibility({ fontSize: option.value })}
             >
@@ -65,13 +75,14 @@ export function AccessibilityToolbar({ settings, onSettingsChange }) {
         </div>
 
         <div className="accessibility-toolbar-group">
-          <span className="accessibility-toolbar-label">Цвет:</span>
+          <span className="accessibility-toolbar-label">Цветовая схема</span>
           {colorOptions.map((option) => (
             <button
               key={option.value}
               type="button"
               className={`accessibility-tool-button color-scheme-${option.value} ${accessibility.colorScheme === option.value ? "active" : ""}`}
               aria-pressed={accessibility.colorScheme === option.value}
+              aria-label={option.ariaLabel}
               title={option.title}
               onClick={() => updateAccessibility({ colorScheme: option.value })}
             >
@@ -81,17 +92,27 @@ export function AccessibilityToolbar({ settings, onSettingsChange }) {
         </div>
 
         <div className="accessibility-toolbar-group">
-          <span className="accessibility-toolbar-label">Настройки:</span>
-          <a className="accessibility-tool-button" href="#settings" title="Открыть настройки">
+          <span className="accessibility-toolbar-label">Настройки</span>
+          <a className="accessibility-tool-button" href="#settings" aria-label="Открыть настройки доступности" title="Открыть настройки">
             <Settings size={18} strokeWidth={2.2} />
           </a>
         </div>
 
         <div className="accessibility-toolbar-group">
-          <span className="accessibility-toolbar-label">Обычная версия:</span>
+          <span className="accessibility-toolbar-label">Сброс</span>
           <button
             type="button"
             className="accessibility-tool-button"
+            aria-label="Сбросить настройки доступности"
+            title="Сбросить настройки доступности"
+            onClick={resetAccessibility}
+          >
+            <RotateCcw size={18} strokeWidth={2.2} />
+          </button>
+          <button
+            type="button"
+            className="accessibility-tool-button"
+            aria-label="Вернуться к обычной версии"
             title="Вернуться к обычной версии"
             onClick={disableAccessibility}
           >

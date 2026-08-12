@@ -441,6 +441,7 @@ a {
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-strong);
   line-height: 1;
+  white-space: nowrap;
 }
 
 .accessibility-tool-button {
@@ -466,6 +467,24 @@ a {
 .accessibility-tool-button.active {
   background: var(--accent);
   color: var(--on-accent);
+}
+
+.accessibility-tool-button.active {
+  box-shadow: 0 0 0 3px var(--focus-ring);
+  position: relative;
+}
+
+.accessibility-tool-button.active::after {
+  content: "";
+  position: absolute;
+  right: 5px;
+  bottom: 5px;
+  width: 7px;
+  height: 7px;
+  border: 2px solid currentColor;
+  border-top: 0;
+  border-left: 0;
+  transform: rotate(45deg);
 }
 
 .accessibility-tool-button.font-size-1 {
@@ -2448,20 +2467,17 @@ th {
   display: flex;
   align-items: center;
   gap: 6px;
-  min-height: 38px;
+  min-height: 48px;
   padding: 0 4px 0 0;
   border-radius: var(--radius);
   color: var(--text);
   font-size: var(--font-size-sm);
   transition: background var(--motion-base) var(--ease-standard), border-color var(--motion-base) var(--ease-standard), color var(--motion-base) var(--ease-standard), transform var(--motion-fast) var(--ease-out);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .history-item {
   min-width: 0;
-  min-height: 38px;
+  min-height: 48px;
   padding: 8px 8px 8px 12px;
   border-radius: var(--radius);
   flex: 1;
@@ -2480,8 +2496,37 @@ th {
 
 .history-item span {
   min-width: 0;
+}
+
+.history-item-copy {
+  display: grid;
+  gap: 2px;
+  line-height: 1.25;
+}
+
+.history-item-title,
+.history-item-meta {
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.history-item-title {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.history-item-meta {
+  color: var(--text-subtle);
+  font-size: var(--font-size-xs);
+  white-space: nowrap;
+}
+
+.brand-short {
+  display: none;
 }
 
 .history-row:hover,
@@ -4328,6 +4373,14 @@ body[data-density="minimal"] .state-panel {
 }
 
 @media (max-width: 640px) {
+  .brand-full {
+    display: none;
+  }
+
+  .brand-short {
+    display: inline;
+  }
+
   .workspace {
     padding: 12px;
   }

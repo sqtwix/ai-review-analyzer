@@ -142,7 +142,7 @@ export function buildCourseReportViewModel(report) {
     involvement,
     limitations: {
       exactScoreDistribution:
-        "Backend пока не передает абсолютные корзины оценок 1-10; frontend показывает агрегированные проценты 1-3 / 4-7 / 8-10.",
+        "Показано агрегированное распределение оценок по трем диапазонам: низкие, средние и высокие.",
       sourceEvidence:
         "точные номера строк и вопросов недоступны до расширения backend-контракта.",
     },

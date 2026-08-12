@@ -632,7 +632,7 @@ export function CourseReportDetailPage({
                 autoFocus
               />
               <button type="submit" className="primary-button inline-rename-button">
-                Сохранить
+                Сохранить название
               </button>
               <button
                 type="button"
@@ -685,8 +685,8 @@ export function CourseReportDetailPage({
               }}
               aria-expanded={isSaveMenuOpen}
               aria-haspopup="menu"
-              aria-label="Сохранить"
-              title="Сохранить"
+              aria-label="Экспортировать отчет"
+              title="Экспортировать отчет"
             >
               <Save size={18} strokeWidth={2.2} />
             </button>
