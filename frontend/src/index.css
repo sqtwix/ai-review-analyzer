@@ -868,6 +868,27 @@ p {
   color: var(--accent);
 }
 
+.text-link-button {
+  width: max-content;
+  max-width: 100%;
+  min-height: 34px;
+  margin-top: 10px;
+  padding: 0;
+  border: 0;
+  display: inline-flex;
+  align-items: center;
+  background: transparent;
+  color: var(--accent);
+  cursor: pointer;
+  font-weight: var(--font-weight-strong);
+  text-align: left;
+}
+
+.text-link-button:hover {
+  color: var(--accent-hover);
+  text-decoration: underline;
+}
+
 .danger-button {
   background: var(--danger);
   border-color: var(--danger);
@@ -1205,6 +1226,28 @@ p {
 .badge {
   color: var(--accent);
   background: var(--mint);
+}
+
+.source-badge {
+  min-height: 22px;
+  padding: 3px 7px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: max-content;
+  max-width: 100%;
+  color: var(--accent);
+  background: var(--mint);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-strong);
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.source-badge-demo {
+  color: var(--accent-3);
+  background: var(--blue);
 }
 
 .badge {
@@ -2253,9 +2296,41 @@ th {
   color: var(--accent);
 }
 
+.dialog-icon-info {
+  border-color: var(--accent-3);
+  background: var(--blue);
+  color: var(--accent-3);
+}
+
 .dialog-form {
   display: grid;
   gap: 14px;
+}
+
+.file-guide-dialog {
+  max-width: 620px;
+}
+
+.file-guide-list {
+  display: grid;
+  gap: 12px;
+}
+
+.file-guide-list section {
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-soft);
+}
+
+.file-guide-list h4,
+.file-guide-list p {
+  margin: 0;
+}
+
+.file-guide-list h4 {
+  margin-bottom: 5px;
+  color: var(--heading);
 }
 
 .dialog-field-label {
@@ -2640,6 +2715,17 @@ th {
   color: var(--text-subtle);
   font-size: var(--font-size-xs);
   white-space: nowrap;
+}
+
+.history-item-meta-row {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.history-item-meta-row .source-badge {
+  flex: 0 0 auto;
 }
 
 .brand-short {
@@ -4354,6 +4440,13 @@ body[data-density="minimal"] .state-panel {
 #report-title-heading,
 #report-course-eyebrow {
   overflow-wrap: anywhere;
+}
+
+.report-meta-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
 }
 
 .report-tabs {

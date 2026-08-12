@@ -9,6 +9,8 @@ const formatHistoryMeta = (report) => {
   return createdAt ? `${title} · ${createdAt}` : title;
 };
 
+const getReportSourceLabel = (source) => (source === "demo" ? "Демо" : "Создано мной");
+
 export function AppLayout({
   route,
   pageTitle,
@@ -91,7 +93,12 @@ export function AppLayout({
                     <FileText size={16} strokeWidth={2.2} />
                     <span className="history-item-copy">
                       <span className="history-item-title">{report.course}</span>
-                      <small className="history-item-meta">{formatHistoryMeta(report)}</small>
+                      <span className="history-item-meta-row">
+                        <small className="history-item-meta">{formatHistoryMeta(report)}</small>
+                        <small className={`source-badge source-badge-${report.source || "user"}`}>
+                          {getReportSourceLabel(report.source)}
+                        </small>
+                      </span>
                     </span>
                   </a>
                   <button

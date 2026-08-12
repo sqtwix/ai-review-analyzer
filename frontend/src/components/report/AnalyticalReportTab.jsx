@@ -12,7 +12,7 @@ export function AnalyticalReportTab({ reportData }) {
     return (
       <section className="panel analysis-empty-state">
         <h3>Аналитическая справка</h3>
-        <p className="muted">Backend не передал аналитическую справку для этого отчета.</p>
+        <p className="muted">В отчете пока нет аналитической справки.</p>
       </section>
     );
   }

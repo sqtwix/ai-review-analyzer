@@ -21,7 +21,7 @@ function EmptyQualitativeState({ title }) {
   return (
     <section className="panel analysis-empty-state">
       <h3>{title}</h3>
-      <p className="muted">Backend не передал данные для этого блока качественного анализа.</p>
+      <p className="muted">В отчете пока нет данных для этого блока качественного анализа.</p>
     </section>
   );
 }
@@ -124,7 +124,7 @@ export function QualitativeTab({ textAnalysis, activeTab, onTabChange, sourceLim
                   </div>
                 ))}
               </div>
-              <EvidenceLine>Основание: агрегированная классификация всех комментариев, переданная backend.</EvidenceLine>
+              <EvidenceLine>Основание: агрегированная классификация всех комментариев в данных отчета.</EvidenceLine>
             </section>
           ) : (
             <EmptyQualitativeState title="Тональность" />
@@ -176,7 +176,7 @@ export function QualitativeTab({ textAnalysis, activeTab, onTabChange, sourceLim
                     <span className="badge recommendation-target">Объект: {recommendation.target}</span>
                     <h4>{recommendation.action_item}</h4>
                     <EvidenceLine>
-                      Основание: рекомендация сформирована из агрегированных проблем и тем; точные ссылки на строки недоступны до расширения backend-контракта.
+                      Основание: рекомендация сформирована из агрегированных проблем и тем; точные ссылки на строки пока недоступны в данных отчета.
                     </EvidenceLine>
                   </div>
                   <span className={`risk-pill ${getPriorityClass(recommendation.priority)}`}>

@@ -40,6 +40,7 @@ const normalizeOfflineReport = (report) => ({
   id: String(report.id),
   course: report.course || "Электронный курс",
   title: report.title || "Локальный демо-отчет",
+  source: report.source || (String(report.id).startsWith("offline-") || String(report.id).startsWith("manual-") ? "user" : "demo"),
   errors: Array.isArray(report.errors) ? report.errors : [],
   recommendations: Array.isArray(report.recommendations) ? report.recommendations : [],
   status: report.status || "Completed",
@@ -328,7 +329,7 @@ export async function uploadFiles(userResponseFiles, modelType) {
     saveOfflineTasks(tasks);
     return {
       task_id: taskId,
-      message: "Offline mode: файлы приняты в локальную обработку.",
+      message: "Демо-режим: файлы приняты в локальную обработку.",
     };
   }
 
@@ -415,7 +416,7 @@ export async function renameAnalysisReport(taskId, newName) {
 }
 
 export async function createOfflineReport(report) {
-  if (!isOfflineMode) throw new Error("Создание локального отчета доступно только в offline mode.");
+  if (!isOfflineMode) throw new Error("Создание локального отчета доступно только в демо-режиме.");
   await delay(120);
   const nextReport = normalizeOfflineReport({
     id: `manual-${Date.now()}`,
@@ -426,7 +427,7 @@ export async function createOfflineReport(report) {
 }
 
 export async function updateOfflineReport(reportId, patch) {
-  if (!isOfflineMode) throw new Error("Редактирование локального отчета доступно только в offline mode.");
+  if (!isOfflineMode) throw new Error("Редактирование локального отчета доступно только в демо-режиме.");
   await delay(80);
   let updatedReport = null;
   const reports = getOfflineReports().map((report) => {

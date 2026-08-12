@@ -119,3 +119,44 @@ export function NamingDialog({
     </div>
   );
 }
+
+export function FileGuideDialog({ open, onClose }) {
+  if (!open) return null;
+
+  return (
+    <div className="modal-backdrop" role="presentation">
+      <section className="dialog file-guide-dialog" role="dialog" aria-modal="true" aria-labelledby="file-guide-title">
+        <div className="dialog-icon dialog-icon-info">
+          <Info size={20} strokeWidth={2.2} />
+        </div>
+        <div>
+          <h3 id="file-guide-title">Как подготовить файл</h3>
+          <p>Загрузите таблицу с ответами слушателей или ZIP-архив с несколькими таблицами одного курса.</p>
+        </div>
+        <div className="file-guide-list">
+          <section>
+            <h4>Форматы</h4>
+            <p>.xlsx, .csv или .zip. Файлы Word пока не поддерживаются.</p>
+          </section>
+          <section>
+            <h4>Структура</h4>
+            <p>В таблице должны быть ответы слушателей, названия вопросов и строки с данными. Пустые файлы не обрабатываются.</p>
+          </section>
+          <section>
+            <h4>Несколько файлов</h4>
+            <p>Можно выбрать несколько Excel/CSV-файлов или один ZIP-архив с выгрузками по одному курсу.</p>
+          </section>
+          <section>
+            <h4>Если появилась ошибка</h4>
+            <p>Удалите неподходящий файл из списка, выберите другой и запустите анализ снова.</p>
+          </section>
+        </div>
+        <div className="dialog-actions">
+          <button type="button" className="primary-button" onClick={onClose}>
+            Понятно
+          </button>
+        </div>
+      </section>
+    </div>
+  );
+}

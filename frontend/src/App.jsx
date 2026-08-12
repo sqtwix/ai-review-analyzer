@@ -16,7 +16,7 @@ import {
 } from "./api";
 import { AppLayout } from "./components/Layout";
 import { AccessibilityToolbar } from "./components/AccessibilityToolbar";
-import { ConfirmDialog, NamingDialog, ToastStack } from "./components/Feedback";
+import { ConfirmDialog, FileGuideDialog, NamingDialog, ToastStack } from "./components/Feedback";
 import { AuthPage, SettingsPage, StudentsPage, CourseReportDetailPage } from "./components/Pages";
 import { loadUserSettings, persistUserSettings, readLocalSettings } from "./settingsService";
 import { getSidebarMaxWidth, layoutLimits, readLayoutPreferences, writeLayoutPreferences } from "./layoutPreferences";
@@ -213,6 +213,7 @@ const initialMockReports = [
     course: "Применение инструментов ИИ в гос управлении",
     title: "Анализ опроса за период 28.05-10.06",
     status: "Completed",
+    source: "demo",
     isArchived: false,
     createdAt: new Date().toISOString(),
     result: generateMockResult("1")
@@ -222,6 +223,7 @@ const initialMockReports = [
     course: "Разработка на Python для госслужащих",
     title: "Анализ опроса за период 12.05-25.05",
     status: "Completed",
+    source: "demo",
     isArchived: false,
     createdAt: new Date().toISOString(),
     result: generateMockResult("2")
@@ -383,6 +385,7 @@ function App() {
   const [isSaveMenuOpen, setIsSaveMenuOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [exportStatus, setExportStatus] = useState(null);
+  const [showFileGuide, setShowFileGuide] = useState(false);
   const [manualCourse, setManualCourse] = useState("Новый локальный курс");
   const [manualTitle, setManualTitle] = useState("Черновик offline-отчета");
 
@@ -440,6 +443,7 @@ function App() {
       title: apiReport.title || `Анализ опроса за период ${courseAnalysis.period || ""}`,
       status: apiReport.status,
       error: apiReport.error,
+      source: apiReport.source,
       isArchived: Boolean(apiReport.isArchived),
       createdAt: apiReport.createdAt,
       result: apiReport.result
@@ -882,6 +886,7 @@ function App() {
               course: courseName,
               title: `Анализ опроса за период ${cleanResponseName.match(/^\d{2}\.\d{2}-\d{2}\.\d{2}/)?.[0] || ""}`,
               status: "Completed",
+              source: "user",
               isArchived: false,
               createdAt: new Date().toISOString(),
               result: result
@@ -1065,7 +1070,8 @@ function App() {
             text: "Черновая находка для ручного редактирования в песочнице.",
           },
         ],
-        recommendations: ["Уточните содержание отчета в редакторе offline mode."],
+        recommendations: ["Уточните содержание отчета в локальном редакторе."],
+        source: "user",
       });
       await fetchHistory();
       window.location.hash = `report-detail-${report.id}`;
@@ -1201,6 +1207,9 @@ function App() {
                 <p className="eyebrow">Новый анализ</p>
                 <h2>Загрузите файлы опросов слушателей</h2>
                 <p className="muted">Поддерживаются файлы Excel (.xlsx), CSV или ZIP-архивы с таблицами опросов. Если в файлах не хватает колонок или они повреждены, система сообщит об этом до запуска анализа.</p>
+                <button type="button" className="text-link-button file-guide-trigger" onClick={() => setShowFileGuide(true)}>
+                  Как подготовить файл
+                </button>
 
                 <label
                   className="dropzone"
@@ -1394,7 +1403,7 @@ function App() {
                 </div>
                 <div id="step-2" className={getTimelineStepClass(1, analysisProgress)}>
                   <b>Данные приведены к JSON</b>
-                  <p>{isOfflineMode ? "Offline mode подготовил локальную структуру отчета." : "api-core подготовил структуру для ai-driver."}</p>
+                  <p>{isOfflineMode ? "Демо-режим подготовил локальную структуру отчета." : "Данные подготовлены для анализа."}</p>
                 </div>
                 <div id="step-3" className={getTimelineStepClass(2, analysisProgress)}>
                   <b>ИИ-агенты анализируют паттерны</b>
@@ -1646,6 +1655,7 @@ function App() {
         onSubmit={handleSaveReportName}
         onSkip={handleSkipNaming}
       />
+      <FileGuideDialog open={showFileGuide} onClose={() => setShowFileGuide(false)} />
       <ConfirmDialog
         open={!!archiveTargetId}
         title="Архивировать отчет?"

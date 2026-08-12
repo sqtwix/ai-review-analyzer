@@ -668,6 +668,7 @@ export function CourseReportDetailPage({
     period,
     studentsCount,
   } = reportViewModel;
+  const reportSourceLabel = report.source === "demo" ? "Демо" : "Создано мной";
 
   return (
     <section className="page active" id="report-detail" data-title="Детали отчёта">
@@ -714,6 +715,7 @@ export function CourseReportDetailPage({
           <h2 id="report-title-heading">{report.title}</h2>
           <p className="muted report-meta-line">
             Период: <b>{period}</b> · Анкетировано слушателей: <b>{studentsCount} чел.</b>
+            <span className={`source-badge source-badge-${report.source || "user"}`}>{reportSourceLabel}</span>
           </p>
         </div>
 
