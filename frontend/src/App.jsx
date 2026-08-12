@@ -228,6 +228,40 @@ const initialMockReports = [
   }
 ];
 
+const allowedUploadExtensions = new Set(["csv", "xlsx", "zip"]);
+
+const formatFileSize = (size) => {
+  if (!Number.isFinite(size)) return "0 Б";
+  if (size < 1024) return `${size} Б`;
+  if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} КБ`;
+  return `${(size / (1024 * 1024)).toFixed(1)} МБ`;
+};
+
+const getUploadFileExtension = (file) => file.name.split(".").pop()?.toLowerCase() || "";
+
+const getUploadFileStatus = (file) => {
+  const extension = getUploadFileExtension(file);
+  if (!allowedUploadExtensions.has(extension)) {
+    return {
+      tone: "error",
+      label: "Неподдерживаемый формат",
+      details: "Поддерживаются только .xlsx, .csv и .zip.",
+    };
+  }
+  if (file.size === 0) {
+    return {
+      tone: "error",
+      label: "Файл пустой",
+      details: "Мы не нашли данных для анализа.",
+    };
+  }
+  return {
+    tone: "success",
+    label: "Проверка пройдена",
+    details: "Формат и размер подходят.",
+  };
+};
+
 function App() {
   const [route, setRoute] = useState(() => {
     return window.location.hash.replace("#", "") || "upload";
@@ -670,6 +704,17 @@ function App() {
     }
   };
 
+  const handleRemoveSelectedFile = (fileIndex) => {
+    setSelectedResponseFiles((files) => files.filter((_, index) => index !== fileIndex));
+    if (responsesInputRef.current) responsesInputRef.current.value = "";
+  };
+
+  const handleClearSelectedFiles = () => {
+    setSelectedResponseFiles([]);
+    setShowValidation(false);
+    if (responsesInputRef.current) responsesInputRef.current.value = "";
+  };
+
   const uploadValidation = useMemo(() => {
     if (selectedResponseFiles.length === 0) {
       return {
@@ -679,10 +724,9 @@ function App() {
       };
     }
 
-    const allowedExtensions = new Set(["csv", "xlsx", "zip"]);
     const invalidFiles = selectedResponseFiles.filter((file) => {
-      const extension = file.name.split(".").pop()?.toLowerCase();
-      return !allowedExtensions.has(extension);
+      const extension = getUploadFileExtension(file);
+      return !allowedUploadExtensions.has(extension);
     });
     const emptyFiles = selectedResponseFiles.filter((file) => file.size === 0);
 
@@ -690,7 +734,7 @@ function App() {
       return {
         status: "error",
         title: "Неподдерживаемый формат",
-        message: `Проверьте файлы: ${invalidFiles.map((file) => file.name).join(", ")}. Поддерживаются только .xlsx, .csv и .zip.`,
+        message: `Проверьте файлы: ${invalidFiles.map((file) => file.name).join(", ")}. Поддерживаются только .xlsx, .csv и .zip. Удалите неподходящий файл или выберите другой.`,
       };
     }
 
@@ -698,7 +742,7 @@ function App() {
       return {
         status: "error",
         title: "Пустой файл",
-        message: `Файлы без данных не будут обработаны: ${emptyFiles.map((file) => file.name).join(", ")}.`,
+        message: `Мы не нашли данных в файлах: ${emptyFiles.map((file) => file.name).join(", ")}. Удалите пустой файл или выберите другой.`,
       };
     }
 
@@ -708,6 +752,11 @@ function App() {
       message: "Расширения и размер файлов корректны. Наличие обязательных колонок проверит сервер при запуске анализа.",
     };
   }, [selectedResponseFiles]);
+
+  const selectedFilesTotalSize = useMemo(
+    () => selectedResponseFiles.reduce((total, file) => total + file.size, 0),
+    [selectedResponseFiles]
+  );
 
   // Trigger validation banner visibility
   useEffect(() => {
@@ -1142,6 +1191,43 @@ function App() {
                     onChange={(e) => handleFileChange(e, "responses")}
                   />
                 </label>
+                {selectedResponseFiles.length > 0 && (
+                  <div className="upload-file-panel" aria-live="polite">
+                    <div className="upload-file-summary">
+                      <strong>{selectedResponseFiles.length} файл(а)</strong>
+                      <span>{formatFileSize(selectedFilesTotalSize)} всего</span>
+                      <button type="button" className="ghost-button upload-clear-button" onClick={handleClearSelectedFiles}>
+                        Очистить все
+                      </button>
+                    </div>
+                    <ul className="upload-file-list" aria-label="Выбранные файлы анкет">
+                      {selectedResponseFiles.map((file, index) => {
+                        const status = getUploadFileStatus(file);
+                        const extension = getUploadFileExtension(file).toUpperCase() || "FILE";
+                        return (
+                          <li className={`upload-file-item upload-file-item-${status.tone}`} key={`${file.name}-${file.size}-${index}`}>
+                            <div className="upload-file-main">
+                              <strong title={file.name}>{file.name}</strong>
+                              <span>{extension} · {formatFileSize(file.size)} · {status.details}</span>
+                            </div>
+                            <span className={`upload-file-status upload-file-status-${status.tone}`}>
+                              {status.label}
+                            </span>
+                            <button
+                              type="button"
+                              className="icon-action-button upload-file-remove"
+                              onClick={() => handleRemoveSelectedFile(index)}
+                              aria-label={`Удалить файл ${file.name}`}
+                              title="Удалить файл"
+                            >
+                              <XCircle size={16} strokeWidth={2.2} />
+                            </button>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                )}
               </section>
 
               <section className="panel">
@@ -1194,6 +1280,11 @@ function App() {
                   >
                     <b>{uploadValidation.title}</b>
                     <p>{uploadValidation.message}</p>
+                    {uploadValidation.status === "error" && (
+                      <button type="button" className="ghost-button validation-replace-button" onClick={() => responsesInputRef.current?.click()}>
+                        Выбрать другой файл
+                      </button>
+                    )}
                   </div>
                 )}
 

@@ -1679,6 +1679,109 @@ p {
   line-height: var(--line-height-base);
 }
 
+.upload-file-panel {
+  margin-top: 14px;
+  display: grid;
+  gap: 10px;
+}
+
+.upload-file-summary {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, max-content) minmax(0, 1fr) max-content;
+  gap: 10px;
+  align-items: center;
+  color: var(--text-soft);
+  font-size: var(--font-size-sm);
+}
+
+.upload-clear-button {
+  min-height: 34px;
+  padding: 6px 10px;
+  justify-self: end;
+}
+
+.upload-file-list {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+  list-style: none;
+}
+
+.upload-file-item {
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) max-content max-content;
+  gap: 10px;
+  align-items: center;
+  background: var(--surface-soft);
+}
+
+.upload-file-item-error {
+  border-color: var(--danger);
+  background: var(--danger-soft);
+}
+
+.upload-file-main {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.upload-file-main strong,
+.upload-file-main span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.upload-file-main span {
+  color: var(--text-subtle);
+  font-size: var(--font-size-xs);
+}
+
+.upload-file-status {
+  min-height: 28px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-strong);
+}
+
+.upload-file-status-success {
+  color: var(--accent);
+  background: var(--mint);
+}
+
+.upload-file-status-error {
+  color: var(--danger);
+  background: var(--surface);
+}
+
+.upload-file-remove {
+  width: 34px;
+  height: 34px;
+  min-width: 34px;
+  min-height: 34px;
+  color: var(--danger);
+}
+
+.validation-replace-button {
+  min-height: 34px;
+  margin-top: 10px;
+  padding: 6px 10px;
+}
+
 .validation-box-pending {
   border-color: var(--warning);
   background: var(--warning-soft);
@@ -4502,6 +4605,23 @@ body[data-density="minimal"] .state-panel {
   .course-mobile-list {
     display: grid;
     gap: 12px;
+  }
+
+  .upload-file-summary,
+  .upload-file-item {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .upload-clear-button,
+  .upload-file-status,
+  .upload-file-remove {
+    justify-self: start;
+  }
+
+  .upload-file-main strong,
+  .upload-file-main span {
+    white-space: normal;
+    overflow-wrap: anywhere;
   }
 
   .breakdown-header {
