@@ -25,6 +25,7 @@
   --text-muted: var(--muted);
   --danger-soft: #f7e6df;
   --warning-soft: #f7eddc;
+  --focus-ring: rgba(47, 111, 101, 0.28);
   --overlay: rgba(30, 41, 38, 0.38);
   --dialog-shadow: 0 24px 60px rgba(30, 41, 38, 0.22);
   --accessibility-toolbar-height: 0px;
@@ -84,6 +85,7 @@
   --danger-hover: #f0a094;
   --danger-soft: #3a211f;
   --warning-soft: #372b18;
+  --focus-ring: rgba(114, 183, 167, 0.36);
   --overlay: rgba(0, 0, 0, 0.58);
   --dialog-shadow: 0 24px 60px rgba(0, 0, 0, 0.42);
   --shadow: 0 14px 42px rgba(0, 0, 0, 0.28);
@@ -113,6 +115,7 @@
 }
 
 :root[data-contrast="high"] {
+  color-scheme: light;
   --text: #07140f;
   --heading: #000000;
   --text-soft: #20362f;
@@ -121,9 +124,14 @@
   --value-text: #004f42;
   --line: #6b827a;
   --accent: #185f51;
+  --accent-color: var(--accent);
+  --border-color: var(--line);
+  --text-muted: var(--muted);
+  --focus-ring: rgba(24, 95, 81, 0.34);
 }
 
 :root[data-theme="dark"][data-contrast="high"] {
+  color-scheme: dark;
   --bg: #050807;
   --surface: #0f1714;
   --surface-soft: #15211d;
@@ -135,14 +143,23 @@
   --value-text: #9ce0cf;
   --line: #8ea69e;
   --accent: #9ce0cf;
+  --accent-color: var(--accent);
+  --border-color: var(--line);
+  --text-muted: var(--muted);
+  --focus-ring: rgba(156, 224, 207, 0.42);
 }
 
 :root[data-accessibility="enabled"][data-contrast="light"] {
+  color-scheme: light;
   --bg: #ffffff;
   --surface: #ffffff;
   --surface-soft: #f2f2f2;
   --text: #000000;
+  --heading: #000000;
+  --text-soft: #111111;
   --muted: #222222;
+  --text-subtle: #333333;
+  --value-text: #000000;
   --line: #000000;
   --mint: #eeeeee;
   --peach: #eeeeee;
@@ -157,17 +174,26 @@
   --danger-hover: #222222;
   --danger-soft: #eeeeee;
   --warning-soft: #eeeeee;
+  --accent-color: var(--accent);
+  --border-color: var(--line);
+  --text-muted: var(--muted);
+  --focus-ring: rgba(0, 0, 0, 0.42);
   --overlay: rgba(0, 0, 0, 0.52);
   --dialog-shadow: none;
   --shadow: none;
 }
 
 :root[data-accessibility="enabled"][data-contrast="dark"] {
+  color-scheme: dark;
   --bg: #000000;
   --surface: #000000;
   --surface-soft: #121212;
   --text: #ffffff;
+  --heading: #ffffff;
+  --text-soft: #ffffff;
   --muted: #f0f0f0;
+  --text-subtle: #d8d8d8;
+  --value-text: #ffffff;
   --line: #ffffff;
   --mint: #1f1f1f;
   --peach: #1f1f1f;
@@ -182,17 +208,26 @@
   --danger-hover: #dddddd;
   --danger-soft: #1f1f1f;
   --warning-soft: #1f1f1f;
+  --accent-color: var(--accent);
+  --border-color: var(--line);
+  --text-muted: var(--muted);
+  --focus-ring: rgba(255, 255, 255, 0.46);
   --overlay: rgba(255, 255, 255, 0.32);
   --dialog-shadow: none;
   --shadow: none;
 }
 
 :root[data-accessibility="enabled"][data-contrast="blue"] {
+  color-scheme: light;
   --bg: #d9ecff;
   --surface: #edf7ff;
   --surface-soft: #cfe7ff;
   --text: #002b5c;
+  --heading: #002b5c;
+  --text-soft: #003f85;
   --muted: #003f85;
+  --text-subtle: #104f91;
+  --value-text: #002b5c;
   --line: #002b5c;
   --mint: #b8dcff;
   --peach: #b8dcff;
@@ -207,17 +242,26 @@
   --danger-hover: #004a99;
   --danger-soft: #b8dcff;
   --warning-soft: #b8dcff;
+  --accent-color: var(--accent);
+  --border-color: var(--line);
+  --text-muted: var(--muted);
+  --focus-ring: rgba(0, 43, 92, 0.42);
   --overlay: rgba(0, 43, 92, 0.42);
   --dialog-shadow: none;
   --shadow: none;
 }
 
 :root[data-contrast="mono"] {
+  color-scheme: light;
   --bg: #ffffff;
   --surface: #ffffff;
   --surface-soft: #f2f2f2;
   --text: #000000;
+  --heading: #000000;
+  --text-soft: #111111;
   --muted: #222222;
+  --text-subtle: #333333;
+  --value-text: #000000;
   --line: #000000;
   --mint: #eeeeee;
   --peach: #eeeeee;
@@ -232,17 +276,26 @@
   --danger-hover: #222222;
   --danger-soft: #eeeeee;
   --warning-soft: #eeeeee;
+  --accent-color: var(--accent);
+  --border-color: var(--line);
+  --text-muted: var(--muted);
+  --focus-ring: rgba(0, 0, 0, 0.42);
   --overlay: rgba(0, 0, 0, 0.52);
   --dialog-shadow: none;
   --shadow: none;
 }
 
 :root[data-theme="dark"][data-contrast="mono"] {
+  color-scheme: dark;
   --bg: #000000;
   --surface: #000000;
   --surface-soft: #121212;
   --text: #ffffff;
+  --heading: #ffffff;
+  --text-soft: #ffffff;
   --muted: #f0f0f0;
+  --text-subtle: #d8d8d8;
+  --value-text: #ffffff;
   --line: #ffffff;
   --mint: #1f1f1f;
   --peach: #1f1f1f;
@@ -257,6 +310,10 @@
   --danger-hover: #dddddd;
   --danger-soft: #1f1f1f;
   --warning-soft: #1f1f1f;
+  --accent-color: var(--accent);
+  --border-color: var(--line);
+  --text-muted: var(--muted);
+  --focus-ring: rgba(255, 255, 255, 0.46);
   --overlay: rgba(255, 255, 255, 0.32);
   --dialog-shadow: none;
   --shadow: none;
@@ -555,6 +612,23 @@ input,
 textarea,
 select {
   font: inherit;
+}
+
+.accessibility-toolbar .accessibility-tool-button.font-size-1 {
+  font-size: 1rem;
+}
+
+.accessibility-toolbar .accessibility-tool-button.font-size-2 {
+  font-size: 1.28rem;
+}
+
+.accessibility-toolbar .accessibility-tool-button.font-size-3 {
+  font-size: 1.58rem;
+}
+
+.accessibility-font-sample {
+  display: block;
+  line-height: 1;
 }
 
 .app-shell {

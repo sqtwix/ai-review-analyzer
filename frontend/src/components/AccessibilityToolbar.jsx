@@ -7,9 +7,9 @@ const defaultAccessibility = {
 };
 
 const fontOptions = [
-  { value: "large", label: "A", title: "Крупный шрифт", ariaLabel: "Выбрать крупный шрифт" },
-  { value: "xlarge", label: "A", title: "Очень крупный шрифт", ariaLabel: "Выбрать очень крупный шрифт" },
-  { value: "xxlarge", label: "A", title: "Максимальный шрифт", ariaLabel: "Выбрать максимальный шрифт" },
+  { value: "large", label: "А", title: "Крупный шрифт", ariaLabel: "Выбрать крупный шрифт" },
+  { value: "xlarge", label: "А", title: "Очень крупный шрифт", ariaLabel: "Выбрать очень крупный шрифт" },
+  { value: "xxlarge", label: "А", title: "Максимальный шрифт", ariaLabel: "Выбрать максимальный шрифт" },
 ];
 
 const colorOptions = [
@@ -69,7 +69,7 @@ export function AccessibilityToolbar({ settings, onSettingsChange }) {
               title={option.title}
               onClick={() => updateAccessibility({ fontSize: option.value })}
             >
-              {option.label}
+              <span className="accessibility-font-sample" aria-hidden="true">{option.label}</span>
             </button>
           ))}
         </div>
