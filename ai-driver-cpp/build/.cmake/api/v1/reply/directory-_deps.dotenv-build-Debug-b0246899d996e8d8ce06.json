@@ -1,0 +1,99 @@
+{
+	"backtraceGraph" : 
+	{
+		"commands" : 
+		[
+			"install"
+		],
+		"files" : 
+		[
+			"build/_deps/dotenv-src/CMakeLists.txt"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 57,
+				"parent" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 61,
+				"parent" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 65,
+				"parent" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 71,
+				"parent" : 0
+			}
+		]
+	},
+	"installers" : 
+	[
+		{
+			"backtrace" : 1,
+			"component" : "Unspecified",
+			"destination" : "include/laserpants/dotenv-0.9.3",
+			"paths" : 
+			[
+				"build/_deps/dotenv-build/laserpants_dotenv-config.h"
+			],
+			"type" : "file"
+		},
+		{
+			"backtrace" : 2,
+			"component" : "Unspecified",
+			"destination" : "include/laserpants/dotenv-0.9.3",
+			"paths" : 
+			[
+				"build/_deps/dotenv-src/include/laserpants/dotenv/dotenv.h"
+			],
+			"type" : "file"
+		},
+		{
+			"backtrace" : 3,
+			"component" : "Unspecified",
+			"destination" : "lib/cmake/laserpants_dotenv",
+			"paths" : 
+			[
+				"build/_deps/dotenv-src/cmake/laserpants_dotenv-config.cmake"
+			],
+			"type" : "file"
+		},
+		{
+			"backtrace" : 4,
+			"component" : "Unspecified",
+			"destination" : "lib/cmake/laserpants_dotenv",
+			"exportName" : "dotenv",
+			"exportTargets" : 
+			[
+				{
+					"id" : "dotenv::@716e82f5030071b30bc8",
+					"index" : 0
+				}
+			],
+			"paths" : 
+			[
+				"_deps/dotenv-build/CMakeFiles/Export/f4b2b96f92992dd058d0b642fed2fee9/dotenv.cmake"
+			],
+			"type" : "export"
+		}
+	],
+	"paths" : 
+	{
+		"build" : "_deps/dotenv-build",
+		"source" : "build/_deps/dotenv-src"
+	}
+}

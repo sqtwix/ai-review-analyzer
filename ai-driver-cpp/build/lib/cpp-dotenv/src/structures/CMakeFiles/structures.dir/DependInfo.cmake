@@ -1,0 +1,27 @@
+
+# Consider dependencies only in project.
+set(CMAKE_DEPENDS_IN_PROJECT_ONLY OFF)
+
+# The set of languages for which implicit dependencies are needed:
+set(CMAKE_DEPENDS_LANGUAGES
+  )
+
+# The set of dependency files which are needed:
+set(CMAKE_DEPENDS_DEPENDENCY_FILES
+  "/home/shurik/Documents/Projects/ai-review-analyzer/ai-driver-cpp/lib/cpp-dotenv/src/structures/ReferencesTable.cpp" "lib/cpp-dotenv/src/structures/CMakeFiles/structures.dir/ReferencesTable.cpp.o" "gcc" "lib/cpp-dotenv/src/structures/CMakeFiles/structures.dir/ReferencesTable.cpp.o.d"
+  "/home/shurik/Documents/Projects/ai-review-analyzer/ai-driver-cpp/lib/cpp-dotenv/src/structures/ReplaceStack.cpp" "lib/cpp-dotenv/src/structures/CMakeFiles/structures.dir/ReplaceStack.cpp.o" "gcc" "lib/cpp-dotenv/src/structures/CMakeFiles/structures.dir/ReplaceStack.cpp.o.d"
+  "/home/shurik/Documents/Projects/ai-review-analyzer/ai-driver-cpp/lib/cpp-dotenv/src/structures/SymbolsTable.cpp" "lib/cpp-dotenv/src/structures/CMakeFiles/structures.dir/SymbolsTable.cpp.o" "gcc" "lib/cpp-dotenv/src/structures/CMakeFiles/structures.dir/SymbolsTable.cpp.o.d"
+  "/home/shurik/Documents/Projects/ai-review-analyzer/ai-driver-cpp/lib/cpp-dotenv/src/structures/TreeDecorations.cpp" "lib/cpp-dotenv/src/structures/CMakeFiles/structures.dir/TreeDecorations.cpp.o" "gcc" "lib/cpp-dotenv/src/structures/CMakeFiles/structures.dir/TreeDecorations.cpp.o.d"
+  "" "lib/cpp-dotenv/src/structures/libstructures.so" "gcc" "lib/cpp-dotenv/src/structures/CMakeFiles/structures.dir/link.d"
+  )
+
+# Targets to which this target links which contain Fortran sources.
+set(CMAKE_Fortran_TARGET_LINKED_INFO_FILES
+  )
+
+# Targets to which this target links which contain Fortran sources.
+set(CMAKE_Fortran_TARGET_FORWARD_LINKED_INFO_FILES
+  )
+
+# Fortran module output directory.
+set(CMAKE_Fortran_TARGET_MODULE_DIR "")

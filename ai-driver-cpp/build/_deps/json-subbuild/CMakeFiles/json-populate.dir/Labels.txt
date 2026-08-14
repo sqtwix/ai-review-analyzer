@@ -1,0 +1,14 @@
+# Target labels
+ json-populate
+# Source files and their labels
+/home/shurik/Documents/Projects/ai-review-analyzer/ai-driver-cpp/build/_deps/json-subbuild/CMakeFiles/json-populate
+/home/shurik/Documents/Projects/ai-review-analyzer/ai-driver-cpp/build/_deps/json-subbuild/CMakeFiles/json-populate.rule
+/home/shurik/Documents/Projects/ai-review-analyzer/ai-driver-cpp/build/_deps/json-subbuild/CMakeFiles/json-populate-complete.rule
+/home/shurik/Documents/Projects/ai-review-analyzer/ai-driver-cpp/build/_deps/json-subbuild/json-populate-prefix/src/json-populate-stamp/json-populate-build.rule
+/home/shurik/Documents/Projects/ai-review-analyzer/ai-driver-cpp/build/_deps/json-subbuild/json-populate-prefix/src/json-populate-stamp/json-populate-configure.rule
+/home/shurik/Documents/Projects/ai-review-analyzer/ai-driver-cpp/build/_deps/json-subbuild/json-populate-prefix/src/json-populate-stamp/json-populate-download.rule
+/home/shurik/Documents/Projects/ai-review-analyzer/ai-driver-cpp/build/_deps/json-subbuild/json-populate-prefix/src/json-populate-stamp/json-populate-install.rule
+/home/shurik/Documents/Projects/ai-review-analyzer/ai-driver-cpp/build/_deps/json-subbuild/json-populate-prefix/src/json-populate-stamp/json-populate-mkdir.rule
+/home/shurik/Documents/Projects/ai-review-analyzer/ai-driver-cpp/build/_deps/json-subbuild/json-populate-prefix/src/json-populate-stamp/json-populate-patch.rule
+/home/shurik/Documents/Projects/ai-review-analyzer/ai-driver-cpp/build/_deps/json-subbuild/json-populate-prefix/src/json-populate-stamp/json-populate-test.rule
+/home/shurik/Documents/Projects/ai-review-analyzer/ai-driver-cpp/build/_deps/json-subbuild/json-populate-prefix/src/json-populate-stamp/json-populate-update.rule

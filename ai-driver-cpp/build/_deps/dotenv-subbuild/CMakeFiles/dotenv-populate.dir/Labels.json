@@ -1,0 +1,46 @@
+{
+	"sources" : 
+	[
+		{
+			"file" : "/home/shurik/Documents/Projects/ai-review-analyzer/ai-driver-cpp/build/_deps/dotenv-subbuild/CMakeFiles/dotenv-populate"
+		},
+		{
+			"file" : "/home/shurik/Documents/Projects/ai-review-analyzer/ai-driver-cpp/build/_deps/dotenv-subbuild/CMakeFiles/dotenv-populate.rule"
+		},
+		{
+			"file" : "/home/shurik/Documents/Projects/ai-review-analyzer/ai-driver-cpp/build/_deps/dotenv-subbuild/CMakeFiles/dotenv-populate-complete.rule"
+		},
+		{
+			"file" : "/home/shurik/Documents/Projects/ai-review-analyzer/ai-driver-cpp/build/_deps/dotenv-subbuild/dotenv-populate-prefix/src/dotenv-populate-stamp/dotenv-populate-build.rule"
+		},
+		{
+			"file" : "/home/shurik/Documents/Projects/ai-review-analyzer/ai-driver-cpp/build/_deps/dotenv-subbuild/dotenv-populate-prefix/src/dotenv-populate-stamp/dotenv-populate-configure.rule"
+		},
+		{
+			"file" : "/home/shurik/Documents/Projects/ai-review-analyzer/ai-driver-cpp/build/_deps/dotenv-subbuild/dotenv-populate-prefix/src/dotenv-populate-stamp/dotenv-populate-download.rule"
+		},
+		{
+			"file" : "/home/shurik/Documents/Projects/ai-review-analyzer/ai-driver-cpp/build/_deps/dotenv-subbuild/dotenv-populate-prefix/src/dotenv-populate-stamp/dotenv-populate-install.rule"
+		},
+		{
+			"file" : "/home/shurik/Documents/Projects/ai-review-analyzer/ai-driver-cpp/build/_deps/dotenv-subbuild/dotenv-populate-prefix/src/dotenv-populate-stamp/dotenv-populate-mkdir.rule"
+		},
+		{
+			"file" : "/home/shurik/Documents/Projects/ai-review-analyzer/ai-driver-cpp/build/_deps/dotenv-subbuild/dotenv-populate-prefix/src/dotenv-populate-stamp/dotenv-populate-patch.rule"
+		},
+		{
+			"file" : "/home/shurik/Documents/Projects/ai-review-analyzer/ai-driver-cpp/build/_deps/dotenv-subbuild/dotenv-populate-prefix/src/dotenv-populate-stamp/dotenv-populate-test.rule"
+		},
+		{
+			"file" : "/home/shurik/Documents/Projects/ai-review-analyzer/ai-driver-cpp/build/_deps/dotenv-subbuild/dotenv-populate-prefix/src/dotenv-populate-stamp/dotenv-populate-update.rule"
+		}
+	],
+	"target" : 
+	{
+		"labels" : 
+		[
+			"dotenv-populate"
+		],
+		"name" : "dotenv-populate"
+	}
+}

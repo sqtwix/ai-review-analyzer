@@ -1,0 +1,13 @@
+/home/shurik/Documents/Projects/ai-review-analyzer/ai-driver-cpp/build/CMakeFiles/AiDriverService.dir
+/home/shurik/Documents/Projects/ai-review-analyzer/ai-driver-cpp/build/CMakeFiles/edit_cache.dir
+/home/shurik/Documents/Projects/ai-review-analyzer/ai-driver-cpp/build/CMakeFiles/rebuild_cache.dir
+/home/shurik/Documents/Projects/ai-review-analyzer/ai-driver-cpp/build/CMakeFiles/list_install_components.dir
+/home/shurik/Documents/Projects/ai-review-analyzer/ai-driver-cpp/build/CMakeFiles/install.dir
+/home/shurik/Documents/Projects/ai-review-analyzer/ai-driver-cpp/build/CMakeFiles/install/local.dir
+/home/shurik/Documents/Projects/ai-review-analyzer/ai-driver-cpp/build/CMakeFiles/install/strip.dir
+/home/shurik/Documents/Projects/ai-review-analyzer/ai-driver-cpp/build/_deps/dotenv-build/CMakeFiles/edit_cache.dir
+/home/shurik/Documents/Projects/ai-review-analyzer/ai-driver-cpp/build/_deps/dotenv-build/CMakeFiles/rebuild_cache.dir
+/home/shurik/Documents/Projects/ai-review-analyzer/ai-driver-cpp/build/_deps/dotenv-build/CMakeFiles/list_install_components.dir
+/home/shurik/Documents/Projects/ai-review-analyzer/ai-driver-cpp/build/_deps/dotenv-build/CMakeFiles/install.dir
+/home/shurik/Documents/Projects/ai-review-analyzer/ai-driver-cpp/build/_deps/dotenv-build/CMakeFiles/install/local.dir
+/home/shurik/Documents/Projects/ai-review-analyzer/ai-driver-cpp/build/_deps/dotenv-build/CMakeFiles/install/strip.dir

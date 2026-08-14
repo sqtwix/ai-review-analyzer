@@ -1,0 +1,1 @@
+/usr/bin/clang++-19 -fPIC -g -Xlinker --dependency-file=CMakeFiles/environ.dir/link.d -shared -Wl,-soname,libenviron.so -o libenviron.so CMakeFiles/environ.dir/environ.cpp.o

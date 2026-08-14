@@ -1,0 +1,2 @@
+/usr/bin/llvm-ar-19 qc libtests_helpers.a CMakeFiles/tests_helpers.dir/fd_utils.cc.o
+/usr/bin/llvm-ranlib-19 libtests_helpers.a

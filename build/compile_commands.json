@@ -1,0 +1,32 @@
+[
+{
+  "directory": "/home/shurik/Documents/Projects/ai-review-analyzer/build",
+  "command": "/usr/bin/clang++-19 -DBOOST_CONTAINER_DYN_LINK -DBOOST_CONTAINER_NO_LIB -DBOOST_JSON_DYN_LINK -DBOOST_JSON_NO_LIB -I/home/shurik/Documents/Projects/ai-review-analyzer/build/_deps/dotenv-src/include/laserpants/dotenv -g -o CMakeFiles/AiDriverService.dir/main.cpp.o -c /home/shurik/Documents/Projects/ai-review-analyzer/ai-driver-cpp/main.cpp",
+  "file": "/home/shurik/Documents/Projects/ai-review-analyzer/ai-driver-cpp/main.cpp",
+  "output": "CMakeFiles/AiDriverService.dir/main.cpp.o"
+},
+{
+  "directory": "/home/shurik/Documents/Projects/ai-review-analyzer/build",
+  "command": "/usr/bin/clang++-19 -DBOOST_CONTAINER_DYN_LINK -DBOOST_CONTAINER_NO_LIB -DBOOST_JSON_DYN_LINK -DBOOST_JSON_NO_LIB -I/home/shurik/Documents/Projects/ai-review-analyzer/build/_deps/dotenv-src/include/laserpants/dotenv -g -o CMakeFiles/AiDriverService.dir/src/Backend/AgentClient.cpp.o -c /home/shurik/Documents/Projects/ai-review-analyzer/ai-driver-cpp/src/Backend/AgentClient.cpp",
+  "file": "/home/shurik/Documents/Projects/ai-review-analyzer/ai-driver-cpp/src/Backend/AgentClient.cpp",
+  "output": "CMakeFiles/AiDriverService.dir/src/Backend/AgentClient.cpp.o"
+},
+{
+  "directory": "/home/shurik/Documents/Projects/ai-review-analyzer/build",
+  "command": "/usr/bin/clang++-19 -DBOOST_CONTAINER_DYN_LINK -DBOOST_CONTAINER_NO_LIB -DBOOST_JSON_DYN_LINK -DBOOST_JSON_NO_LIB -I/home/shurik/Documents/Projects/ai-review-analyzer/build/_deps/dotenv-src/include/laserpants/dotenv -g -o CMakeFiles/AiDriverService.dir/src/Backend/AgentFactory.cpp.o -c /home/shurik/Documents/Projects/ai-review-analyzer/ai-driver-cpp/src/Backend/AgentFactory.cpp",
+  "file": "/home/shurik/Documents/Projects/ai-review-analyzer/ai-driver-cpp/src/Backend/AgentFactory.cpp",
+  "output": "CMakeFiles/AiDriverService.dir/src/Backend/AgentFactory.cpp.o"
+},
+{
+  "directory": "/home/shurik/Documents/Projects/ai-review-analyzer/build",
+  "command": "/usr/bin/clang++-19 -DBOOST_CONTAINER_DYN_LINK -DBOOST_CONTAINER_NO_LIB -DBOOST_JSON_DYN_LINK -DBOOST_JSON_NO_LIB -I/home/shurik/Documents/Projects/ai-review-analyzer/build/_deps/dotenv-src/include/laserpants/dotenv -g -o CMakeFiles/AiDriverService.dir/src/Backend/AgentManager.cpp.o -c /home/shurik/Documents/Projects/ai-review-analyzer/ai-driver-cpp/src/Backend/AgentManager.cpp",
+  "file": "/home/shurik/Documents/Projects/ai-review-analyzer/ai-driver-cpp/src/Backend/AgentManager.cpp",
+  "output": "CMakeFiles/AiDriverService.dir/src/Backend/AgentManager.cpp.o"
+},
+{
+  "directory": "/home/shurik/Documents/Projects/ai-review-analyzer/build",
+  "command": "/usr/bin/clang++-19 -DBOOST_CONTAINER_DYN_LINK -DBOOST_CONTAINER_NO_LIB -DBOOST_JSON_DYN_LINK -DBOOST_JSON_NO_LIB -I/home/shurik/Documents/Projects/ai-review-analyzer/build/_deps/dotenv-src/include/laserpants/dotenv -g -o CMakeFiles/AiDriverService.dir/src/Controller/AiDriverController.cpp.o -c /home/shurik/Documents/Projects/ai-review-analyzer/ai-driver-cpp/src/Controller/AiDriverController.cpp",
+  "file": "/home/shurik/Documents/Projects/ai-review-analyzer/ai-driver-cpp/src/Controller/AiDriverController.cpp",
+  "output": "CMakeFiles/AiDriverService.dir/src/Controller/AiDriverController.cpp.o"
+}
+]

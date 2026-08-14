@@ -1,0 +1,46 @@
+{
+	"sources" : 
+	[
+		{
+			"file" : "/home/shurik/Documents/Projects/ai-review-analyzer/ai-driver-cpp/build/_deps/dotenv_cpp-subbuild/CMakeFiles/dotenv_cpp-populate"
+		},
+		{
+			"file" : "/home/shurik/Documents/Projects/ai-review-analyzer/ai-driver-cpp/build/_deps/dotenv_cpp-subbuild/CMakeFiles/dotenv_cpp-populate.rule"
+		},
+		{
+			"file" : "/home/shurik/Documents/Projects/ai-review-analyzer/ai-driver-cpp/build/_deps/dotenv_cpp-subbuild/CMakeFiles/dotenv_cpp-populate-complete.rule"
+		},
+		{
+			"file" : "/home/shurik/Documents/Projects/ai-review-analyzer/ai-driver-cpp/build/_deps/dotenv_cpp-subbuild/dotenv_cpp-populate-prefix/src/dotenv_cpp-populate-stamp/dotenv_cpp-populate-build.rule"
+		},
+		{
+			"file" : "/home/shurik/Documents/Projects/ai-review-analyzer/ai-driver-cpp/build/_deps/dotenv_cpp-subbuild/dotenv_cpp-populate-prefix/src/dotenv_cpp-populate-stamp/dotenv_cpp-populate-configure.rule"
+		},
+		{
+			"file" : "/home/shurik/Documents/Projects/ai-review-analyzer/ai-driver-cpp/build/_deps/dotenv_cpp-subbuild/dotenv_cpp-populate-prefix/src/dotenv_cpp-populate-stamp/dotenv_cpp-populate-download.rule"
+		},
+		{
+			"file" : "/home/shurik/Documents/Projects/ai-review-analyzer/ai-driver-cpp/build/_deps/dotenv_cpp-subbuild/dotenv_cpp-populate-prefix/src/dotenv_cpp-populate-stamp/dotenv_cpp-populate-install.rule"
+		},
+		{
+			"file" : "/home/shurik/Documents/Projects/ai-review-analyzer/ai-driver-cpp/build/_deps/dotenv_cpp-subbuild/dotenv_cpp-populate-prefix/src/dotenv_cpp-populate-stamp/dotenv_cpp-populate-mkdir.rule"
+		},
+		{
+			"file" : "/home/shurik/Documents/Projects/ai-review-analyzer/ai-driver-cpp/build/_deps/dotenv_cpp-subbuild/dotenv_cpp-populate-prefix/src/dotenv_cpp-populate-stamp/dotenv_cpp-populate-patch.rule"
+		},
+		{
+			"file" : "/home/shurik/Documents/Projects/ai-review-analyzer/ai-driver-cpp/build/_deps/dotenv_cpp-subbuild/dotenv_cpp-populate-prefix/src/dotenv_cpp-populate-stamp/dotenv_cpp-populate-test.rule"
+		},
+		{
+			"file" : "/home/shurik/Documents/Projects/ai-review-analyzer/ai-driver-cpp/build/_deps/dotenv_cpp-subbuild/dotenv_cpp-populate-prefix/src/dotenv_cpp-populate-stamp/dotenv_cpp-populate-update.rule"
+		}
+	],
+	"target" : 
+	{
+		"labels" : 
+		[
+			"dotenv_cpp-populate"
+		],
+		"name" : "dotenv_cpp-populate"
+	}
+}
