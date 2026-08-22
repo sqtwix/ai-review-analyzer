@@ -5,7 +5,7 @@ namespace ApiCore.Services;
 
 public class ValidationService
 {
-    private readonly string[] _allowedExtensions = { ".csv", ".json", ".xlsx", ".xls" };
+    private readonly string[] _allowedExtensions = { ".csv", ".xlsx", ".xls" };
 
     private readonly string[][] _requiredKeywordGroups = 
     {

@@ -6,14 +6,14 @@ Codex desktop does not expose system `node`/`npm` in this workspace. Use the bun
 
 ```bash
 PATH=/Users/maxbond/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:$PATH \
-VITE_OFFLINE_MODE=true ./node_modules/.bin/vite --host 127.0.0.1 --port 5173
+VITE_ENABLE_DEMO_MODE=true ./node_modules/.bin/vite --host 127.0.0.1 --port 5173
 ```
 
 Production build smoke:
 
 ```bash
 PATH=/Users/maxbond/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:$PATH \
-VITE_OFFLINE_MODE=true ./node_modules/.bin/vite build
+./node_modules/.bin/vite build
 ```
 
 Lint smoke:
@@ -45,7 +45,7 @@ The frontend review is tracked as ten input units:
 Run:
 
 ```bash
-VITE_OFFLINE_MODE=true npm run dev -- --host 127.0.0.1
+VITE_ENABLE_DEMO_MODE=true npm run dev -- --host 127.0.0.1
 ```
 
 Checked flows:

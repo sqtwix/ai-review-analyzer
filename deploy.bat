@@ -23,7 +23,8 @@ if not exist ".env" (
             echo JWT_EXPIRY_MINUTES=1440
             echo DEEPSEEK_API_KEY=
             echo SBERGPT_API_KEY=
-            echo VITE_OFFLINE_MODE=true
+            echo VITE_OFFLINE_MODE=false
+            echo VITE_ENABLE_DEMO_MODE=false
         ) > .env
     )
 ) else (
@@ -42,11 +43,12 @@ if not exist "%MODEL_PATH%" (
 )
 
 echo --> Starting Docker containers...
-docker compose down -v
+docker compose down
 docker compose up --build -d
 
 echo ==================================================
 echo DEPLOYMENT SUCCESSFUL!
 echo Open application in browser: http://localhost/
+echo Data volumes were preserved. To delete all data intentionally, run: docker compose down -v
 echo ==================================================
 pause

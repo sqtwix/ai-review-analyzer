@@ -8,6 +8,7 @@ import {
   getAnalysisHistory,
   renameAnalysisReport,
   isOfflineMode,
+  isLegacyOfflineModeIgnored,
   seedOfflineReports,
   createOfflineReport,
   updateOfflineReport,
@@ -443,7 +444,7 @@ function App() {
       title: apiReport.title || `Анализ опроса за период ${courseAnalysis.period || ""}`,
       status: apiReport.status,
       error: apiReport.error,
-      source: apiReport.source,
+      source: apiReport.source || "user",
       isArchived: Boolean(apiReport.isArchived),
       createdAt: apiReport.createdAt,
       result: apiReport.result
@@ -754,7 +755,7 @@ function App() {
       return {
         status: "idle",
         title: "Файлы не выбраны",
-        message: "Выберите Excel, CSV или ZIP-архив с анкетами.",
+        message: "Выберите Excel, CSV или ZIP-архив с анкетами. JSON не поддерживается как входной формат.",
       };
     }
 
@@ -783,7 +784,7 @@ function App() {
     return {
       status: "pending",
       title: "Базовая проверка пройдена",
-      message: "Расширения и размер файлов корректны. Наличие обязательных колонок проверит сервер при запуске анализа.",
+      message: "Расширения и размер файлов корректны. Наличие обязательных колонок, пропусков и ошибочных оценок проверит сервер при запуске анализа.",
     };
   }, [selectedResponseFiles]);
 
@@ -915,8 +916,13 @@ function App() {
           }
         } catch (err) {
           console.error("Polling error:", err);
-          // Retry polling in case of transient network issues
-          setTimeout(poll, 3000);
+          clearInterval(intervalRef.current);
+          setIsAnalyzing(false);
+          notify({
+            type: "error",
+            title: "Backend недоступен",
+            message: "Не удалось получить статус анализа. Готовый отчет не создан, чтобы не подменять реальные данные mock-результатом.",
+          });
         }
       };
 
@@ -1206,7 +1212,13 @@ function App() {
               <section className="panel">
                 <p className="eyebrow">Новый анализ</p>
                 <h2>Загрузите файлы опросов слушателей</h2>
-                <p className="muted">Поддерживаются файлы Excel (.xlsx), CSV или ZIP-архивы с таблицами опросов. Если в файлах не хватает колонок или они повреждены, система сообщит об этом до запуска анализа.</p>
+                <p className="muted">Поддерживаются файлы Excel (.xlsx), CSV или ZIP-архивы с таблицами опросов. JSON не принимается как входной формат. Если в файлах не хватает колонок или они повреждены, система сообщит об этом до запуска анализа.</p>
+                {isLegacyOfflineModeIgnored && (
+                  <div className="validation-box validation-box-pending production-guard-box">
+                    <b>Production-режим подключен к backend</b>
+                    <p>Переменная VITE_OFFLINE_MODE игнорируется в production. Для отдельной демо-сборки используйте VITE_ENABLE_DEMO_MODE=true.</p>
+                  </div>
+                )}
                 <button type="button" className="text-link-button file-guide-trigger" onClick={() => setShowFileGuide(true)}>
                   Как подготовить файл
                 </button>
@@ -1402,8 +1414,8 @@ function App() {
                   <p>Эталон и файлы ответов прошли базовую проверку.</p>
                 </div>
                 <div id="step-2" className={getTimelineStepClass(1, analysisProgress)}>
-                  <b>Данные приведены к JSON</b>
-                  <p>{isOfflineMode ? "Демо-режим подготовил локальную структуру отчета." : "Данные подготовлены для анализа."}</p>
+                  <b>Данные проверены сервером</b>
+                  <p>{isOfflineMode ? "Демо-режим подготовил локальную структуру отчета." : "Сервер проверяет формат, обязательные колонки, пропуски и ошибочные оценки."}</p>
                 </div>
                 <div id="step-3" className={getTimelineStepClass(2, analysisProgress)}>
                   <b>ИИ-агенты анализируют паттерны</b>
@@ -1411,7 +1423,7 @@ function App() {
                 </div>
                 <div id="step-4" className={getTimelineStepClass(3, analysisProgress)}>
                   <b>Формируется отчёт</b>
-                  <p>{isOfflineMode ? "JSON будет доступен локально после завершения." : "Excel, JSON и PDF будут готовы после завершения."}</p>
+                  <p>{isOfflineMode ? "Демо-отчет будет доступен локально после завершения." : "Отчет и выгрузки будут готовы после завершения."}</p>
                 </div>
               </div>
             </div>

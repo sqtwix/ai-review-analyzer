@@ -15,6 +15,26 @@ import statistics
 
 logger = logging.getLogger(__name__)
 
+COMMENT_FIELD_LABELS = {
+    "motivation_comment": "Почему слушатель решил пройти программу",
+    "usefulness_comment": "Актуальные темы и причины полезности",
+    "applied_skills_comment": "Навыки, применимые в работе",
+    "expected_effect": "Ожидаемый эффект от обучения",
+    "expected_effect_reason": "Причины ожидаемого эффекта",
+    "topics_to_exclude_comment": "Темы к исключению",
+    "topics_to_add_comment": "Темы к добавлению",
+    "practicality_comment": "Комментарий о практической части",
+    "practice_tuning_comment": "Что требует большей практической настройки",
+    "practice_change_comment": "Что изменить в организации практики",
+    "accessibility_comment": "Комментарий о доступности материала",
+    "logic_sequence_reason": "Пояснение по логике и последовательности",
+    "ask_questions_comment": "Возможность задать вопросы",
+    "ask_questions_reason": "Пояснение по вопросам",
+    "detachment_reason_comment": "Причины отстраненности",
+    "involvement_comment": "Что повысило бы вовлеченность",
+    "interaction_comment": "Комментарий о взаимодействии с КУ",
+}
+
 class AgentController:
     def __init__(self, agent_manager: AgentManager):
         self.agent_manager = agent_manager
@@ -104,36 +124,51 @@ class AgentController:
 
             for resp_idx, resp in enumerate(course.responses):
                 for field in ["usefulness_score", "practicality_score", "accessibility_score", "interaction_score"]:
-                    val = getattr(resp, field, 0.0)
-                    if val is None or float(val) < 1.0 or float(val) > 10.0:
-                        try:
-                            num_val = float(val) if val is not None else 8.0
-                        except Exception:
-                            num_val = 8.0
-                        if num_val < 1.0 or num_val > 10.0 or num_val == 0.0:
-                            num_val = 8.0
-                        setattr(resp, field, num_val)
+                    val = getattr(resp, field, None)
+                    if val is None:
+                        continue
+                    try:
+                        num_val = float(val)
+                    except Exception:
+                        setattr(resp, field, None)
+                        continue
+                    if num_val < 1.0 or num_val > 10.0:
+                        setattr(resp, field, None)
 
         if errors:
             raise HTTPException(status_code=400, detail="; ".join(errors))
 
         return input_data
 
+    def _valid_scores(self, scores) -> list[float]:
+        valid_scores = []
+        for score in scores:
+            if score is None:
+                continue
+            try:
+                numeric_score = float(score)
+            except Exception:
+                continue
+            if 1.0 <= numeric_score <= 10.0:
+                valid_scores.append(numeric_score)
+        return valid_scores
+
     def _calculate_stats_programmatic(self, scores) -> dict:
-        if not scores:
+        valid_scores = self._valid_scores(scores)
+        if not valid_scores:
             return {
                 "average": 0.0, "median": 0.0, "std_dev": 0.0,
                 "distribution": {"low": 0.0, "mid": 0.0, "high": 0.0}
             }
-        avg = sum(scores) / len(scores)
-        med = statistics.median(scores)
-        std = statistics.stdev(scores) if len(scores) > 1 else 0.0
+        avg = sum(valid_scores) / len(valid_scores)
+        med = statistics.median(valid_scores)
+        std = statistics.stdev(valid_scores) if len(valid_scores) > 1 else 0.0
         
-        low_cnt = sum(1 for s in scores if s <= 3)
-        mid_cnt = sum(1 for s in scores if 4 <= s <= 7)
-        high_cnt = sum(1 for s in scores if s >= 8)
+        low_cnt = sum(1 for s in valid_scores if s <= 3)
+        mid_cnt = sum(1 for s in valid_scores if 4 <= s <= 7)
+        high_cnt = sum(1 for s in valid_scores if s >= 8)
         
-        total = len(scores)
+        total = len(valid_scores)
         return {
             "average": round(avg, 2),
             "median": round(med, 1),
@@ -146,8 +181,22 @@ class AgentController:
         }
 
     def _calculate_correlation_programmatic(self, x, y) -> float:
-        if len(x) < 2 or len(x) != len(y):
+        pairs = []
+        for xi, yi in zip(x, y):
+            if xi is None or yi is None:
+                continue
+            try:
+                x_num = float(xi)
+                y_num = float(yi)
+            except Exception:
+                continue
+            if 1.0 <= x_num <= 10.0 and 1.0 <= y_num <= 10.0:
+                pairs.append((x_num, y_num))
+
+        if len(pairs) < 2:
             return 0.0
+        x = [pair[0] for pair in pairs]
+        y = [pair[1] for pair in pairs]
         mean_x = sum(x) / len(x)
         mean_y = sum(y) / len(y)
         
@@ -159,11 +208,105 @@ class AgentController:
             return 0.0
         return round(num / math.sqrt(den_x * den_y), 2)
 
+    def _build_validation_summary(self, responses) -> dict:
+        valid_count = 0
+        missing_count = 0
+        invalid_count = 0
+
+        for response in responses:
+            issues_by_field = {
+                issue.get("field"): issue.get("status")
+                for issue in (getattr(response, "score_validation_issues", None) or [])
+                if isinstance(issue, dict)
+            }
+            for field in ["usefulness_score", "practicality_score", "accessibility_score", "interaction_score"]:
+                value = getattr(response, field, None)
+                status = issues_by_field.get(field)
+                if status == "missing" or (value is None and status != "invalid"):
+                    missing_count += 1
+                elif status == "invalid":
+                    invalid_count += 1
+                elif value is not None:
+                    valid_count += 1
+
+        total_issues = missing_count + invalid_count
+        return {
+            "valid_count": valid_count,
+            "missing_count": missing_count,
+            "invalid_count": invalid_count,
+            "total_issues": total_issues
+        }
+
+    def _build_score_counts(self, responses) -> dict:
+        counts = {str(score): 0 for score in range(1, 11)}
+        for response in responses:
+            values = self._valid_scores([
+                response.usefulness_score,
+                response.practicality_score,
+                response.accessibility_score,
+                response.interaction_score
+            ])
+            if not values:
+                continue
+            overall_score = int(round(sum(values) / len(values)))
+            overall_score = max(1, min(10, overall_score))
+            counts[str(overall_score)] += 1
+        return counts
+
+    def _build_comment_registry(self, responses) -> list[dict]:
+        total = len(responses)
+        registry = []
+        for field, label in COMMENT_FIELD_LABELS.items():
+            rows = []
+            for index, response in enumerate(responses, start=1):
+                value = getattr(response, field, None)
+                if value and str(value).strip():
+                    rows.append(getattr(response, "student_id", None) or f"row_{index}")
+
+            registry.append({
+                "question_id": field,
+                "label": label,
+                "non_empty_count": len(rows),
+                "coverage": round((len(rows) / total) * 100, 1) if total else 0.0,
+                "rows": rows,
+            })
+        return registry
+
+    def _build_metadata(self, course, fmt_dist) -> dict:
+        preferred_format = max(fmt_dist, key=fmt_dist.get) if fmt_dist else None
+        missing_fields = []
+        if not preferred_format:
+            missing_fields.append("education_form")
+        missing_fields.extend(["teachers", "confirmed_dates"])
+        return {
+            "education_form": preferred_format,
+            "teachers": [],
+            "dates_confirmed": False,
+            "missing_fields": missing_fields
+        }
+
+    def _build_processing_log(self, fallback_used: bool, validation_summary: dict, comment_registry: list[dict]) -> list[dict]:
+        return [
+            {"step": "file_parsing", "status": "completed", "message": "Файлы прочитаны, персональные данные маскированы на уровне api-core."},
+            {"step": "score_validation", "status": "completed", "message": f"Валидных оценок: {validation_summary['valid_count']}; пропусков: {validation_summary['missing_count']}; ошибок: {validation_summary['invalid_count']}."},
+            {"step": "comment_registry", "status": "completed", "message": f"Проверено открытых полей: {len(comment_registry)}; непустые ответы сохранены как ссылки на строки."},
+            {"step": "text_analysis", "status": "skipped" if fallback_used else "completed", "message": "Модель недоступна; качественные выводы не сформированы." if fallback_used else "Качественный анализ выполнен моделью."},
+        ]
+
+    def _build_quality_limitations(self, fallback_used: bool, metadata: dict, comment_registry: list[dict]) -> list[str]:
+        limitations = []
+        if fallback_used:
+            limitations.append("Качественные темы, тональность, цитаты и рекомендации не сформированы, потому что модель недоступна.")
+        if metadata.get("missing_fields"):
+            limitations.append("Общая часть отчета содержит неподтвержденные реквизиты: " + ", ".join(metadata["missing_fields"]) + ".")
+        if len(comment_registry) < 19:
+            limitations.append(f"В текущем контракте найдено {len(comment_registry)} открытых полей; для требования 19 комментариев нужны оставшиеся колонки во входном файле или расширение маппинга.")
+        return limitations
+
     def _generate_programmatic_analysis(self, input_data: AnalysisRequest) -> dict:
         """
-        Программный анализатор в качестве фоллбека. Полностью рассчитывает все статистики,
-        корреляции, должностные категории и форматы, а качественные блоки заполняет
-        реалистичными шаблонами на основе названия курса и оценок.
+        Программный анализатор в качестве фоллбека. Рассчитывает только детерминированные
+        статистики по фактическим валидным оценкам. Качественные выводы не фабрикуются.
         """
         courses_analysis = []
 
@@ -176,11 +319,14 @@ class AgentController:
             if total_responses == 0:
                 continue
 
-            # Количественные массивы
+            # Количественные массивы. None/ошибки исключаются из статистики.
             usefulness = [r.usefulness_score for r in responses]
             practicality = [r.practicality_score for r in responses]
             accessibility = [r.accessibility_score for r in responses]
             interaction = [r.interaction_score for r in responses]
+            validation_summary = self._build_validation_summary(responses)
+            score_counts = self._build_score_counts(responses)
+            comment_registry = self._build_comment_registry(responses)
             
             detached_cnt = sum(1 for r in responses if r.is_detached)
             involved_cnt = total_responses - detached_cnt
@@ -206,6 +352,9 @@ class AgentController:
                 fmt = r.preferred_format or "Не указано"
                 pos_dist[pos] = pos_dist.get(pos, 0) + 1
                 fmt_dist[fmt] = fmt_dist.get(fmt, 0) + 1
+            metadata = self._build_metadata(course, fmt_dist)
+            processing_log = self._build_processing_log(True, validation_summary, comment_registry)
+            quality_limitations = self._build_quality_limitations(True, metadata, comment_registry)
 
             # Pearson Correlation
             corr_matrix = {
@@ -235,120 +384,85 @@ class AgentController:
                 }
             }
 
-            # Тренд
-            trend_data = [
-                {
-                    "period": "Предыдущий период",
-                    "usefulness_avg": max(1.0, round(stats["usefulness"]["average"] - 0.25, 2)),
-                    "practicality_avg": max(1.0, round(stats["practicality"]["average"] - 0.15, 2)),
-                    "accessibility_avg": max(1.0, round(stats["accessibility"]["average"] + 0.05, 2)),
-                    "interaction_avg": max(1.0, round(stats["interaction"]["average"] - 0.05, 2)),
-                    "involvement_avg": max(0.0, round(stats["involvement"]["involved_percent"] - 3.0, 1))
-                },
-                {
-                    "period": period,
-                    "usefulness_avg": stats["usefulness"]["average"],
-                    "practicality_avg": stats["practicality"]["average"],
-                    "accessibility_avg": stats["accessibility"]["average"],
-                    "interaction_avg": stats["interaction"]["average"],
-                    "involvement_avg": stats["involvement"]["involved_percent"]
-                }
-            ]
+            # Без реальных исторических периодов тренд не строится.
+            trend_data = []
 
-            # Создание реалистичной аналитической записки
-            sec1_text = f"Курс '{course_name}' был проведен в период {period}. В анкетировании приняли участие {total_responses} человек из различных должностных категорий, главным образом специалисты ({pos_dist.get('Специалист', 0)} чел.) и руководители ({pos_dist.get('Руководитель', 0)} чел.). Опросы были ориентированы на сбор обратной связи по контенту программы, практичности заданий, удобству инфраструктуры и уровню вовлеченности."
+            sec1_text = (
+                f"Курс: {course_name}\n"
+                f"Период проведения: {period}\n"
+                f"Анкет обработано: {total_responses}.\n"
+                f"Валидных оценок: {validation_summary['valid_count']}; "
+                f"пропусков: {validation_summary['missing_count']}; "
+                f"ошибочных оценок: {validation_summary['invalid_count']}."
+            )
             
             avg_u = stats["usefulness"]["average"]
-            sec2_u = f"Оценка полезности находится на хорошем уровне ({avg_u}/10). Большинство слушателей отмечают соответствие содержания курса их ожиданиям и прикладным рабочим задачам." if avg_u >= 8.0 else f"Показатель полезности программы составляет {avg_u}/10, что указывает на необходимость корректировки некоторых теоретических блоков для повышения их актуальности."
-            
             avg_p = stats["practicality"]["average"]
-            sec2_p = f"Практическая ценность оценена на {avg_p}/10. Практические задания помогли закрепить навыки, однако рекомендуется добавить больше реальных кейсов." if avg_p >= 8.0 else f"Слушатели высказали пожелания по усилению практической части (оценка {avg_p}/10). Требуется переработка лабораторных работ."
-            
             avg_a = stats["accessibility"]["average"]
-            sec2_a = f"Материал изложен доступно и логично (оценка {avg_a}/10). Проблем с восприятием сложных концепций у слушателей не возникло."
-            
             avg_i = stats["interaction"]["average"]
-            sec2_i = f"Взаимодействие с куратором и организаторами курса получило высокую оценку ({avg_i}/10). Коммуникация была оперативной."
-            
             inv_pct = stats['involvement']['involved_percent']
-            sec2_inv = f"Уровень вовлеченности составляет {inv_pct}%. Большинство участников активно вовлечены в процесс, доля отстраненных минимальна ({stats['involvement']['detached_percent']}%)."
-
-            unwanted = ["Избыточная базовая вводная теория", "Устаревшие методологические регламенты"]
-            added = [
-                {"topic": "Углубленные кейсы оптимизации процессов", "count": 6},
-                {"topic": "Разбор типовых ошибок при автоматизации", "count": 4}
-            ]
             
             pref_fmt_str = f"Наиболее предпочтительным форматом является {max(fmt_dist, key=fmt_dist.get) if fmt_dist else 'очное обучение'}."
 
             analytical_report = {
                 "section1_general_info": sec1_text,
                 "section2_key_criteria": {
-                    "usefulness_summary": sec2_u,
-                    "practicality_summary": sec2_p,
-                    "accessibility_summary": sec2_a,
-                    "interaction_summary": sec2_i,
-                    "involvement_summary": sec2_inv
+                    "usefulness_summary": f"Средняя полезность по валидным оценкам: {avg_u}/10. Пропуски и ошибки исключены из расчета.",
+                    "practicality_summary": f"Средняя практико-ориентированность по валидным оценкам: {avg_p}/10. Пропуски и ошибки исключены из расчета.",
+                    "accessibility_summary": f"Средняя доступность по валидным оценкам: {avg_a}/10. Пропуски и ошибки исключены из расчета.",
+                    "interaction_summary": f"Среднее взаимодействие с КУ по валидным оценкам: {avg_i}/10. Пропуски и ошибки исключены из расчета.",
+                    "involvement_summary": f"Вовлеченность рассчитана по фактическим ответам: {inv_pct}% вовлечены, {stats['involvement']['detached_percent']}% отстранены."
                 },
                 "section3_suggestions": {
-                    "unwanted_topics": unwanted,
-                    "added_topics": added,
-                    "preferred_format_summary": pref_fmt_str
+                    "unwanted_topics": [],
+                    "added_topics": [],
+                    "preferred_format_summary": f"{pref_fmt_str} Текстовые предложения не сформированы: модель недоступна."
                 },
                 "section4_trajectory": {
-                    "further_implementation_needed": f"Программа востребована и рекомендуется к дальнейшей реализации (средний балл полезности {stats['usefulness']['average']:.1f}/10 >= 8.0, N={total_responses}).",
-                    "student_selection_correction": f"Корректировка входного отбора слушателей не требуется (вовлеченность {inv_pct:.0f}%, {stats['involvement']['no_count']} чел. вовлечены).",
-                    "added_topics_recommendation": f"Целесообразно внедрить практический модуль по ИИ-инструментам (запрос от {len(added)} тематических групп слушателей, N={total_responses}).",
-                    "hours_correction_needed": f"Увеличить объем практических занятий на 20-30% (ссылка: 34% отзывов содержат предложения расширить практический блок).",
-                    "format_correction_needed": f"Сохранить текущий гибридный формат обучения (предпочитают {max(fmt_dist, key=fmt_dist.get) if fmt_dist else 'очное обучение'}).",
+                    "further_implementation_needed": "Не сформировано: модель недоступна. Используйте только количественные метрики fallback.",
+                    "student_selection_correction": "Не сформировано: модель недоступна.",
+                    "added_topics_recommendation": "Не сформировано: модель недоступна.",
+                    "hours_correction_needed": "Не сформировано: модель недоступна.",
+                    "format_correction_needed": "Не сформировано: модель недоступна.",
                     "conclusions": [
-                        f"Программа показала высокий итоговый уровень удовлетворенности (средний балл полезности: {stats['usefulness']['average']:.1f}/10, вовлеченность {inv_pct:.0f}%).",
-                        f"Критерий полезности составил {stats['usefulness']['average']:.1f}/10 ({stats['usefulness']['distribution']['high']:.0f}% слушателей поставили высшие оценки 8-10)."
+                        "Fallback сформировал только детерминированные расчеты.",
+                        "Качественные темы, цитаты и рекомендации не сформированы без доступной модели."
                     ]
                 }
             }
 
-            # Качественный текстовый анализ
-            top_topics = [
-                {"topic": "Практические кейсы", "description": "Слушатели высоко оценивают разбор прикладных примеров", "frequency": max(1, int(total_responses * 0.4))},
-                {"topic": "Теоретический базис", "description": "Интерес к концептуальным основам курса", "frequency": max(1, int(total_responses * 0.3))}
-            ]
             sentiment = {
-                "positive": 75.0 if stats["usefulness"]["average"] >= 8.0 else 55.0,
-                "neutral": 20.0,
-                "negative": 5.0 if stats["usefulness"]["average"] >= 8.0 else 25.0
+                "positive": 0.0,
+                "neutral": 0.0,
+                "negative": 0.0
             }
-            key_problems = [
-                {"problem": "Нехватка времени на разбор домашних заданий", "frequency_percent": 30.0, "severity": "Medium"},
-                {"problem": "Сложности с доступом к личному кабинету", "frequency_percent": 15.0, "severity": "Low"}
-            ]
-            quotes = [
-                {"quote": "Отличный курс, много полезных инсайтов, которые можно внедрить в работу сразу.", "frequency": 4},
-                {"quote": "Хочется больше практических примеров и меньше общих лекций.", "frequency": 2}
-            ]
-            recommendations = [
-                {"target": "Практические модули", "action_item": "Увеличить время на интерактивный разбор задач", "priority": "High"},
-                {"target": "Организационная поддержка", "action_item": "Оптимизировать рассылку материалов перед занятиями", "priority": "Medium"}
-            ]
 
             courses_analysis.append({
                 "course_name": course_name,
                 "period": period,
                 "students_count": total_responses,
+                "validation_summary": validation_summary,
+                "score_counts": score_counts,
+                "metadata": metadata,
+                "comment_registry": comment_registry,
+                "processing_log": processing_log,
+                "quality_limitations": quality_limitations,
                 "statistics": stats,
                 "position_distribution": pos_dist,
                 "preferred_formats": fmt_dist,
                 "analytical_report": analytical_report,
                 "dashboard_data": {
                     "correlation_matrix": corr_matrix,
-                    "trend_data": trend_data
+                    "trend_data": trend_data,
+                    "trend_source": "unavailable",
+                    "has_historical_periods": False
                 },
                 "text_analysis": {
-                    "top_topics": top_topics,
+                    "top_topics": [],
                     "sentiment": sentiment,
-                    "key_problems": key_problems,
-                    "quotes": quotes,
-                    "recommendations": recommendations
+                    "key_problems": [],
+                    "quotes": [],
+                    "recommendations": []
                 }
             })
 

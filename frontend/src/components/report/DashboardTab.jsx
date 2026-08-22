@@ -365,6 +365,15 @@ function SvgCorrelationHeatmap({ matrix }) {
    4. SVG Overall Distribution Column Chart — Распределение общей оценки
    ========================================================================= */
 function SvgOverallDistributionChart({ distribution, limitation }) {
+  if (!distribution) {
+    return (
+      <EmptyChartState
+        title="Распределение общей оценки"
+        message={limitation}
+      />
+    );
+  }
+
   const buckets = [
     { label: "1–3 (Низкая)", value: Number(distribution?.low || 0), color: "#e11d48" },
     { label: "4–7 (Средняя)", value: Number(distribution?.mid || 0), color: "#d97706" },
@@ -426,12 +435,12 @@ function SvgOverallDistributionChart({ distribution, limitation }) {
 /* =========================================================================
    5. SVG Trend Line Chart — Динамика оценок по периодам
    ========================================================================= */
-function SvgTrendChart({ trendData }) {
+function SvgTrendChart({ trendData, limitation }) {
   if (!Array.isArray(trendData) || trendData.length === 0) {
     return (
       <EmptyChartState
         title="Динамика оценок по периодам"
-        message="Для данного отчета не переданы временные данные по нескольким периодам."
+        message={limitation || "Для данного отчета не переданы временные данные по нескольким периодам."}
       />
     );
   }
@@ -582,7 +591,7 @@ export function DashboardTab({ viewModel }) {
 
       {/* Section 2: Period Dynamics */}
       <DashboardSection title="Динамика реализации программы">
-        <SvgTrendChart trendData={viewModel.dashboardData.trend_data} />
+        <SvgTrendChart trendData={viewModel.trendData} limitation={viewModel.limitations.trendData} />
       </DashboardSection>
 
       {/* Section 3: Audience Composition & Format Preferences */}

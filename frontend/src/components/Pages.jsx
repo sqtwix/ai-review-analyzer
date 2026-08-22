@@ -668,8 +668,19 @@ export function CourseReportDetailPage({
     courseName,
     period,
     studentsCount,
+    sourceTransparency,
+    validationSummary,
+    metadata,
+    commentRegistry,
+    processingLog,
+    qualityLimitations,
   } = reportViewModel;
-  const reportSourceLabel = report.source === "demo" ? "Демо" : "Создано мной";
+  const reportSourceLabel = report.source === "demo" ? "Демо-данные" : "Данные пользователя";
+  const hasProductionWarnings =
+    report.source === "demo" ||
+    !sourceTransparency.hasExactScoreCounts ||
+    !sourceTransparency.hasEvidenceRegistry ||
+    validationSummary.totalIssues > 0;
 
   return (
     <section className="page active" id="report-detail" data-title="Детали отчёта">
@@ -789,6 +800,54 @@ export function CourseReportDetailPage({
           </button>
         </section>
       )}
+
+      {hasProductionWarnings && (
+        <section className={`report-quality-banner ${report.source === "demo" ? "report-quality-banner-demo" : ""}`} role="status">
+          <AlertTriangle size={18} strokeWidth={2.2} aria-hidden="true" />
+          <div>
+            <strong>{report.source === "demo" ? "Это демонстрационный отчет" : "Нужна проверка источников данных"}</strong>
+            <p>
+              {report.source === "demo"
+                ? "Данные, темы, цитаты и рекомендации в этом отчете не являются результатом обработки реальных анкет."
+                : "Frontend показывает только переданные backend данные. Для production нужны counts 1-10, ссылки evidence на строки/вопросы и отдельная сводка пропусков/ошибок."}
+            </p>
+          </div>
+        </section>
+      )}
+
+      <section className="report-transparency-panel" aria-labelledby="report-transparency-title">
+        <div>
+          <p className="eyebrow">Проверяемость данных</p>
+          <h3 id="report-transparency-title">Источник, полнота и ограничения</h3>
+        </div>
+        <div className="transparency-grid">
+          <article>
+            <strong>Реквизиты</strong>
+            <p>Форма: {metadata.educationForm || "не передана"}</p>
+            <p>Преподаватели: {metadata.teachers.length ? metadata.teachers.join(", ") : "не переданы"}</p>
+            <p>Даты: {metadata.datesConfirmed ? "подтверждены" : "не подтверждены"}</p>
+          </article>
+          <article>
+            <strong>Открытые ответы</strong>
+            <p>{commentRegistry.length} полей в реестре</p>
+            <p>{commentRegistry.reduce((sum, item) => sum + Number(item.non_empty_count ?? item.NonEmptyCount ?? 0), 0)} непустых ответов</p>
+            <p>{commentRegistry.length >= 19 ? "Требование 19 полей закрыто" : "Нужен маппинг до 19 открытых полей"}</p>
+          </article>
+          <article>
+            <strong>Обработка</strong>
+            <p>{processingLog.length} шаг(а) в журнале</p>
+            <p>{validationSummary.validCount ?? 0} валидных оценок</p>
+            <p>{validationSummary.totalIssues} пропусков/ошибок</p>
+          </article>
+        </div>
+        {qualityLimitations.length > 0 && (
+          <ul className="quality-limitations-list" aria-label="Ограничения качества">
+            {qualityLimitations.map((limitation) => (
+              <li key={limitation}>{limitation}</li>
+            ))}
+          </ul>
+        )}
+      </section>
 
       {/* Main Tabs Navigation */}
       <nav className="report-tabs" aria-label="Разделы отчета">

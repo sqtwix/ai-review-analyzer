@@ -9,12 +9,13 @@ from typing import List, Optional
 class SurveyResponse(BaseModel):
     student_id: Optional[str] = "unknown"
     position_category: Optional[str] = "Не указано"
-    usefulness_score: float = 0.0
-    practicality_score: float = 0.0
-    accessibility_score: float = 0.0
-    interaction_score: float = 0.0
+    usefulness_score: Optional[float] = None
+    practicality_score: Optional[float] = None
+    accessibility_score: Optional[float] = None
+    interaction_score: Optional[float] = None
     preferred_format: Optional[str] = "Не указано"
     is_detached: bool = False
+    score_validation_issues: List[dict] = Field(default_factory=list)
     
     motivation_comment: Optional[str] = ""
     usefulness_comment: Optional[str] = ""
@@ -38,7 +39,7 @@ class CourseSurvey(BaseModel):
     course_name: str
     period: Optional[str] = "Не указан"
     students_count: Optional[int] = 0
-    responses: List[SurveyResponse] = []
+    responses: List[SurveyResponse] = Field(default_factory=list)
 
 class AnalysisRequest(BaseModel):
     batch_id: str

@@ -38,10 +38,51 @@ const getMetricValue = (metric, field) => {
 };
 
 const normalizeDistribution = (distribution) => ({
-  low: toNumber(distribution?.low),
-  mid: toNumber(distribution?.mid),
-  high: toNumber(distribution?.high),
+  low: toNumber(distribution?.low ?? distribution?.Low),
+  mid: toNumber(distribution?.mid ?? distribution?.Mid),
+  high: toNumber(distribution?.high ?? distribution?.High),
 });
+
+const getFirstDefined = (...values) => values.find((value) => value !== undefined && value !== null);
+
+const normalizeScoreCounts = (rawCounts) => {
+  if (!rawCounts || typeof rawCounts !== "object") return null;
+  const counts = {};
+  let total = 0;
+
+  for (let score = 1; score <= 10; score += 1) {
+    const value = toNumber(rawCounts[score] ?? rawCounts[String(score)], 0);
+    counts[score] = value;
+    total += value;
+  }
+
+  return total > 0 ? { counts, total } : null;
+};
+
+const scoreCountsToDistribution = (scoreCounts) => {
+  if (!scoreCounts?.total) return null;
+  const low = scoreCounts.counts[1] + scoreCounts.counts[2] + scoreCounts.counts[3];
+  const mid = scoreCounts.counts[4] + scoreCounts.counts[5] + scoreCounts.counts[6] + scoreCounts.counts[7];
+  const high = scoreCounts.counts[8] + scoreCounts.counts[9] + scoreCounts.counts[10];
+
+  return {
+    low: (low / scoreCounts.total) * 100,
+    mid: (mid / scoreCounts.total) * 100,
+    high: (high / scoreCounts.total) * 100,
+  };
+};
+
+const normalizeEvidence = (item) => {
+  const evidence = item?.evidence || item?.Evidence || {};
+  const rows = getFirstDefined(item?.rows, item?.row_ids, item?.source_rows, evidence.rows, evidence.row_ids, evidence.source_rows);
+  const questions = getFirstDefined(item?.questions, item?.question_ids, evidence.questions, evidence.question_ids);
+
+  return {
+    rows: Array.isArray(rows) ? rows : [],
+    questions: Array.isArray(questions) ? questions : [],
+    coverage: getFirstDefined(item?.coverage, item?.coverage_percent, evidence.coverage, evidence.coverage_percent),
+  };
+};
 
 const averageNumbers = (values) => {
   const validValues = values.filter((value) => Number.isFinite(value));
@@ -86,6 +127,11 @@ const buildDecisionSupport = ({
   overallSatisfaction,
   involvement,
   studentsCount,
+  sourceTransparency,
+  validationSummary,
+  commentRegistry,
+  metadata,
+  processingLog,
 }) => {
   const topics = textAnalysis?.top_topics || [];
   const problems = textAnalysis?.key_problems || [];
@@ -130,12 +176,19 @@ const buildDecisionSupport = ({
   ].filter(Boolean);
 
   const filledMetricCount = metricCards.filter((card) => Number.isFinite(card.average)).length;
-  const evidenceCount = topics.length + problems.length + quotes.length + recommendations.length;
+  const verifiedEvidenceCount = [topics, problems, quotes, recommendations]
+    .flat()
+    .filter((item) => item.evidence?.rows?.length || item.evidence?.questions?.length)
+    .length;
+  const evidenceCount = verifiedEvidenceCount;
   const sampleScore = studentsCount > 0 ? clampNumber((studentsCount / 40) * 35, 8, 35) : 0;
   const metricScore = (filledMetricCount / Math.max(metricCards.length, 1)) * 25;
   const evidenceScore = clampNumber(evidenceCount * 4, 0, 25);
   const actionScore = clampNumber(recommendations.length * 5, 0, 15);
-  const confidenceScore = Math.round(sampleScore + metricScore + evidenceScore + actionScore);
+  const rawConfidenceScore = Math.round(sampleScore + metricScore + evidenceScore + actionScore);
+  const confidenceScore = sourceTransparency.hasEvidenceRegistry && sourceTransparency.hasExactScoreCounts
+    ? rawConfidenceScore
+    : Math.min(rawConfidenceScore, 55);
   const confidenceLabel =
     confidenceScore >= 80 ? "Высокая" :
     confidenceScore >= 60 ? "Достаточная" :
@@ -146,10 +199,12 @@ const buildDecisionSupport = ({
     studentsCount < 30
       ? "Выборка меньше 30 слушателей: выводы стоит подтвердить на следующем запуске."
       : "Размер выборки достаточен для первичной управленческой оценки.",
-    quotes.length === 0
-      ? "В данных нет репрезентативных цитат, поэтому качественные выводы менее проверяемы."
-      : "Есть цитаты и повторяющиеся формулировки, которые подтверждают качественные выводы.",
-    "Точные номера строк и вопросов появятся после передачи детальных ссылок из анализа.",
+    sourceTransparency.hasEvidenceRegistry
+      ? "Качественные выводы связаны с номерами вопросов или строк в данных отчета."
+      : "Backend пока не передал номера строк и вопросов: качественные выводы требуют ручной сверки.",
+    validationSummary.missingCount > 0 || validationSummary.invalidCount > 0
+      ? `Есть пропуски/ошибки в оценках: ${validationSummary.missingCount + validationSummary.invalidCount}. Проверьте, что они не подменены значениями.`
+      : "Пропуски и ошибки оценок не переданы отдельной сводкой.",
   ];
 
   const evidenceHighlights = [
@@ -157,21 +212,27 @@ const buildDecisionSupport = ({
       type: "Проблема",
       title: problem.problem || "Проблема без названия",
       detail: `Встречается в ${formatPercent(problem.frequency_percent)} отзывов.`,
-      support: `Риск: ${priorityLabels[normalizePriority(problem.severity)]}.`,
+      support: problem.evidence?.rows?.length
+        ? `Строки: ${problem.evidence.rows.join(", ")}.`
+        : `Риск: ${priorityLabels[normalizePriority(problem.severity)]}. Источник строк не передан.`,
       tone: normalizePriority(problem.severity) === "high" ? "risk" : "watch",
     })),
     ...topics.slice(0, 2).map((topic) => ({
       type: "Тема",
       title: topic.topic || "Тема без названия",
       detail: topic.description || "Описание темы не передано.",
-      support: `Упоминаний: ${topic.frequency}.`,
+      support: topic.evidence?.questions?.length
+        ? `Вопросы: ${topic.evidence.questions.join(", ")}.`
+        : `Упоминаний: ${topic.frequency}. Источник строк не передан.`,
       tone: "normal",
     })),
     ...quotes.slice(0, 2).map((quote) => ({
       type: "Цитата",
       title: `«${quote.quote || "Текст цитаты не передан"}»`,
       detail: `Схожих формулировок: ${quote.frequency}.`,
-      support: "Подтверждает язык слушателей, а не только агрегированные метрики.",
+      support: quote.evidence?.rows?.length
+        ? `Строки: ${quote.evidence.rows.join(", ")}.`
+        : "Источник строки для цитаты не передан.",
       tone: "good",
     })),
     ...lowMetrics.slice(0, 2).map((metric) => ({
@@ -238,10 +299,45 @@ const buildDecisionSupport = ({
     },
     {
       label: "Качественные выводы подтверждены",
-      detail: quotes.length > 0 || topics.length > 0
-        ? `Есть ${topics.length} тем(ы) и ${quotes.length} цитат(ы) для проверки выводов.`
-        : "Нет тем и цитат, которые показывают основание качественных выводов.",
-      status: quotes.length > 0 || topics.length > 0 ? "done" : "warning",
+      detail: sourceTransparency.hasEvidenceRegistry
+        ? `Есть ${verifiedEvidenceCount} ссылок на строки или вопросы.`
+        : "Нет ссылок на строки/вопросы; выводы нельзя считать полностью проверяемыми.",
+      status: sourceTransparency.hasEvidenceRegistry ? "done" : "warning",
+    },
+    {
+      label: "Распределение 1-10 подтверждено",
+      detail: sourceTransparency.hasExactScoreCounts
+        ? "Backend передал абсолютные counts по всем оценкам 1-10."
+        : "Backend не передал counts 1-10; общий график не должен заменяться средними по метрикам.",
+      status: sourceTransparency.hasExactScoreCounts ? "done" : "warning",
+    },
+    {
+      label: "Пропуски и ошибки видимы",
+      detail: validationSummary.totalIssues > 0
+        ? `Передано ${validationSummary.totalIssues} пропусков/ошибок для проверки.`
+        : "Отдельная сводка валидных, пропущенных и ошибочных оценок не передана.",
+      status: validationSummary.totalIssues > 0 ? "warning" : "info",
+    },
+    {
+      label: "Открытые ответы учтены",
+      detail: commentRegistry.length
+        ? `Передан реестр ${commentRegistry.length} открытых полей; непустые ответы: ${commentRegistry.reduce((sum, item) => sum + toNumber(item.non_empty_count ?? item.nonEmptyCount, 0), 0)}.`
+        : "Backend не передал реестр открытых ответов.",
+      status: commentRegistry.length >= 19 ? "done" : "warning",
+    },
+    {
+      label: "Реквизиты общей части подтверждены",
+      detail: metadata.missingFields.length
+        ? `Не хватает: ${metadata.missingFields.join(", ")}.`
+        : "Форма обучения, преподаватели и даты переданы backend.",
+      status: metadata.missingFields.length ? "warning" : "done",
+    },
+    {
+      label: "Журнал обработки доступен",
+      detail: processingLog.length
+        ? `Передано ${processingLog.length} шаг(а) обработки.`
+        : "Журнал обработки не передан.",
+      status: processingLog.length ? "done" : "warning",
     },
     {
       label: "Есть план корректировок",
@@ -291,9 +387,48 @@ export function buildCourseReportViewModel(report) {
   const courseAnalysis = getCourseAnalysis(report);
   const statistics = courseAnalysis?.statistics || courseAnalysis?.Statistics || null;
   const reportData = courseAnalysis?.analytical_report || courseAnalysis?.AnalyticalReport || null;
-  const textAnalysis = courseAnalysis?.text_analysis || courseAnalysis?.TextAnalysis || null;
+  const rawTextAnalysis = courseAnalysis?.text_analysis || courseAnalysis?.TextAnalysis || null;
+  const textAnalysis = rawTextAnalysis
+    ? {
+        ...rawTextAnalysis,
+        top_topics: (rawTextAnalysis.top_topics || rawTextAnalysis.TopTopics || []).map((item) => ({ ...item, evidence: normalizeEvidence(item) })),
+        key_problems: (rawTextAnalysis.key_problems || rawTextAnalysis.KeyProblems || []).map((item) => ({ ...item, evidence: normalizeEvidence(item) })),
+        quotes: (rawTextAnalysis.quotes || rawTextAnalysis.Quotes || []).map((item) => ({ ...item, evidence: normalizeEvidence(item) })),
+        recommendations: (rawTextAnalysis.recommendations || rawTextAnalysis.Recommendations || []).map((item) => ({ ...item, evidence: normalizeEvidence(item) })),
+      }
+    : null;
   const dashboardData = courseAnalysis?.dashboard_data || courseAnalysis?.DashboardData || {};
   const involvement = statistics?.involvement || statistics?.Involvement || null;
+  const validationRaw =
+    courseAnalysis?.validation_summary ||
+    courseAnalysis?.ValidationSummary ||
+    courseAnalysis?.data_quality ||
+    courseAnalysis?.DataQuality ||
+    {};
+  const validationSummary = {
+    validCount: toNumber(validationRaw.valid_count ?? validationRaw.ValidCount, null),
+    missingCount: toNumber(validationRaw.missing_count ?? validationRaw.MissingCount, 0),
+    invalidCount: toNumber(validationRaw.invalid_count ?? validationRaw.InvalidCount, 0),
+  };
+  validationSummary.totalIssues = validationSummary.missingCount + validationSummary.invalidCount;
+  const metadataRaw = courseAnalysis?.metadata || courseAnalysis?.Metadata || {};
+  const metadata = {
+    educationForm: metadataRaw.education_form ?? metadataRaw.EducationForm ?? null,
+    teachers: metadataRaw.teachers || metadataRaw.Teachers || [],
+    datesConfirmed: Boolean(metadataRaw.dates_confirmed ?? metadataRaw.DatesConfirmed),
+    missingFields: metadataRaw.missing_fields || metadataRaw.MissingFields || [],
+  };
+  const commentRegistry = courseAnalysis?.comment_registry || courseAnalysis?.CommentRegistry || [];
+  const processingLog = courseAnalysis?.processing_log || courseAnalysis?.ProcessingLog || [];
+  const qualityLimitations = courseAnalysis?.quality_limitations || courseAnalysis?.QualityLimitations || [];
+  const scoreCounts = normalizeScoreCounts(
+    courseAnalysis?.score_counts ||
+    courseAnalysis?.ScoreCounts ||
+    courseAnalysis?.overall_score_counts ||
+    courseAnalysis?.OverallScoreCounts ||
+    dashboardData.score_counts ||
+    dashboardData.ScoreCounts
+  );
 
   const metricCards = numericMetricKeys.map((metricDefinition) => {
     const metric = statistics?.[metricDefinition.key] || statistics?.[metricDefinition.key.charAt(0).toUpperCase() + metricDefinition.key.slice(1)] || null;
@@ -311,12 +446,31 @@ export function buildCourseReportViewModel(report) {
   });
 
   const numericAverages = metricCards.map((card) => card.average);
-  const overallSatisfaction = averageNumbers(numericAverages);
-  const overallDistribution = {
-    low: averageNumbers(metricCards.map((card) => card.distribution.low)) || 0,
-    mid: averageNumbers(metricCards.map((card) => card.distribution.mid)) || 0,
-    high: averageNumbers(metricCards.map((card) => card.distribution.high)) || 0,
+  const overallSatisfaction = getMetricValue(statistics?.overall || statistics?.Overall, "average") ??
+    getMetricValue(statistics?.overall || statistics?.Overall, "Average") ??
+    averageNumbers(numericAverages);
+  const overallDistribution = scoreCountsToDistribution(scoreCounts);
+  const hasEvidenceRegistry = Boolean(
+    textAnalysis &&
+    [
+      ...(textAnalysis.top_topics || []),
+      ...(textAnalysis.key_problems || []),
+      ...(textAnalysis.quotes || []),
+      ...(textAnalysis.recommendations || []),
+    ].some((item) => item.evidence?.rows?.length || item.evidence?.questions?.length)
+  );
+  const sourceTransparency = {
+    hasEvidenceRegistry,
+    hasExactScoreCounts: Boolean(scoreCounts),
   };
+  const rawTrendData = dashboardData.trend_data || dashboardData.TrendData || [];
+  const hasVerifiedTrendSource =
+    report?.source === "demo" ||
+    dashboardData.trend_source === "historical" ||
+    dashboardData.TrendSource === "historical" ||
+    dashboardData.has_historical_periods === true ||
+    dashboardData.HasHistoricalPeriods === true;
+  const trendData = hasVerifiedTrendSource ? rawTrendData : [];
 
   const involvementChartMetric = {
     key: "involvement",
@@ -353,8 +507,16 @@ export function buildCourseReportViewModel(report) {
     courseName: courseAnalysis?.course_name || report?.course || "Электронный курс",
     period: courseAnalysis?.period || "Не указан",
     studentsCount: toNumber(courseAnalysis?.students_count),
+    scoreCounts,
+    validationSummary,
+    metadata,
+    commentRegistry,
+    processingLog,
+    qualityLimitations,
+    sourceTransparency,
     positionDistribution: courseAnalysis?.position_distribution || {},
     preferredFormats: courseAnalysis?.preferred_formats || {},
+    trendData,
     metricCards,
     fiveCriteria,
     overallSatisfaction,
@@ -366,12 +528,25 @@ export function buildCourseReportViewModel(report) {
       overallSatisfaction,
       involvement,
       studentsCount: toNumber(courseAnalysis?.students_count),
+      sourceTransparency,
+      validationSummary,
+      commentRegistry,
+      metadata,
+      processingLog,
     }),
     limitations: {
       exactScoreDistribution:
-        "Показано агрегированное распределение оценок по трем диапазонам: низкие, средние и высокие.",
+        overallDistribution
+          ? "Распределение построено из абсолютных counts оценок 1-10, переданных backend."
+          : "Backend не передал абсолютные counts 1-10. График общей оценки скрыт, чтобы не подменять его средними по критериям.",
       sourceEvidence:
-        "точные номера строк и вопросов пока недоступны в данных отчета.",
+        hasEvidenceRegistry
+          ? "точные строки или вопросы переданы в evidence отчета."
+          : "точные номера строк и вопросов пока недоступны в данных отчета.",
+      trendData:
+        trendData.length > 0
+          ? "Тренд показан по историческим периодам, переданным backend."
+          : "Тренд скрыт: backend не передал подтверждение наличия реальных исторических периодов.",
     },
   };
 }
