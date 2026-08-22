@@ -1,5 +1,13 @@
-export const isOfflineMode =
+const legacyOfflineModeEnabled =
   String(import.meta.env.VITE_OFFLINE_MODE || "").toLowerCase() === "true";
+const explicitDemoModeEnabled =
+  String(import.meta.env.VITE_ENABLE_DEMO_MODE || "").toLowerCase() === "true";
+
+export const isOfflineMode =
+  explicitDemoModeEnabled || (import.meta.env.DEV && legacyOfflineModeEnabled);
+
+export const isLegacyOfflineModeIgnored =
+  import.meta.env.PROD && legacyOfflineModeEnabled && !explicitDemoModeEnabled;
 
 const OFFLINE_REPORTS_KEY = "educheck_offline_reports";
 const OFFLINE_TASKS_KEY = "educheck_offline_tasks";

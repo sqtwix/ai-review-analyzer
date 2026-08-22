@@ -24,6 +24,7 @@ services:
       context: ./frontend
       args:
         VITE_OFFLINE_MODE: ${VITE_OFFLINE_MODE:-false}
+        VITE_ENABLE_DEMO_MODE: ${VITE_ENABLE_DEMO_MODE:-false}
     ports:
       - "80:80"
     depends_on:

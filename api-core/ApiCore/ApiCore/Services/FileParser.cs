@@ -149,23 +149,28 @@ public class FileParser
             if (string.IsNullOrWhiteSpace(pos) && fields.Count > usefulnessScoreIdx && string.IsNullOrWhiteSpace(GetValueSafely(fields, usefulnessScoreIdx)))
                 continue;
 
+            var usefulnessScore = ParseScore(GetValueSafely(fields, usefulnessScoreIdx));
+            var practicalityScore = ParseScore(GetValueSafely(fields, practicalityScoreIdx));
+            var accessibilityScore = ParseScore(GetValueSafely(fields, accessibilityScoreIdx));
+            var interactionScore = ParseScore(GetValueSafely(fields, interactionScoreIdx));
+
             var response = new SurveyResponseDto
             {
                 StudentId = $"student_{studentCounter++}",
                 PositionCategory = pos,
                 MotivationComment = GetValueSafely(fields, motivationIdx),
-                UsefulnessScore = ParseScore(GetValueSafely(fields, usefulnessScoreIdx)),
+                UsefulnessScore = usefulnessScore.Score,
                 UsefulnessComment = GetValueSafely(fields, usefulnessCommentIdx),
                 AppliedSkillsComment = GetValueSafely(fields, appliedSkillsIdx),
                 ExpectedEffect = GetValueSafely(fields, expectedEffectIdx),
                 ExpectedEffectReason = GetValueSafely(fields, expectedEffectReasonIdx),
                 TopicsToExcludeComment = GetValueSafely(fields, topicsExcludeIdx),
                 TopicsToAddComment = GetValueSafely(fields, topicsAddIdx),
-                PracticalityScore = ParseScore(GetValueSafely(fields, practicalityScoreIdx)),
+                PracticalityScore = practicalityScore.Score,
                 PracticalityComment = GetValueSafely(fields, practicalityCommentIdx),
                 PracticeTuningComment = GetValueSafely(fields, practiceTuningIdx),
                 PracticeChangeComment = GetValueSafely(fields, practiceChangeIdx),
-                AccessibilityScore = ParseScore(GetValueSafely(fields, accessibilityScoreIdx)),
+                AccessibilityScore = accessibilityScore.Score,
                 AccessibilityComment = GetValueSafely(fields, accessibilityCommentIdx),
                 LogicSequenceReason = GetValueSafely(fields, logicSequenceReasonIdx),
                 AskQuestionsComment = GetValueSafely(fields, askQuestionsIdx),
@@ -174,9 +179,14 @@ public class FileParser
                 DetachmentReasonComment = GetValueSafely(fields, detachmentReasonIdx),
                 InvolvementComment = GetValueSafely(fields, involvementIdx),
                 PreferredFormat = GetValueSafely(fields, formatIdx),
-                InteractionScore = ParseScore(GetValueSafely(fields, interactionScoreIdx)),
+                InteractionScore = interactionScore.Score,
                 InteractionComment = GetValueSafely(fields, interactionCommentIdx)
             };
+
+            AddScoreIssue(response, "usefulness_score", usefulnessScore);
+            AddScoreIssue(response, "practicality_score", practicalityScore);
+            AddScoreIssue(response, "accessibility_score", accessibilityScore);
+            AddScoreIssue(response, "interaction_score", interactionScore);
 
             courseSurvey.Responses.Add(response);
         }
@@ -231,17 +241,37 @@ public class FileParser
         return -1;
     }
 
-    private static int ParseScore(string text, int defaultValue = 10)
+    private static ScoreParseResult ParseScore(string text)
     {
-        if (string.IsNullOrWhiteSpace(text)) return defaultValue;
-        var match = Regex.Match(text, @"\d+");
-        if (match.Success && int.TryParse(match.Value, out int score))
+        if (string.IsNullOrWhiteSpace(text))
         {
-            if (score < 1) return 1;
-            if (score > 10) return 10;
-            return score;
+            return new ScoreParseResult(null, "missing", text ?? string.Empty);
         }
-        return defaultValue;
+
+        var normalized = text.Trim().Replace(',', '.');
+        var match = Regex.Match(normalized, @"-?\d+(\.\d+)?");
+        if (!match.Success || !double.TryParse(match.Value, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var numericScore))
+        {
+            return new ScoreParseResult(null, "invalid", text);
+        }
+
+        if (numericScore < 1 || numericScore > 10)
+        {
+            return new ScoreParseResult(null, "invalid", text);
+        }
+
+        return new ScoreParseResult((int)Math.Round(numericScore, MidpointRounding.AwayFromZero), "valid", text);
+    }
+
+    private static void AddScoreIssue(SurveyResponseDto response, string field, ScoreParseResult scoreResult)
+    {
+        if (scoreResult.Status == "valid") return;
+        response.ScoreValidationIssues.Add(new ScoreValidationIssueDto
+        {
+            Field = field,
+            Status = scoreResult.Status,
+            RawValue = scoreResult.RawValue
+        });
     }
 
     private static bool ParseIsDetached(string text)
@@ -323,4 +353,6 @@ public class FileParser
         courseName = courseName.Replace("Вопросы функционирования контрактной системы_40_ДОТ", "Вопросы функционирования контрактной системы").Trim();
         return courseName;
     }
+
+    private sealed record ScoreParseResult(int? Score, string Status, string RawValue);
 }

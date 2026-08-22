@@ -68,7 +68,7 @@ public class AnalysisService
                                     continue;
 
                                 var nestedExt = Path.GetExtension(entry.Name).ToLowerSuffix();
-                                if (nestedExt == ".xlsx" || nestedExt == ".xls" || nestedExt == ".csv" || nestedExt == ".json")
+                                if (nestedExt == ".xlsx" || nestedExt == ".xls" || nestedExt == ".csv")
                                 {
                                     var destinationPath = Path.Combine(zipExtractDir, entry.Name);
                                     

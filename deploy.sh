@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-echo "DEPLOYING AI REVIEW ANALYZER (OFFLINE/LOCAL)"
+echo "DEPLOYING AI REVIEW ANALYZER"
 
 # Ensure execution from repository root
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
@@ -26,7 +26,8 @@ JWT_AUDIENCE=ai-review-analyzer-frontend
 JWT_EXPIRY_MINUTES=1440
 DEEPSEEK_API_KEY=
 SBERGPT_API_KEY=
-VITE_OFFLINE_MODE=true
+VITE_OFFLINE_MODE=false
+VITE_ENABLE_DEMO_MODE=false
 EOT
     fi
 else
@@ -48,7 +49,7 @@ fi
 
 # 3. Docker Container Deployment
 echo "--> Starting Docker containers..."
-docker compose down -v 2>/dev/null || true
+docker compose down 2>/dev/null || true
 docker compose up --build -d
 
 echo "--> Cleaning up unused Docker images..."
@@ -57,4 +58,5 @@ docker image prune -f 2>/dev/null || true
 echo "=================================================="
 echo "DEPLOYMENT SUCCESSFUL!"
 echo "Open application in browser: http://localhost/"
+echo "Data volumes were preserved. To delete all data intentionally, run: docker compose down -v"
 echo "=================================================="

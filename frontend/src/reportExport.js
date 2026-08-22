@@ -64,6 +64,7 @@ export async function exportReportToPdf(report) {
   const period = courseAnalysis?.period || "Не указан";
   const studentsCount = courseAnalysis?.students_count || 0;
   const decisionSupport = getDecisionSupport(report);
+  const transparency = getCourseTransparencyRows(courseAnalysis);
 
   // Header Banner
   doc.setFillColor(...SOFT_GREEN);
@@ -83,10 +84,26 @@ export async function exportReportToPdf(report) {
   doc.setFontSize(14);
   doc.text(courseName, 14, 42, { maxWidth: 182 });
 
+  autoTable(doc, {
+    startY: 46,
+    head: [["Проверка", "Значение"]],
+    body: [
+      ["Валидные оценки", transparency.validationRows[0]?.[1] ?? 0],
+      ["Пропуски / ошибки", `${transparency.validationRows[1]?.[1] ?? 0} / ${transparency.validationRows[2]?.[1] ?? 0}`],
+      ["Открытые поля", transparency.registryRows.length],
+      ["Недостающие реквизиты", transparency.metadataRows[3]?.[1] || "нет"],
+    ],
+    styles: { font: PDF_FONT, fontSize: 8, cellPadding: 2, textColor: TEXT_COLOR },
+    headStyles: { fillColor: BRAND_GREEN, textColor: [255, 255, 255], fontStyle: "bold" },
+    columnStyles: { 0: { cellWidth: 54 }, 1: { cellWidth: 128 } },
+    margin: { left: 14, right: 14 },
+  });
+
   // 1. Статистика (Table)
+  const statsTitleY = (doc.lastAutoTable?.finalY || 56) + 8;
   doc.setFontSize(11);
   doc.setFont(PDF_FONT, "bold");
-  doc.text("1. Количественные показатели удовлетворенности", 14, 52);
+  doc.text("1. Количественные показатели удовлетворенности", 14, statsTitleY);
 
   const stats = courseAnalysis?.statistics;
   const rows = [];
@@ -126,7 +143,7 @@ export async function exportReportToPdf(report) {
   }
 
   autoTable(doc, {
-    startY: 56,
+    startY: statsTitleY + 4,
     head: [["Критерий", "Показатели (Среднее, Медиана, Откл)", "Распределение оценок"]],
     body: rows.length ? rows : [["", "Нет данных", ""]],
     styles: {
@@ -375,6 +392,43 @@ const buildDecisionExportRows = (decisionSupport) => {
   ];
 };
 
+const getCourseTransparencyRows = (courseAnalysis) => {
+  const metadata = courseAnalysis?.metadata || {};
+  const validation = courseAnalysis?.validation_summary || {};
+  const scoreCounts = courseAnalysis?.score_counts || {};
+  const registry = courseAnalysis?.comment_registry || [];
+  const processingLog = courseAnalysis?.processing_log || [];
+  const limitations = courseAnalysis?.quality_limitations || [];
+
+  return {
+    metadataRows: [
+      ["Форма обучения", metadata.education_form || "не передана"],
+      ["Преподаватели", metadata.teachers?.length ? metadata.teachers.join(", ") : "не переданы"],
+      ["Даты подтверждены", metadata.dates_confirmed ? "да" : "нет"],
+      ["Недостающие реквизиты", metadata.missing_fields?.length ? metadata.missing_fields.join(", ") : "нет"],
+    ],
+    validationRows: [
+      ["Валидные оценки", validation.valid_count ?? 0],
+      ["Пропуски оценок", validation.missing_count ?? 0],
+      ["Ошибочные оценки", validation.invalid_count ?? 0],
+      ["Всего проблем", validation.total_issues ?? 0],
+    ],
+    scoreRows: Array.from({ length: 10 }, (_, index) => {
+      const score = String(index + 1);
+      return [score, scoreCounts[score] ?? 0];
+    }),
+    registryRows: registry.map((item) => [
+      item.question_id,
+      item.label,
+      item.non_empty_count ?? 0,
+      item.coverage ?? 0,
+      item.rows?.join(", ") || "",
+    ]),
+    logRows: processingLog.map((item) => [item.step, item.status, item.message]),
+    limitationRows: limitations.map((item) => [item]),
+  };
+};
+
 export async function exportReportToXlsx(report) {
   const ExcelJS = (await import("exceljs")).default;
   const courseAnalysis = report.result?.courses_analysis?.[0];
@@ -549,7 +603,23 @@ export async function exportReportToXlsx(report) {
     });
   }
 
-  [summarySheet, statsSheet, qualSheet, decisionSheet, repSheet].forEach((worksheet) => {
+  const transparency = getCourseTransparencyRows(courseAnalysis);
+  const dataSheet = workbook.addWorksheet("Проверяемость данных");
+  dataSheet.columns = [
+    { header: "Блок", key: "block", width: 24 },
+    { header: "Поле", key: "field", width: 36 },
+    { header: "Значение", key: "value", width: 90 },
+  ];
+  transparency.metadataRows.forEach(([field, value]) => dataSheet.addRow({ block: "Реквизиты", field, value }));
+  transparency.validationRows.forEach(([field, value]) => dataSheet.addRow({ block: "Валидация оценок", field, value }));
+  transparency.scoreRows.forEach(([field, value]) => dataSheet.addRow({ block: "Counts 1-10", field, value }));
+  transparency.registryRows.forEach(([id, label, count, coverage, rows]) => {
+    dataSheet.addRow({ block: "Открытые ответы", field: `${id}: ${label}`, value: `Непустых: ${count}; покрытие: ${coverage}%; строки: ${rows || "нет"}` });
+  });
+  transparency.logRows.forEach(([step, status, message]) => dataSheet.addRow({ block: "Журнал", field: `${step}: ${status}`, value: message }));
+  transparency.limitationRows.forEach(([value]) => dataSheet.addRow({ block: "Ограничение", field: "quality", value }));
+
+  [summarySheet, statsSheet, qualSheet, decisionSheet, repSheet, dataSheet].forEach((worksheet) => {
     styleWorksheetHeader(worksheet);
     worksheet.eachRow((row) => {
       row.alignment = { vertical: "top", wrapText: true };
@@ -645,6 +715,7 @@ export async function exportReportToDocx(report) {
   const stats = courseAnalysis?.statistics;
   const reportData = courseAnalysis?.analytical_report;
   const decisionSupport = getDecisionSupport(report);
+  const transparency = getCourseTransparencyRows(courseAnalysis);
 
   const statisticRows = [];
   const addMetricRow = (name, metric) => {
@@ -713,6 +784,23 @@ export async function exportReportToDocx(report) {
       ],
       spacing: { after: 240 },
     }),
+    createDocxHeading("0. Проверяемость данных"),
+    createDocxTable(["Реквизит", "Значение"], transparency.metadataRows),
+    createDocxHeading("Валидация оценок", 2),
+    createDocxTable(["Показатель", "Значение"], transparency.validationRows),
+    createDocxHeading("Counts общей оценки 1-10", 2),
+    createDocxTable(["Оценка", "Количество"], transparency.scoreRows),
+    createDocxHeading("Реестр открытых ответов", 2),
+    createDocxTable(
+      ["Поле", "Вопрос", "Непустых", "Покрытие", "Строки"],
+      transparency.registryRows.length ? transparency.registryRows : [["Нет данных", "-", "-", "-", "-"]]
+    ),
+    ...(transparency.limitationRows.length
+      ? [
+          createDocxHeading("Ограничения качества", 2),
+          ...transparency.limitationRows.map(([limitation]) => createBulletParagraph(limitation)),
+        ]
+      : []),
     ...decisionChildren,
     createDocxHeading("1. Общая информация о программе"),
     ...createTextParagraphs(reportData?.section1_general_info),
@@ -768,6 +856,7 @@ export function exportReportToCsv(report) {
   const period = courseAnalysis?.period || "Не указан";
   const studentsCount = courseAnalysis?.students_count || 0;
   const decisionSupport = getDecisionSupport(report);
+  const transparency = getCourseTransparencyRows(courseAnalysis);
 
   const rows = [
     ["Общая сводка по опросу"],
@@ -776,6 +865,19 @@ export function exportReportToCsv(report) {
     ["Период", period],
     ["Слушатели", studentsCount],
     ["Выгружено", exportDate],
+    [],
+    ["Проверяемость данных"],
+    ["Блок", "Поле", "Значение"],
+    ...transparency.metadataRows.map(([field, value]) => ["Реквизиты", field, value]),
+    ...transparency.validationRows.map(([field, value]) => ["Валидация оценок", field, value]),
+    ...transparency.scoreRows.map(([field, value]) => ["Counts 1-10", field, value]),
+    ...transparency.registryRows.map(([id, label, count, coverage, sourceRows]) => [
+      "Открытые ответы",
+      `${id}: ${label}`,
+      `Непустых: ${count}; покрытие: ${coverage}%; строки: ${sourceRows || "нет"}`,
+    ]),
+    ...transparency.logRows.map(([step, status, message]) => ["Журнал обработки", `${step}: ${status}`, message]),
+    ...transparency.limitationRows.map(([limitation]) => ["Ограничение", "quality", limitation]),
     [],
     ["Решение и план действий"],
     ["Тип", "Содержание", "Статус / Приоритет", "Детали"],

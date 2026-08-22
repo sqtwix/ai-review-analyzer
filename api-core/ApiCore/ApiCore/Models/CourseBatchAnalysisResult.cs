@@ -39,6 +39,24 @@ public class CourseAnalysisResultDto
 
     [JsonPropertyName("text_analysis")]
     public TextAnalysisDto TextAnalysis { get; set; } = new();
+
+    [JsonPropertyName("validation_summary")]
+    public ValidationSummaryDto ValidationSummary { get; set; } = new();
+
+    [JsonPropertyName("score_counts")]
+    public Dictionary<string, int> ScoreCounts { get; set; } = new();
+
+    [JsonPropertyName("metadata")]
+    public CourseMetadataDto Metadata { get; set; } = new();
+
+    [JsonPropertyName("comment_registry")]
+    public List<CommentRegistryItemDto> CommentRegistry { get; set; } = new();
+
+    [JsonPropertyName("processing_log")]
+    public List<ProcessingLogItemDto> ProcessingLog { get; set; } = new();
+
+    [JsonPropertyName("quality_limitations")]
+    public List<string> QualityLimitations { get; set; } = new();
 }
 
 public class CourseStatisticsDto
@@ -183,6 +201,72 @@ public class DashboardDataDto
 
     [JsonPropertyName("trend_data")]
     public List<TrendPointDto> TrendData { get; set; } = new();
+
+    [JsonPropertyName("trend_source")]
+    public string TrendSource { get; set; } = "unavailable";
+
+    [JsonPropertyName("has_historical_periods")]
+    public bool HasHistoricalPeriods { get; set; }
+}
+
+public class ValidationSummaryDto
+{
+    [JsonPropertyName("valid_count")]
+    public int ValidCount { get; set; }
+
+    [JsonPropertyName("missing_count")]
+    public int MissingCount { get; set; }
+
+    [JsonPropertyName("invalid_count")]
+    public int InvalidCount { get; set; }
+
+    [JsonPropertyName("total_issues")]
+    public int TotalIssues { get; set; }
+}
+
+public class CourseMetadataDto
+{
+    [JsonPropertyName("education_form")]
+    public string? EducationForm { get; set; }
+
+    [JsonPropertyName("teachers")]
+    public List<string> Teachers { get; set; } = new();
+
+    [JsonPropertyName("dates_confirmed")]
+    public bool DatesConfirmed { get; set; }
+
+    [JsonPropertyName("missing_fields")]
+    public List<string> MissingFields { get; set; } = new();
+}
+
+public class CommentRegistryItemDto
+{
+    [JsonPropertyName("question_id")]
+    public string QuestionId { get; set; } = string.Empty;
+
+    [JsonPropertyName("label")]
+    public string Label { get; set; } = string.Empty;
+
+    [JsonPropertyName("non_empty_count")]
+    public int NonEmptyCount { get; set; }
+
+    [JsonPropertyName("coverage")]
+    public double Coverage { get; set; }
+
+    [JsonPropertyName("rows")]
+    public List<string> Rows { get; set; } = new();
+}
+
+public class ProcessingLogItemDto
+{
+    [JsonPropertyName("step")]
+    public string Step { get; set; } = string.Empty;
+
+    [JsonPropertyName("status")]
+    public string Status { get; set; } = string.Empty;
+
+    [JsonPropertyName("message")]
+    public string Message { get; set; } = string.Empty;
 }
 
 public class TrendPointDto
@@ -234,6 +318,9 @@ public class TopicDto
 
     [JsonPropertyName("frequency")]
     public int Frequency { get; set; }
+
+    [JsonPropertyName("evidence")]
+    public EvidenceDto Evidence { get; set; } = new();
 }
 
 public class SentimentDto
@@ -258,6 +345,9 @@ public class ProblemDto
 
     [JsonPropertyName("severity")]
     public string Severity { get; set; } = string.Empty; // High, Medium, Low
+
+    [JsonPropertyName("evidence")]
+    public EvidenceDto Evidence { get; set; } = new();
 }
 
 public class QuoteDto
@@ -267,6 +357,9 @@ public class QuoteDto
 
     [JsonPropertyName("frequency")]
     public int Frequency { get; set; }
+
+    [JsonPropertyName("evidence")]
+    public EvidenceDto Evidence { get; set; } = new();
 }
 
 public class RecommendationDto
@@ -279,4 +372,19 @@ public class RecommendationDto
 
     [JsonPropertyName("priority")]
     public string Priority { get; set; } = string.Empty; // High, Medium, Low
+
+    [JsonPropertyName("evidence")]
+    public EvidenceDto Evidence { get; set; } = new();
+}
+
+public class EvidenceDto
+{
+    [JsonPropertyName("rows")]
+    public List<string> Rows { get; set; } = new();
+
+    [JsonPropertyName("questions")]
+    public List<string> Questions { get; set; } = new();
+
+    [JsonPropertyName("coverage")]
+    public double? Coverage { get; set; }
 }
