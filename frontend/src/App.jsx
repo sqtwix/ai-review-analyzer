@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from "react";
-import { Archive, Clock3, Files, Pencil, Save, Upload, XCircle } from "lucide-react";
+import { Clock3, Files, XCircle } from "lucide-react";
 import {
   login,
   register,
@@ -11,7 +11,6 @@ import {
   isLegacyOfflineModeIgnored,
   seedOfflineReports,
   createOfflineReport,
-  updateOfflineReport,
   archiveAnalysisReport,
   unarchiveAnalysisReport,
 } from "./api";
@@ -322,7 +321,6 @@ function App() {
 
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [editTitleValue, setEditTitleValue] = useState("");
-  const [isEditingReportContent, setIsEditingReportContent] = useState(false);
 
   const updateLayoutPreferences = (patch) => {
     setLayoutPreferences((currentPreferences) => ({
@@ -591,7 +589,6 @@ function App() {
         setRoute(newRoute);
       }
       setIsEditingTitle(false); // Reset inline edit state on navigation
-      setIsEditingReportContent(false);
       setIsSaveMenuOpen(false);
       setIsProfileMenuOpen(false);
       setIsMenuOpen(false); // Close mobile drawer on route change
@@ -1007,69 +1004,6 @@ function App() {
     }
   };
 
-  const persistOfflineReport = (reportId, patch) => {
-    setMockReports((reports) =>
-      reports.map((report) => (report.id === reportId ? { ...report, ...patch } : report))
-    );
-    updateOfflineReport(reportId, patch).catch((err) => {
-      notify({
-        type: "error",
-        title: "Не удалось сохранить изменения",
-        message: err.message,
-      });
-    });
-  };
-
-  const handleReportFieldChange = (reportId, field, value) => {
-    persistOfflineReport(reportId, { [field]: value });
-  };
-
-  const handleFindingChange = (report, index, field, value) => {
-    const nextErrors = report.errors.map((error, currentIndex) =>
-      currentIndex === index ? { ...error, [field]: value } : error
-    );
-    persistOfflineReport(report.id, { errors: nextErrors });
-  };
-
-  const addFinding = (report) => {
-    persistOfflineReport(report.id, {
-      errors: [
-        ...report.errors,
-        {
-          priority: "medium",
-          val: "25%",
-          question: "Новый вопрос",
-          text: "Опишите найденную массовую ошибку.",
-        },
-      ],
-    });
-  };
-
-  const removeFinding = (report, index) => {
-    persistOfflineReport(report.id, {
-      errors: report.errors.filter((_, currentIndex) => currentIndex !== index),
-    });
-  };
-
-  const handleRecommendationChange = (report, index, value) => {
-    const nextRecommendations = report.recommendations.map((recommendation, currentIndex) =>
-      currentIndex === index ? value : recommendation
-    );
-    persistOfflineReport(report.id, { recommendations: nextRecommendations });
-  };
-
-  const addRecommendation = (report) => {
-    persistOfflineReport(report.id, {
-      recommendations: [...report.recommendations, "Новая рекомендация для методиста."],
-    });
-  };
-
-  const removeRecommendation = (report, index) => {
-    persistOfflineReport(report.id, {
-      recommendations: report.recommendations.filter((_, currentIndex) => currentIndex !== index),
-    });
-  };
-
   const handleCreateManualReport = async (e) => {
     e.preventDefault();
     try {
@@ -1113,7 +1047,6 @@ function App() {
       await archiveAnalysisReport(archiveTargetId);
       await fetchHistory();
       await fetchArchivedHistory();
-      setIsEditingReportContent(false);
       const archivedRoute = `report-detail-${archiveTargetId}`;
       setArchiveTargetId("");
       if (route === archivedRoute) {

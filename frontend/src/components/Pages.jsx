@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo } from "react";
 import { 
   ArchiveRestore, ArrowLeft, Construction, Eye, Layers3, Monitor, Moon, PanelLeftClose, 
   PanelLeftOpen, Search, Sun, Pencil, Archive, Save, BookOpen, BarChart3, MessageSquare, 
-  AlertTriangle, CheckCircle, HelpCircle, ChevronRight, ThumbsUp, X, ClipboardCheck
+  AlertTriangle, ChevronRight, X, ClipboardCheck
 } from "lucide-react";
 import { buildCourseReportViewModel } from "../reportViewModel";
 import { AnalyticalReportTab } from "./report/AnalyticalReportTab";
@@ -644,7 +644,6 @@ export function CourseReportDetailPage({
   handleArchiveReport,
   isSaveMenuOpen,
   setIsSaveMenuOpen,
-  isProfileMenuOpen,
   setIsProfileMenuOpen,
   handleExportReport,
   saveActionsRef,

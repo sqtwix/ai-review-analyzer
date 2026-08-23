@@ -1,6 +1,7 @@
 ﻿from openai import OpenAI
 import json
 import logging
+import os
 
 # ========================= Agent Client =========================
 
@@ -36,8 +37,9 @@ class AgentClient:
             self.base_url = base_url
             self.model = agent_model
             self.specialization = specialization
-            # OpenAI клиент работает для всех совместимых API (DeepSeek, GigaChat, vLLM)
-            self.client = OpenAI(api_key=self.api_key, base_url=self.base_url)
+            # OpenAI клиент работает для всех совместимых API (DeepSeek, GigaChat, llama.cpp).
+            # Retries are handled by the controller fallback path, so the UI does not hang on local model 500s.
+            self.client = OpenAI(api_key=self.api_key, base_url=self.base_url, max_retries=0)
         except Exception as e:
             raise Exception("AgentClient Initialization Exception: agent initialization failed - " + str(e))
 
@@ -63,16 +65,18 @@ class AgentClient:
                 ],
                 response_format={"type": "json_object"},
                 temperature=0.3,
-                timeout=90
+                max_tokens=int(os.getenv("AI_AGENT_MAX_TOKENS", "1536")),
+                timeout=float(os.getenv("AI_AGENT_TIMEOUT_SECONDS", "45"))
             )
 
             # Извлекаем содержимое ответа
             raw_content = response.choices[0].message.content
+            json_content = self._extract_json_content(raw_content)
 
             # Валидация JSON: проверяем, что модель вернула корректный JSON
             # Это критично, так как все модули ожидают JSON на вход
             try:
-                json.loads(raw_content)
+                json.loads(json_content)
             except json.JSONDecodeError as json_err:
                 raise Exception(
                     "AgentClient JSON Validation Exception: model returned invalid JSON. "
@@ -80,8 +84,50 @@ class AgentClient:
                 )
 
             logger.info("Agent [%s] completed successfully", self.specialization)
-            return raw_content
+            return json_content
 
         except Exception as e:
             logger.error("Agent [%s] execution failed: %s", self.specialization, str(e))
             raise Exception("AgentClient Execution Exception: prompt execution failed - " + str(e))
+
+    @staticmethod
+    def _extract_json_content(raw_content: str) -> str:
+        if not raw_content:
+            return raw_content
+
+        content = raw_content.strip()
+        if content.startswith("```"):
+            lines = content.splitlines()
+            if lines and lines[0].strip().startswith("```"):
+                lines = lines[1:]
+            if lines and lines[-1].strip() == "```":
+                lines = lines[:-1]
+            content = "\n".join(lines).strip()
+
+        start = content.find("{")
+        if start < 0:
+            return content
+
+        depth = 0
+        in_string = False
+        escape_next = False
+        for index, char in enumerate(content[start:], start=start):
+            if escape_next:
+                escape_next = False
+                continue
+            if char == "\\" and in_string:
+                escape_next = True
+                continue
+            if char == '"':
+                in_string = not in_string
+                continue
+            if in_string:
+                continue
+            if char == "{":
+                depth += 1
+            elif char == "}":
+                depth -= 1
+                if depth == 0:
+                    return content[start:index + 1]
+
+        return content[start:]

@@ -23,6 +23,15 @@ if not exist ".env" (
             echo JWT_EXPIRY_MINUTES=1440
             echo DEEPSEEK_API_KEY=
             echo SBERGPT_API_KEY=
+            echo QWEN_GGUF_MODEL_FILE=qwen2.5-0.5b-instruct-q8_0.gguf
+            echo QWEN_LOCAL_MODEL=local-model
+            echo QWEN_CONTEXT_SIZE=4096
+            echo QWEN_THREADS=4
+            echo QWEN_BATCH_SIZE=256
+            echo QWEN_PARALLEL=1
+            echo AI_AGENT_MAX_TOKENS=1536
+            echo AI_AGENT_TIMEOUT_SECONDS=45
+            echo AI_DRIVER_FORCE_MODEL_FALLBACK=false
             echo VITE_OFFLINE_MODE=false
             echo VITE_ENABLE_DEMO_MODE=false
         ) > .env
@@ -33,10 +42,11 @@ if not exist ".env" (
 
 if not exist "models" mkdir models
 
-set "MODEL_PATH=models\Qwen3.5-0.8B-Q8_0.gguf"
+if "%QWEN_GGUF_MODEL_FILE%"=="" set "QWEN_GGUF_MODEL_FILE=qwen2.5-0.5b-instruct-q8_0.gguf"
+set "MODEL_PATH=models\%QWEN_GGUF_MODEL_FILE%"
 if not exist "%MODEL_PATH%" (
     echo --> Downloading local GGUF model...
-    powershell -Command "Invoke-WebRequest -Uri 'https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct-GGUF/resolve/main/qwen2.5-0.5b-instruct-q8_0.gguf' -OutFile 'models\Qwen3.5-0.8B-Q8_0.gguf'"
+    powershell -Command "Invoke-WebRequest -Uri 'https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct-GGUF/resolve/main/qwen2.5-0.5b-instruct-q8_0.gguf' -OutFile 'models\%QWEN_GGUF_MODEL_FILE%'"
     echo --> Model downloaded successfully.
 ) else (
     echo --> Local GGUF model already exists in .\models, skipping download.

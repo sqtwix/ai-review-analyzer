@@ -11,6 +11,7 @@ from fastapi.responses import JSONResponse
 import json
 import logging
 import math
+import os
 import statistics
 
 logger = logging.getLogger(__name__)
@@ -42,6 +43,7 @@ class AgentController:
     def get_deepseek_data_analysis(self, input_data: AnalysisRequest):
         try:
             self._validate_request(input_data)
+            self._raise_if_forced_programmatic_fallback()
             logger.info("Executing DeepSeek agent pipeline processing...")
             ai_responses = self.agent_manager.start_deepseek_processing(
                 input_data=input_data.model_dump_json()
@@ -63,6 +65,7 @@ class AgentController:
     def get_sbergpt_data_analysis(self, input_data: AnalysisRequest):
         try:
             self._validate_request(input_data)
+            self._raise_if_forced_programmatic_fallback()
             logger.info("Executing SberGPT agent pipeline processing...")
             ai_responses = self.agent_manager.start_sbergpt_processing(
                 input_data=input_data.model_dump_json()
@@ -84,6 +87,7 @@ class AgentController:
     def get_qwen_local_data_analysis(self, input_data: AnalysisRequest):
         try:
             self._validate_request(input_data)
+            self._raise_if_forced_programmatic_fallback()
             logger.info("Executing Qwen Local agent pipeline processing...")
             ai_responses = self.agent_manager.start_qwen_local_processing(
                 input_data=input_data.model_dump_json()
@@ -139,6 +143,10 @@ class AgentController:
             raise HTTPException(status_code=400, detail="; ".join(errors))
 
         return input_data
+
+    def _raise_if_forced_programmatic_fallback(self):
+        if os.getenv("AI_DRIVER_FORCE_MODEL_FALLBACK", "").strip().lower() == "true":
+            raise RuntimeError("Programmatic fallback forced by AI_DRIVER_FORCE_MODEL_FALLBACK=true")
 
     def _valid_scores(self, scores) -> list[float]:
         valid_scores = []
