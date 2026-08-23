@@ -504,7 +504,7 @@ export function buildCourseReportViewModel(report) {
     reportData,
     textAnalysis,
     dashboardData,
-    courseName: courseAnalysis?.course_name || report?.course || "Электронный курс",
+    courseName: report?.course || courseAnalysis?.course_name || "Электронный курс",
     period: courseAnalysis?.period || "Не указан",
     studentsCount: toNumber(courseAnalysis?.students_count),
     scoreCounts,

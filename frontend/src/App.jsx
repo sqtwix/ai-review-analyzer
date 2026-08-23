@@ -439,15 +439,15 @@ function App() {
     const courseAnalysis = coursesAnalysis[0] || {};
 
     return {
-      id: apiReport.id || result.batch_id,
-      course: courseAnalysis.course_name || apiReport.course || "Электронный курс",
+      id: apiReport.id || apiReport.Id || result.batch_id,
+      course: apiReport.courseName || apiReport.CourseName || apiReport.course_name || apiReport.course || courseAnalysis.course_name || "Электронный курс",
       title: apiReport.title || `Анализ опроса за период ${courseAnalysis.period || ""}`,
-      status: apiReport.status,
-      error: apiReport.error,
+      status: apiReport.status || apiReport.Status,
+      error: apiReport.error || apiReport.Error,
       source: apiReport.source || "user",
-      isArchived: Boolean(apiReport.isArchived),
-      createdAt: apiReport.createdAt,
-      result: apiReport.result
+      isArchived: Boolean(apiReport.isArchived ?? apiReport.IsArchived),
+      createdAt: apiReport.createdAt || apiReport.CreatedAt,
+      result: apiReport.result || apiReport.Result
     };
   };
 
@@ -951,7 +951,11 @@ function App() {
     }
     setIsSavingName(true);
     try {
-      await renameAnalysisReport(namingTaskId, namingValue);
+      const nextTitle = namingValue.trim();
+      await renameAnalysisReport(namingTaskId, nextTitle);
+      setMockReports((reports) =>
+        reports.map((report) => (report.id === namingTaskId ? { ...report, course: nextTitle } : report))
+      );
       await fetchHistory();
       setShowNamingModal(false);
       notify({
@@ -982,8 +986,12 @@ function App() {
     if (!editTitleValue.trim()) return;
 
     const reportId = route.replace("report-detail-", "");
+    const nextTitle = editTitleValue.trim();
     try {
-      await renameAnalysisReport(reportId, editTitleValue);
+      await renameAnalysisReport(reportId, nextTitle);
+      setMockReports((reports) =>
+        reports.map((report) => (report.id === reportId ? { ...report, course: nextTitle } : report))
+      );
       await fetchHistory();
       setIsEditingTitle(false);
       notify({
