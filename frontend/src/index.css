@@ -1386,16 +1386,16 @@ p {
 }
 
 .production-guard-box {
-  margin: 14px 0 0;
+  margin: var(--space-4) 0 0;
 }
 
 .report-quality-banner {
   display: grid;
   grid-template-columns: max-content minmax(0, 1fr);
-  gap: 12px;
+  gap: var(--space-3);
   align-items: flex-start;
-  margin: 14px 0 18px;
-  padding: 14px 16px;
+  margin: 0;
+  padding: var(--module-padding-sm);
   border: 1px solid rgba(217, 119, 6, 0.26);
   border-radius: var(--radius);
   color: var(--warning);
@@ -1409,7 +1409,7 @@ p {
 
 .report-quality-banner strong {
   display: block;
-  margin-bottom: 4px;
+  margin-bottom: var(--space-1);
   color: var(--heading);
   font-size: var(--font-size-sm);
 }
@@ -1746,7 +1746,7 @@ p {
 .archive-panel {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 14px;
+  gap: var(--module-gap-sm);
   align-items: stretch;
 }
 
@@ -1764,12 +1764,12 @@ p {
 
 .archive-search {
   min-height: 42px;
-  padding: 0 12px;
+  padding: 0 var(--space-3);
   border: 2px solid var(--line);
   border-radius: var(--radius);
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   background: var(--surface-soft);
   color: var(--muted);
   transition:
@@ -1798,17 +1798,17 @@ p {
 
 .archive-list {
   display: grid;
-  gap: 10px;
+  gap: var(--space-3);
   min-width: 0;
 }
 
 .archive-item {
-  padding: 12px;
+  padding: var(--space-3);
   border: 2px solid var(--line);
   border-radius: var(--radius);
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  gap: 12px;
+  gap: var(--space-3);
   align-items: center;
   background: var(--surface-soft);
   min-width: 0;
@@ -2081,8 +2081,8 @@ p {
 }
 
 .error-box {
-  margin: 16px 0;
-  padding: 14px;
+  margin: var(--space-4) 0 0;
+  padding: var(--space-3);
   background: var(--danger-soft);
   border: 1px solid var(--danger);
   border-radius: var(--radius);
@@ -2094,8 +2094,8 @@ p {
 
 .state-panel {
   max-width: 720px;
-  margin: 40px auto;
-  padding: 42px 24px;
+  margin: var(--space-10) auto;
+  padding: var(--space-10) var(--module-padding);
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--surface);
@@ -2105,7 +2105,7 @@ p {
 }
 
 .state-panel-compact {
-  padding: 32px 28px;
+  padding: var(--space-8) var(--space-7);
   border-top: 4px solid var(--accent-2);
 }
 
@@ -2116,7 +2116,7 @@ p {
 .state-icon {
   width: 52px;
   height: 52px;
-  margin: 0 auto 16px;
+  margin: 0 auto var(--space-4);
   border: 2px solid var(--accent);
   border-radius: var(--radius);
   display: inline-grid;
@@ -2147,7 +2147,7 @@ p {
 }
 
 .state-action {
-  margin-top: 20px;
+  margin-top: var(--space-5);
 }
 
 .progress-track {
@@ -2168,12 +2168,12 @@ p {
 
 .timeline {
   display: grid;
-  gap: 16px;
+  gap: var(--space-4);
 }
 
 .timeline div {
   position: relative;
-  padding-left: 28px;
+  padding-left: var(--space-7);
   border-left: 2px solid var(--line);
 }
 
@@ -2486,7 +2486,7 @@ th {
   z-index: 9999;
   display: grid;
   place-items: center;
-  padding: 16px;
+  padding: var(--module-padding-sm);
   background: var(--overlay);
   backdrop-filter: blur(4px);
   animation: fade-in var(--motion-base) var(--ease-out);
@@ -2494,18 +2494,18 @@ th {
 
 .dialog {
   width: min(460px, 100%);
-  padding: 22px;
+  padding: var(--module-padding);
   border: 2px solid var(--line);
   border-radius: var(--radius);
   background: var(--surface);
   box-shadow: var(--dialog-shadow);
   display: grid;
-  gap: 14px;
+  gap: var(--module-gap-sm);
   animation: dialog-in var(--motion-slow) var(--ease-out);
 }
 
 .dialog h3 {
-  margin-bottom: 6px;
+  margin-bottom: var(--space-2);
 }
 
 .dialog p {
@@ -2545,7 +2545,7 @@ th {
 
 .dialog-form {
   display: grid;
-  gap: 14px;
+  gap: var(--module-gap-sm);
 }
 
 .file-guide-dialog {
@@ -2554,11 +2554,11 @@ th {
 
 .file-guide-list {
   display: grid;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .file-guide-list section {
-  padding: 12px;
+  padding: var(--space-3);
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--surface-soft);
@@ -2570,7 +2570,7 @@ th {
 }
 
 .file-guide-list h4 {
-  margin-bottom: 5px;
+  margin-bottom: var(--space-1);
   color: var(--heading);
 }
 
@@ -2582,7 +2582,7 @@ th {
 .dialog-form input {
   width: 100%;
   min-height: 44px;
-  padding: 10px 12px;
+  padding: var(--space-2) var(--space-3);
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--surface-soft);
@@ -2603,7 +2603,7 @@ th {
 .dialog-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 10px;
+  gap: var(--space-3);
   flex-wrap: wrap;
 }
 
@@ -3099,13 +3099,13 @@ th {
 }
 
 .export-status {
-  margin: 12px 0 18px;
-  padding: 12px;
+  margin: 0;
+  padding: var(--space-3);
   border: 1px solid var(--line);
   border-radius: var(--radius);
   display: grid;
   grid-template-columns: minmax(0, 1fr) max-content max-content;
-  gap: 10px;
+  gap: var(--space-3);
   align-items: center;
   background: var(--surface-soft);
 }
@@ -3116,7 +3116,7 @@ th {
 }
 
 .export-status p {
-  margin-top: 4px;
+  margin-top: var(--space-1);
   color: var(--text-subtle);
   font-size: var(--font-size-sm);
   line-height: var(--line-height-base);
@@ -3140,7 +3140,7 @@ th {
 
 .export-download-link {
   min-height: 36px;
-  padding: 7px 10px;
+  padding: 7px var(--space-3);
 }
 
 .export-status-dismiss {
@@ -3225,11 +3225,11 @@ th {
 .save-menu,
 .profile-menu {
   position: absolute;
-  top: calc(100% + 8px);
+  top: calc(100% + var(--space-2));
   right: 0;
   z-index: 20;
   min-width: 132px;
-  padding: 6px;
+  padding: var(--space-2);
   border: 2px solid var(--line);
   border-radius: var(--radius);
   background: var(--surface);
@@ -3245,9 +3245,9 @@ th {
 .profile-summary {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 8px 8px 10px;
-  margin-bottom: 6px;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-2) var(--space-3);
+  margin-bottom: var(--space-2);
   border-bottom: 1px solid var(--line);
 }
 
@@ -3291,13 +3291,13 @@ th {
 .profile-menu button {
   width: 100%;
   min-height: 34px;
-  padding: 6px 8px;
+  padding: 6px var(--space-2);
   border: 2px solid transparent;
   border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  gap: 8px;
+  gap: var(--space-2);
   background: transparent;
   color: var(--text-soft);
   cursor: pointer;
@@ -3395,20 +3395,20 @@ body[data-density="minimal"] .state-panel {
 
 .toast-stack {
   position: fixed;
-  right: 18px;
-  bottom: 18px;
+  right: var(--space-5);
+  bottom: var(--space-5);
   z-index: 10000;
   width: min(360px, calc(100vw - 32px));
   display: grid;
-  gap: 10px;
+  gap: var(--space-3);
 }
 
 .toast {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
-  gap: 10px;
+  gap: var(--space-3);
   align-items: flex-start;
-  padding: 12px;
+  padding: var(--space-3);
   border: 2px solid var(--line);
   border-radius: var(--radius);
   background: var(--surface);
@@ -3443,7 +3443,7 @@ body[data-density="minimal"] .state-panel {
 
 .toast strong {
   display: block;
-  margin-bottom: 2px;
+  margin-bottom: var(--space-1);
   font-size: var(--font-size-sm);
 }
 
@@ -3475,7 +3475,7 @@ body[data-density="minimal"] .state-panel {
 .offline-create-form label,
 .report-editor label {
   display: grid;
-  gap: 8px;
+  gap: var(--space-2);
   color: var(--muted);
   font-weight: var(--font-weight-secondary);
   min-width: 0;
@@ -5576,13 +5576,13 @@ body[data-density="minimal"] .app-shell {
 }
 
 body[data-density="minimal"] .sidebar {
-  padding: 12px;
-  gap: 12px;
+  padding: var(--space-3);
+  gap: var(--space-3);
 }
 
 body[data-density="minimal"] .brand {
   min-height: 42px;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 body[data-density="minimal"] .brand-mark {
@@ -5611,13 +5611,13 @@ body[data-density="minimal"] .accessibility-toolbar-label {
 }
 
 body[data-density="minimal"] .workspace {
-  padding: 12px;
+  padding: var(--space-3);
 }
 
 body[data-density="minimal"] .topbar,
 body[data-density="minimal"] .settings-topbar {
   min-height: 38px;
-  margin-bottom: 10px;
+  margin-bottom: 0;
 }
 
 body[data-density="minimal"] .topbar h1 {
@@ -5634,7 +5634,7 @@ body[data-density="minimal"] .document-panel {
 }
 
 body[data-density="minimal"] .report-header {
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 body[data-density="minimal"] #report-title-heading {
@@ -5642,13 +5642,13 @@ body[data-density="minimal"] #report-title-heading {
 }
 
 body[data-density="minimal"] .export-actions {
-  gap: 6px;
+  gap: var(--space-2);
 }
 
 body[data-density="minimal"] .report-tabs {
-  gap: 6px;
-  margin-bottom: 10px;
-  padding: 4px 0 10px;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+  padding: var(--space-1) 0 var(--space-3);
 }
 
 body[data-density="minimal"] .report-tabs .tab-btn {
@@ -5667,12 +5667,12 @@ body[data-density="minimal"] .subtab-btn {
 
 body[data-density="minimal"] .qualitative-layout {
   grid-template-columns: max-content minmax(0, 1fr);
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 body[data-density="minimal"] .qualitative-subnav {
-  gap: 4px;
-  padding-right: 10px;
+  gap: var(--space-1);
+  padding-right: var(--space-3);
 }
 
 body[data-density="minimal"] .dashboard-tab,
@@ -5754,12 +5754,12 @@ body[data-density="minimal"] .settings-panel {
   justify-content: stretch;
   min-height: auto;
   align-items: center;
-  gap: 18px;
+  gap: var(--module-gap-sm);
 }
 
 body[data-density="minimal"] .settings-copy {
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 body[data-density="minimal"] .settings-copy > svg {
@@ -5770,7 +5770,7 @@ body[data-density="minimal"] .theme-options {
   width: 100%;
   min-width: 0;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 6px;
+  gap: var(--space-2);
 }
 
 body[data-density="minimal"] .theme-options button {
@@ -5789,8 +5789,8 @@ body[data-density="minimal"] .toggle-switch {
 }
 
 body[data-density="minimal"] .accessibility-toolbar-inner {
-  gap: 8px;
-  padding: 6px 10px;
+  gap: var(--space-2);
+  padding: 6px var(--space-3);
 }
 
 @media (max-width: 640px) {
