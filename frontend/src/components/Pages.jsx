@@ -493,7 +493,7 @@ export function StudentsPage({ reports, onNewAnalysis }) {
           <div className="grid two students-breakdown-grid">
             <section className="panel">
               <h3>Категории слушателей</h3>
-              <div className="stats-breakdown" style={{ display: "flex", flexDirection: "column", gap: "12px", marginTop: "14px" }}>
+              <div className="stats-breakdown">
                 {Object.entries(aggregatedData.positions).map(([pos, count]) => {
                   const total = Math.max(Object.values(aggregatedData.positions).reduce((a, b) => a + b, 0), 1);
                   const pct = Math.round((count / total) * 100);
@@ -504,7 +504,7 @@ export function StudentsPage({ reports, onNewAnalysis }) {
                         <span className="muted">{count} чел. ({pct}%)</span>
                       </div>
                       <div className="breakdown-track">
-                        <div style={{ width: `${pct}%` }}></div>
+                        <div style={{ "--bar-width": `${pct}%` }}></div>
                       </div>
                     </div>
                   );
@@ -514,18 +514,18 @@ export function StudentsPage({ reports, onNewAnalysis }) {
 
             <section className="panel">
               <h3>Предпочитаемые форматы обучения</h3>
-              <div className="stats-breakdown" style={{ display: "flex", flexDirection: "column", gap: "12px", marginTop: "14px" }}>
+              <div className="stats-breakdown">
                 {Object.entries(aggregatedData.formats).map(([format, count]) => {
                   const total = Math.max(Object.values(aggregatedData.formats).reduce((a, b) => a + b, 0), 1);
                   const pct = Math.round((count / total) * 100);
                   return (
                     <div key={format} className="breakdown-row">
                       <div className="breakdown-header">
-                        <span style={{ textTransform: "capitalize" }}><b>{format}</b></span>
+                        <span className="text-capitalize"><b>{format}</b></span>
                         <span className="muted">{pct}%</span>
                       </div>
                       <div className="breakdown-track">
-                        <div style={{ width: `${pct}%` }}></div>
+                        <div style={{ "--bar-width": `${pct}%` }}></div>
                       </div>
                     </div>
                   );

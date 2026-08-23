@@ -17,32 +17,11 @@ function EmptyChartState({ title, message }) {
 
 function DashboardSection({ title, children }) {
   return (
-    <div className="dashboard-section" style={{ marginBottom: "28px" }}>
-      <div 
-        className="dashboard-section-header" 
-        style={{ 
-          padding: "12px 18px", 
-          borderBottom: "1px solid var(--line, #e2e8f0)", 
-          background: "var(--surface-soft, #f8fafc)",
-          borderTopLeftRadius: "var(--radius, 12px)",
-          borderTopRightRadius: "var(--radius, 12px)"
-        }}
-      >
-        <h3 
-          className="dashboard-section-title" 
-          style={{ 
-            margin: 0, 
-            fontSize: "var(--font-size-lg)",
-            fontWeight: 700, 
-            color: "var(--text, #1e293b)",
-            lineHeight: 1.35,
-            wordBreak: "break-word"
-          }}
-        >
-          {title}
-        </h3>
+    <div className="dashboard-section">
+      <div className="dashboard-section-header">
+        <h3 className="dashboard-section-title">{title}</h3>
       </div>
-      <div className="dashboard-section-body" style={{ padding: "18px" }}>
+      <div className="dashboard-section-body">
         {children}
       </div>
     </div>
@@ -54,11 +33,11 @@ function MetricCards({ metricCards, involvement }) {
     <div className="dashboard-metrics-grid">
       {metricCards.map((card) => (
         <article key={card.key} className="panel dashboard-metric-card">
-          <span className="muted" style={{ fontSize: "var(--font-size-sm)", fontWeight: 600 }}>{card.label}</span>
-          <strong style={{ fontSize: "var(--font-size-2xl)" }}>
-            {formatNumber(card.average)} <span style={{ fontSize: "var(--font-size-base)" }}>/ 10</span>
+          <span className="muted dashboard-metric-label">{card.label}</span>
+          <strong className="dashboard-metric-value">
+            {formatNumber(card.average)} <span>/ 10</span>
           </strong>
-          <small className="muted" style={{ fontSize: "var(--font-size-xs)" }}>
+          <small className="muted dashboard-metric-note">
             Медиана: {formatNumber(card.median)} · Отклонение: {formatNumber(card.stdDev)}
           </small>
           <div className="stacked-distribution" aria-label={`Распределение оценок: ${card.label}`}>
@@ -66,7 +45,7 @@ function MetricCards({ metricCards, involvement }) {
             <span className="mid" style={{ width: `${card.distribution.mid}%` }} title={`4-7: ${formatNumber(card.distribution.mid, 0)}%`}></span>
             <span className="high" style={{ width: `${card.distribution.high}%` }} title={`8-10: ${formatNumber(card.distribution.high, 0)}%`}></span>
           </div>
-          <div className="distribution-labels" style={{ fontSize: "var(--font-size-xs)", fontWeight: 600 }}>
+          <div className="distribution-labels">
             <span>1-3: {formatNumber(card.distribution.low, 0)}%</span>
             <span>4-7: {formatNumber(card.distribution.mid, 0)}%</span>
             <span>8-10: {formatNumber(card.distribution.high, 0)}%</span>
@@ -76,16 +55,16 @@ function MetricCards({ metricCards, involvement }) {
 
       {involvement && (
         <article className="panel dashboard-metric-card">
-          <span className="muted" style={{ fontSize: "var(--font-size-sm)", fontWeight: 600 }}>Вовлеченность слушателей</span>
-          <strong style={{ fontSize: "var(--font-size-2xl)" }}>{formatNumber(involvement.involved_percent, 0)}%</strong>
-          <small className="muted" style={{ fontSize: "var(--font-size-xs)" }}>
+          <span className="muted dashboard-metric-label">Вовлеченность слушателей</span>
+          <strong className="dashboard-metric-value">{formatNumber(involvement.involved_percent, 0)}%</strong>
+          <small className="muted dashboard-metric-note">
             Вовлечены: {involvement.no_count} чел. · Отстранены: {involvement.yes_count} чел.
           </small>
           <div className="stacked-distribution" aria-label="Распределение вовлеченности">
             <span className="low" style={{ width: `${involvement.detached_percent}%` }} title={`Отстранены: ${formatNumber(involvement.detached_percent, 0)}%`}></span>
             <span className="high" style={{ width: `${involvement.involved_percent}%` }} title={`Вовлечены: ${formatNumber(involvement.involved_percent, 0)}%`}></span>
           </div>
-          <div className="distribution-labels" style={{ fontSize: "var(--font-size-xs)", fontWeight: 600 }}>
+          <div className="distribution-labels">
             <span>Отстранены: {formatNumber(involvement.detached_percent, 0)}%</span>
             <span>Вовлечены: {formatNumber(involvement.involved_percent, 0)}%</span>
           </div>
@@ -112,11 +91,9 @@ function SvgAverageBarChart({ criteria }) {
 
   return (
     <section className="panel chart-panel">
-      <h3 style={{ fontSize: "var(--font-size-lg)", fontWeight: 700, marginBottom: "16px", color: "var(--text, #1e293b)" }}>
-        Средние баллы по 5 критериям
-      </h3>
-      <div className="chart-frame" style={{ minHeight: `${svgHeight}px`, height: "auto", display: "flex", justifyContent: "center" }}>
-        <svg viewBox={`0 0 ${svgWidth} ${svgHeight}`} style={{ width: "100%", maxHeight: "350px" }}>
+      <h3 className="chart-title">Средние баллы по 5 критериям</h3>
+      <div className="chart-frame chart-frame-dynamic" style={{ "--chart-min-height": `${svgHeight}px` }}>
+        <svg viewBox={`0 0 ${svgWidth} ${svgHeight}`} className="chart-svg chart-svg-average">
           {/* Grid lines */}
           {[0, 2.5, 5, 7.5, 10].map((val) => {
             const x = labelWidth + (val / 10) * chartWidth;
@@ -202,11 +179,9 @@ function SvgSatisfactionRadarChart({ criteria }) {
 
   return (
     <section className="panel chart-panel">
-      <h3 style={{ fontSize: "var(--font-size-lg)", fontWeight: 700, marginBottom: "16px", color: "var(--text, #1e293b)" }}>
-        Профиль удовлетворенности
-      </h3>
-      <div className="chart-frame chart-frame-square" style={{ minHeight: "340px", height: "auto", display: "flex", justifyContent: "center" }}>
-        <svg viewBox="0 0 480 340" style={{ width: "100%", maxHeight: "340px" }}>
+      <h3 className="chart-title">Профиль удовлетворенности</h3>
+      <div className="chart-frame chart-frame-square chart-frame-dynamic">
+        <svg viewBox="0 0 480 340" className="chart-svg chart-svg-radar">
           {/* Concentric Web Rings */}
           {rings.map((ringScale) => {
             const ringPoints = Array.from({ length: total })
@@ -260,7 +235,7 @@ function SvgSatisfactionRadarChart({ criteria }) {
           })}
         </svg>
       </div>
-      <p className="chart-note muted" style={{ fontSize: "var(--font-size-xs)", marginTop: "6px" }}>
+      <p className="chart-note muted">
         Вовлеченность приведена к шкале 0–10 через процент вовлеченных слушателей.
       </p>
     </section>
@@ -293,11 +268,9 @@ function SvgCorrelationHeatmap({ matrix }) {
 
   return (
     <section className="panel chart-panel">
-      <h3 style={{ fontSize: "var(--font-size-lg)", fontWeight: 700, marginBottom: "16px", color: "var(--text, #1e293b)" }}>
-        Тепловая карта корреляций
-      </h3>
-      <div className="chart-frame chart-frame-square" style={{ minHeight: `${svgHeight}px`, height: "auto", display: "flex", justifyContent: "center" }}>
-        <svg viewBox={`0 0 ${svgWidth} ${svgHeight}`} style={{ width: "100%", maxHeight: "360px" }}>
+      <h3 className="chart-title">Тепловая карта корреляций</h3>
+      <div className="chart-frame chart-frame-square chart-frame-dynamic" style={{ "--chart-min-height": `${svgHeight}px` }}>
+        <svg viewBox={`0 0 ${svgWidth} ${svgHeight}`} className="chart-svg chart-svg-heatmap">
           {/* Top Column Headers (Rotated -25 deg to prevent overlapping) */}
           {keys.map((colKey, colIdx) => {
             const x = paddingLeft + colIdx * cellSize + cellSize / 2;
@@ -384,11 +357,9 @@ function SvgOverallDistributionChart({ distribution, limitation }) {
 
   return (
     <section className="panel chart-panel">
-      <h3 style={{ fontSize: "var(--font-size-lg)", fontWeight: 700, marginBottom: "16px", color: "var(--text, #1e293b)" }}>
-        Распределение общей оценки
-      </h3>
-      <div className="chart-frame" style={{ minHeight: `${svgHeight}px`, height: "auto", display: "flex", justifyContent: "center" }}>
-        <svg viewBox={`0 0 ${svgWidth} ${svgHeight}`} style={{ width: "100%", maxHeight: "260px" }}>
+      <h3 className="chart-title">Распределение общей оценки</h3>
+      <div className="chart-frame chart-frame-dynamic" style={{ "--chart-min-height": `${svgHeight}px` }}>
+        <svg viewBox={`0 0 ${svgWidth} ${svgHeight}`} className="chart-svg chart-svg-distribution">
           {/* Y Ticks (0%, 25%, 50%, 75%, 100%) */}
           {[0, 25, 50, 75, 100].map((pct) => {
             const y = startY - (pct / 100) * chartHeight;
@@ -422,7 +393,7 @@ function SvgOverallDistributionChart({ distribution, limitation }) {
           })}
         </svg>
       </div>
-      <p className="chart-note muted" style={{ fontSize: "var(--font-size-xs)", marginTop: "6px" }}>{limitation}</p>
+      <p className="chart-note muted">{limitation}</p>
     </section>
   );
 }
@@ -458,44 +429,28 @@ function SvgTrendChart({ trendData, limitation }) {
 
   return (
     <section className="panel chart-panel chart-panel-wide">
-      <div className="section-heading" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
-        <h3 style={{ fontSize: "var(--font-size-lg)", fontWeight: 700, color: "var(--text, #1e293b)", margin: 0 }}>
-          Динамика оценок по периодам
-        </h3>
-        <span className="badge trend-badge" style={{ display: "inline-flex", alignItems: "center", gap: "5px", background: "var(--soft-accent, #e5f2ec)", color: "var(--accent, #2f6f65)", padding: "5px 12px", borderRadius: "14px", fontSize: "var(--font-size-xs)", fontWeight: 700 }}>
+      <div className="section-heading chart-heading">
+        <h3 className="chart-title">Динамика оценок по периодам</h3>
+        <span className="badge trend-badge">
           <TrendingUp size={15} />
           Тенденция
         </span>
       </div>
 
-      {/* NON-OVERLAPPING Individual Legend Pills with Clear Gap & Padding */}
-      <div style={{ display: "flex", flexWrap: "wrap", gap: "12px", marginBottom: "18px", padding: "12px 16px", background: "var(--surface-soft, #f8fafc)", borderRadius: "10px", border: "1px solid var(--line, #e2e8f0)" }}>
+      <div className="chart-legend">
         {series.map((s) => (
           <div 
             key={s.key} 
-            style={{ 
-              display: "inline-flex", 
-              alignItems: "center", 
-              gap: "8px", 
-              fontSize: "var(--font-size-sm)",
-              fontWeight: 600, 
-              color: "var(--text, #1e293b)", 
-              whiteSpace: "nowrap",
-              padding: "5px 12px",
-              borderRadius: "6px",
-              background: "var(--surface, #ffffff)",
-              border: "1px solid var(--line, #cbd5e1)",
-              boxShadow: "0 1px 3px rgba(0, 0, 0, 0.05)"
-            }}
+            className="chart-legend-item"
           >
-            <span style={{ width: "11px", height: "11px", borderRadius: "50%", backgroundColor: s.color, flexShrink: 0 }}></span>
+            <span className="chart-legend-dot" style={{ "--legend-color": s.color }}></span>
             <span>{s.name}</span>
           </div>
         ))}
       </div>
 
-      <div className="chart-frame" style={{ minHeight: `${svgHeight}px`, height: "auto", display: "flex", justifyContent: "center" }}>
-        <svg viewBox={`0 0 ${svgWidth} ${svgHeight}`} style={{ width: "100%", maxHeight: "280px" }}>
+      <div className="chart-frame chart-frame-dynamic" style={{ "--chart-min-height": `${svgHeight}px` }}>
+        <svg viewBox={`0 0 ${svgWidth} ${svgHeight}`} className="chart-svg chart-svg-trend">
           {/* Y Ticks */}
           {[0, 2.5, 5, 7.5, 10].map((score) => {
             const y = startY - (score / 10) * chartHeight;
@@ -567,13 +522,13 @@ export function DashboardTab({ viewModel }) {
   }
 
   return (
-    <div className="dashboard-tab" style={{ display: "flex", flexDirection: "column", gap: "28px" }}>
+    <div className="dashboard-tab">
       {/* Metric Cards Top Row */}
       <MetricCards metricCards={viewModel.metricCards} involvement={viewModel.involvement} />
 
       {/* Section 1: Main Criteria Visualizations */}
       <DashboardSection title="Критерии и распределение оценок">
-        <div className="dashboard-chart-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(360px, 1fr))", gap: "24px" }}>
+        <div className="dashboard-chart-grid dashboard-chart-grid-wide">
           <SvgAverageBarChart criteria={viewModel.fiveCriteria} />
           <SvgSatisfactionRadarChart criteria={viewModel.fiveCriteria} />
           <SvgCorrelationHeatmap matrix={viewModel.dashboardData.correlation_matrix} />
@@ -591,10 +546,10 @@ export function DashboardTab({ viewModel }) {
 
       {/* Section 3: Audience Composition & Format Preferences */}
       <DashboardSection title="Состав группы и форматы обучения">
-        <div className="dashboard-chart-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "24px" }}>
+        <div className="dashboard-chart-grid">
           <section className="panel compact-breakdown-panel">
-            <h3 style={{ fontSize: "var(--font-size-lg)", fontWeight: 700, marginBottom: "16px", color: "var(--text, #1e293b)" }}>
-              <Layers size={18} style={{ display: "inline", verticalAlign: "sub", marginRight: "6px" }} />
+            <h3 className="chart-title chart-title-with-icon">
+              <Layers size={18} />
               Категории слушателей в группе
             </h3>
             {Object.entries(viewModel.positionDistribution).length > 0 ? (
@@ -602,13 +557,13 @@ export function DashboardTab({ viewModel }) {
                 const total = Math.max(Object.values(viewModel.positionDistribution).reduce((sum, value) => sum + value, 0), 1);
                 const percent = Math.round((count / total) * 100);
                 return (
-                  <div className="breakdown-row" key={position} style={{ marginBottom: "12px" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px", fontSize: "var(--font-size-sm)" }}>
+                  <div className="breakdown-row" key={position}>
+                    <div className="breakdown-header">
                       <span>{position}</span>
                       <strong>{count} чел. ({percent}%)</strong>
                     </div>
-                    <div className="mini-progress" style={{ height: "7px", borderRadius: "4px", backgroundColor: "var(--panel-border, #e2e8f0)", overflow: "hidden" }}>
-                      <span style={{ display: "block", height: "100%", width: `${percent}%`, backgroundColor: "var(--accent, #2f6f65)", borderRadius: "4px" }}></span>
+                    <div className="mini-progress">
+                      <span style={{ "--bar-width": `${percent}%` }}></span>
                     </div>
                   </div>
                 );
@@ -619,8 +574,8 @@ export function DashboardTab({ viewModel }) {
           </section>
 
           <section className="panel compact-breakdown-panel">
-            <h3 style={{ fontSize: "var(--font-size-lg)", fontWeight: 700, marginBottom: "16px", color: "var(--text, #1e293b)" }}>
-              <PieChart size={18} style={{ display: "inline", verticalAlign: "sub", marginRight: "6px" }} />
+            <h3 className="chart-title chart-title-with-icon">
+              <PieChart size={18} />
               Предпочитаемые форматы обучения
             </h3>
             {Object.entries(viewModel.preferredFormats).length > 0 ? (
@@ -628,13 +583,13 @@ export function DashboardTab({ viewModel }) {
                 const total = Math.max(Object.values(viewModel.preferredFormats).reduce((sum, value) => sum + value, 0), 1);
                 const percent = Math.round((count / total) * 100);
                 return (
-                  <div className="format-breakdown-row" key={format} style={{ marginBottom: "12px" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px", fontSize: "var(--font-size-sm)" }}>
+                  <div className="format-breakdown-row" key={format}>
+                    <div className="breakdown-header">
                       <span>{format}</span>
                       <strong>{percent}%</strong>
                     </div>
-                    <div className="mini-progress" style={{ height: "7px", borderRadius: "4px", backgroundColor: "var(--panel-border, #e2e8f0)", overflow: "hidden" }}>
-                      <span style={{ display: "block", height: "100%", width: `${percent}%`, backgroundColor: "var(--accent-2, #425f86)", borderRadius: "4px" }}></span>
+                    <div className="mini-progress mini-progress-secondary">
+                      <span style={{ "--bar-width": `${percent}%` }}></span>
                     </div>
                   </div>
                 );

@@ -73,15 +73,14 @@ export function QualitativeTab({ textAnalysis, activeTab, onTabChange, sourceLim
   return (
     <div className="qualitative-layout">
       <aside className="qualitative-subnav" aria-label="Разделы качественного анализа">
-        <div className="search-filter-box" style={{ padding: "10px", marginBottom: "12px" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "6px", background: "var(--surface, #ffffff)", border: "1px solid var(--line, #cbd5e1)", borderRadius: "6px", padding: "6px 10px" }}>
+        <div className="search-filter-box">
+          <div className="qualitative-search-control">
             <Search size={14} className="muted" />
             <input
               type="text"
               placeholder="Поиск по отзывам..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              style={{ border: "none", outline: "none", width: "100%", fontSize: "var(--font-size-xs)", background: "transparent", color: "var(--text)" }}
             />
           </div>
         </div>

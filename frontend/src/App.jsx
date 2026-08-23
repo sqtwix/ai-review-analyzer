@@ -1243,7 +1243,7 @@ function App() {
                 <div className="segmented" id="model-selector-container">
                   <button
                     type="button"
-                    style={{ textDecoration: "line-through", textDecorationColor: "#dc2626", textDecorationThickness: "2px", color: "var(--text-muted)", opacity: 0.75 }}
+                    className="segmented-option-disabled"
                     onClick={() => {
                       notify({
                         type: "info",
@@ -1257,7 +1257,7 @@ function App() {
                   </button>
                   <button
                     type="button"
-                    style={{ textDecoration: "line-through", textDecorationColor: "#dc2626", textDecorationThickness: "2px", color: "var(--text-muted)", opacity: 0.75 }}
+                    className="segmented-option-disabled"
                     onClick={() => {
                       notify({
                         type: "info",
@@ -1282,7 +1282,6 @@ function App() {
                   <div
                     className={`validation-box validation-box-${uploadValidation.status}`}
                     id="upload-validation-box"
-                    style={{ marginTop: "20px" }}
                   >
                     <b>{uploadValidation.title}</b>
                     <p>{uploadValidation.message}</p>
@@ -1297,7 +1296,6 @@ function App() {
                 <button
                   className="primary-button wide"
                   id="start-analysis-btn"
-                  style={{ marginTop: "20px", width: "100%" }}
                   onClick={startAnalysis}
                   disabled={uploadValidation.status === "error"}
                   aria-describedby={selectedResponseFiles.length === 0 ? "start-analysis-helper" : undefined}
@@ -1338,7 +1336,7 @@ function App() {
               </section>
             </div>
           ) : (
-            <div className="panel" id="upload-progress-panel" style={{ marginTop: "0" }}>
+            <div className="panel" id="upload-progress-panel">
               <div className="section-heading">
                 <div>
                   <p className="eyebrow" id="progress-task-id">Задача {analysisTaskId}</p>
@@ -1347,7 +1345,7 @@ function App() {
                 <span className="badge" id="progress-percentage-badge">{analysisProgress}%</span>
               </div>
               <div className="progress-track">
-                <span id="progress-fill-bar" style={{ width: `${analysisProgress}%`, transition: "width 0.4s ease" }}></span>
+                <span id="progress-fill-bar" style={{ "--progress-value": `${analysisProgress}%` }}></span>
               </div>
               <div className="timeline" id="progress-timeline-steps">
                 <div id="step-1" className={getTimelineStepClass(0, analysisProgress)}>
