@@ -1217,7 +1217,7 @@ p {
 }
 
 .panel > .muted + .dropzone {
-  margin-top: 24px;
+  margin-top: var(--module-gap);
 }
 
 .metric-card {
@@ -1232,7 +1232,7 @@ p {
 
 .metric-card strong {
   display: block;
-  margin: 12px 0;
+  margin: var(--space-3) 0;
   color: var(--value-text);
   font-size: var(--font-size-2xl);
 }
@@ -1254,7 +1254,7 @@ p {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 18px;
+  gap: var(--space-5);
 }
 
 .section-heading > div:first-child,
@@ -1263,7 +1263,7 @@ p {
   min-width: 0;
   display: grid;
   align-content: start;
-  gap: 6px;
+  gap: var(--space-2);
 }
 
 :where(.text-stack, .report-title-block, .settings-copy > div, .qualitative-card > div, .recommendation-card > div, .student-id, .reason-block, .action-card, .dashboard-metric-card, .chart-panel, .document-prose-group, .toast > div) > :where(h1, h2, h3, h4, p, span, strong, small) {
@@ -1275,7 +1275,7 @@ p {
   min-width: 0;
   display: grid;
   align-content: start;
-  gap: 6px;
+  gap: var(--space-2);
 }
 
 .section-heading h2,
@@ -1288,13 +1288,13 @@ p {
 .recommendations {
   list-style: none;
   padding: 0;
-  margin: 18px 0 0;
+  margin: var(--space-5) 0 0;
   display: grid;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .task-list li {
-  padding: 16px 0;
+  padding: var(--module-padding-sm) 0;
   border-top: 1px solid var(--line);
 }
 
@@ -1305,7 +1305,7 @@ p {
 .task-list b,
 .task-list p {
   display: block;
-  margin: 8px 0 0;
+  margin: var(--space-2) 0 0;
 }
 
 .task-list p,
@@ -1323,7 +1323,7 @@ p {
   align-items: center;
   justify-content: center;
   min-height: 28px;
-  padding: 4px 10px;
+  padding: var(--space-1) var(--space-3);
   border-radius: 999px;
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-strong);
@@ -1338,7 +1338,7 @@ p {
   min-width: 74px;
   min-height: 86px;
   max-width: 100%;
-  padding: 0 12px;
+  padding: 0 var(--space-3);
   text-align: center;
   overflow-wrap: normal;
   word-break: keep-all;
@@ -1364,7 +1364,7 @@ p {
 
 .source-badge {
   min-height: 22px;
-  padding: 3px 7px;
+  padding: 3px var(--space-2);
   border-radius: 999px;
   display: inline-flex;
   align-items: center;
@@ -2825,24 +2825,24 @@ th {
 
 .sidebar-history-section {
   min-height: 0;
-  display: flex;
+  display: grid;
   flex: 1;
-  flex-direction: column;
-  gap: 10px;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  gap: var(--space-3);
 }
 
 .sidebar-history {
   flex: 1;
   overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
+  display: grid;
+  align-content: start;
+  gap: var(--space-2);
   margin-top: 0;
   max-height: calc(var(--app-viewport-height) - 320px);
 }
 
 .sidebar-section-title {
-  padding-left: 12px;
+  padding-left: var(--space-3);
   margin-bottom: 0;
   color: var(--muted);
   font-size: var(--font-size-xs);
@@ -2856,12 +2856,12 @@ th {
 .sidebar-search {
   min-height: 38px;
   margin-bottom: 0;
-  padding: 0 10px;
+  padding: 0 var(--space-3);
   border: 2px solid var(--line);
   border-radius: var(--radius);
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   background: var(--surface-soft);
   color: var(--muted);
   white-space: nowrap;
@@ -2891,7 +2891,7 @@ th {
 }
 
 .sidebar-empty {
-  padding: 12px;
+  padding: var(--space-3);
   border: 1px dashed var(--line);
   border-radius: var(--radius);
   color: var(--muted);
@@ -2900,11 +2900,12 @@ th {
 }
 
 .history-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) max-content;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
   min-height: 48px;
-  padding: 0 4px 0 0;
+  padding: 0 var(--space-1) 0 0;
   border-radius: var(--radius);
   color: var(--text);
   font-size: var(--font-size-sm);
@@ -2914,12 +2915,13 @@ th {
 .history-item {
   min-width: 0;
   min-height: 48px;
-  padding: 8px 8px 8px 12px;
+  padding: var(--space-2) var(--space-2) var(--space-2) var(--space-3);
   border-radius: var(--radius);
   flex: 1;
-  display: flex;
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
   align-items: center;
-  gap: 10px;
+  gap: var(--space-3);
   color: inherit;
   cursor: pointer;
   text-decoration: none;
@@ -2936,7 +2938,7 @@ th {
 
 .history-item-copy {
   display: grid;
-  gap: 2px;
+  gap: var(--space-1);
   line-height: 1.25;
 }
 
@@ -2965,7 +2967,7 @@ th {
   min-width: 0;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
 }
 
 .history-item-meta-row .source-badge {
@@ -3021,14 +3023,14 @@ th {
 .sidebar-divider {
   height: 1px;
   background: var(--line);
-  margin: 2px 0;
+  margin: var(--space-1) 0;
 }
 
 .in-dev-badge {
   font-size: var(--font-size-xs);
   background: var(--line);
   color: var(--muted);
-  padding: 2px 6px;
+  padding: 2px var(--space-2);
   border-radius: 4px;
   font-weight: var(--font-weight-regular);
   margin-left: auto;
@@ -3039,7 +3041,7 @@ th {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: var(--space-2);
   width: 100%;
   min-width: 0;
   min-height: 44px;
@@ -3063,7 +3065,7 @@ th {
 .sidebar-nav {
   margin-top: auto;
   display: grid;
-  gap: 6px;
+  gap: var(--space-2);
 }
 
 .primary-button:disabled,
@@ -3269,7 +3271,7 @@ th {
 .profile-summary-text {
   min-width: 0;
   display: grid;
-  gap: 2px;
+  gap: var(--space-1);
 }
 
 .profile-summary-text strong,
@@ -3294,7 +3296,7 @@ th {
 .profile-menu button {
   width: 100%;
   min-height: 34px;
-  padding: 6px var(--space-2);
+  padding: 6px var(--space-3);
   border: 2px solid transparent;
   border-radius: 6px;
   display: flex;
@@ -3330,9 +3332,9 @@ th {
 
 .offline-create-form {
   display: grid;
-  gap: 12px;
-  margin-top: 20px;
-  padding-top: 18px;
+  gap: var(--space-3);
+  margin-top: var(--space-5);
+  padding-top: var(--space-5);
   border-top: 1px solid var(--line);
 }
 
@@ -5114,7 +5116,7 @@ th {
 .report-meta-line {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: var(--space-2);
   align-items: center;
 }
 
@@ -5123,10 +5125,10 @@ th {
   top: var(--accessibility-toolbar-height);
   z-index: 4;
   display: flex;
-  gap: 8px;
+  gap: var(--space-2);
   max-width: 100%;
-  margin-bottom: 18px;
-  padding: 6px 0 18px;
+  margin-bottom: var(--space-5);
+  padding: 6px 0 var(--space-5);
   overflow-x: auto;
   border-bottom: 1px solid var(--line);
   background: inherit;
@@ -5142,7 +5144,7 @@ th {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: var(--space-2);
   background: var(--surface);
   color: var(--muted);
   cursor: pointer;
@@ -5158,7 +5160,7 @@ th {
 .subtab-btn {
   width: 100%;
   min-width: max-content;
-  padding: 8px 14px;
+  padding: var(--space-2) var(--space-4);
 }
 
 .subtab-label {
@@ -5186,7 +5188,7 @@ th {
 .report-tabs .tab-btn {
   flex: 1 1 0;
   min-width: 0;
-  padding: 8px 14px;
+  padding: var(--space-2) var(--space-4);
   text-align: center;
   white-space: normal;
   color: var(--text-soft);
@@ -5242,7 +5244,7 @@ th {
 
 .dashboard-section > summary {
   min-height: 42px;
-  padding: 10px 14px;
+  padding: var(--space-2) var(--space-4);
   display: flex;
   align-items: center;
   cursor: pointer;
@@ -5312,7 +5314,7 @@ th {
 }
 
 .document-section > summary {
-  padding: 12px 0;
+  padding: var(--space-3) 0;
   cursor: pointer;
   color: var(--heading);
   font-weight: var(--font-weight-medium);
@@ -5331,7 +5333,7 @@ th {
 }
 
 .document-section-body {
-  padding-bottom: 16px;
+  padding-bottom: var(--module-padding-sm);
 }
 
 .settings-shell {
@@ -5340,11 +5342,11 @@ th {
 
 .settings-topbar {
   min-height: 42px;
-  margin-bottom: 16px;
+  margin-bottom: var(--module-gap-sm);
 }
 
 .settings-screen {
-  gap: 14px;
+  gap: var(--space-4);
 }
 
 .settings-panel {
@@ -5354,21 +5356,21 @@ th {
 .state-panel {
   display: grid;
   justify-items: center;
-  gap: 10px;
+  gap: var(--space-3);
 }
 
 .state-action {
-  margin-top: 6px;
+  margin-top: var(--space-2);
 }
 
 @media (max-width: 980px) {
   .workspace {
-    padding: 14px;
+    padding: var(--space-4);
   }
 
   .topbar {
     min-height: 42px;
-    margin-bottom: 12px;
+    margin-bottom: var(--space-3);
     flex-direction: row;
     align-items: center;
   }
@@ -5393,10 +5395,10 @@ th {
   }
 
   .report-tabs {
-    margin-right: -14px;
-    margin-left: -14px;
-    padding-right: 14px;
-    padding-left: 14px;
+    margin-right: calc(var(--space-4) * -1);
+    margin-left: calc(var(--space-4) * -1);
+    padding-right: var(--space-4);
+    padding-left: var(--space-4);
   }
 
   .dashboard-chart-grid,
@@ -5415,7 +5417,7 @@ th {
   }
 
   .workspace {
-    padding: 12px;
+    padding: var(--space-3);
   }
 
   .students-course-panel .table-wrap {
@@ -5424,7 +5426,7 @@ th {
 
   .course-mobile-list {
     display: grid;
-    gap: 12px;
+    gap: var(--space-3);
   }
 
   .upload-file-summary,
@@ -5457,6 +5459,13 @@ th {
     min-height: 42px;
   }
 
+  .report-tabs {
+    margin-right: 0;
+    margin-left: 0;
+    padding-right: 0;
+    padding-left: 0;
+  }
+
   .export-actions {
     width: auto;
     justify-content: flex-start;
@@ -5472,7 +5481,7 @@ th {
   }
 
   .report-header {
-    padding: 14px;
+    padding: var(--space-4);
   }
 
   .segmented {
@@ -5500,11 +5509,11 @@ th {
   }
 
   .document-panel {
-    padding: 14px;
+    padding: var(--space-4);
   }
 
   .settings-shell {
-    padding: 12px;
+    padding: var(--space-3);
   }
 }
 
@@ -5566,7 +5575,7 @@ body[data-density="minimal"] .panel,
 body[data-density="minimal"] .report-header,
 body[data-density="minimal"] .dashboard-section,
 body[data-density="minimal"] .document-panel {
-  padding: 12px;
+  padding: var(--space-3);
   border-radius: 6px;
   box-shadow: none;
 }
@@ -5591,7 +5600,7 @@ body[data-density="minimal"] .report-tabs {
 
 body[data-density="minimal"] .report-tabs .tab-btn {
   min-height: 36px;
-  padding: 6px;
+  padding: 6px var(--space-2);
 }
 
 body[data-density="minimal"] .report-tabs .tab-label {
@@ -5600,7 +5609,7 @@ body[data-density="minimal"] .report-tabs .tab-label {
 
 body[data-density="minimal"] .subtab-btn {
   min-height: 32px;
-  padding: 6px 8px;
+  padding: 6px var(--space-2);
 }
 
 body[data-density="minimal"] .qualitative-layout {
@@ -5617,16 +5626,16 @@ body[data-density="minimal"] .dashboard-tab,
 body[data-density="minimal"] .dashboard-section-body,
 body[data-density="minimal"] .qualitative-list,
 body[data-density="minimal"] .settings-screen {
-  gap: 10px;
+  gap: var(--space-3);
 }
 
 body[data-density="minimal"] .dashboard-metrics-grid {
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 body[data-density="minimal"] .dashboard-metric-card {
   min-height: 92px;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 body[data-density="minimal"] .dashboard-metric-card small,
@@ -5636,7 +5645,7 @@ body[data-density="minimal"] .dashboard-metric-card .muted:first-child {
 
 body[data-density="minimal"] .chart-panel {
   min-height: 250px;
-  padding: 12px;
+  padding: var(--space-3);
 }
 
 body[data-density="minimal"] .chart-frame {
@@ -5650,7 +5659,7 @@ body[data-density="minimal"] .chart-frame-square {
 body[data-density="minimal"] .dashboard-section > summary,
 body[data-density="minimal"] .document-section > summary {
   min-height: 34px;
-  padding: 8px 0;
+  padding: var(--space-2) 0;
 }
 
 body[data-density="minimal"] .qualitative-card,
@@ -5658,7 +5667,7 @@ body[data-density="minimal"] .recommendation-card,
 body[data-density="minimal"] .sentiment-panel,
 body[data-density="minimal"] .compact-breakdown-panel,
 body[data-density="minimal"] .analysis-empty-state {
-  padding: 12px;
+  padding: var(--space-3);
 }
 
 body[data-density="minimal"] .analysis-empty-state {
@@ -5666,11 +5675,11 @@ body[data-density="minimal"] .analysis-empty-state {
 }
 
 body[data-density="minimal"] .sentiment-grid {
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 body[data-density="minimal"] .sentiment-card {
-  padding: 12px;
+  padding: var(--space-3);
 }
 
 body[data-density="minimal"] .document-panel {
@@ -5678,11 +5687,11 @@ body[data-density="minimal"] .document-panel {
 }
 
 body[data-density="minimal"] .document-sheet h3 {
-  margin-bottom: 8px;
+  margin-bottom: var(--space-2);
 }
 
 body[data-density="minimal"] .document-section-body {
-  padding-bottom: 10px;
+  padding-bottom: var(--space-3);
 }
 
 body[data-density="minimal"] .settings-panel {
@@ -5715,7 +5724,7 @@ body[data-density="minimal"] .theme-options button {
   min-height: 36px;
   width: 100%;
   min-width: 0;
-  padding: 6px 12px;
+  padding: 6px var(--space-3);
   justify-content: center;
 }
 
