@@ -26,6 +26,7 @@ const getApiBaseUrl = () => {
 };
 
 const API_BASE_URL = getApiBaseUrl();
+let unauthorizedEventDispatched = false;
 
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -260,7 +261,10 @@ export async function request(endpoint, options = {}) {
       localStorage.removeItem("username");
       localStorage.removeItem("userEmail");
       window.location.hash = "login";
-      window.dispatchEvent(new Event("auth:unauthorized"));
+      if (!unauthorizedEventDispatched) {
+        unauthorizedEventDispatched = true;
+        window.dispatchEvent(new Event("auth:unauthorized"));
+      }
     }
     let errorMsg = "Произошла ошибка при выполнении запроса";
     try {
@@ -275,7 +279,9 @@ export async function request(endpoint, options = {}) {
         // ignore
       }
     }
-    throw new Error(errorMsg);
+    const error = new Error(errorMsg);
+    error.status = response.status;
+    throw error;
   }
 
   // Handle empty responses (like 204 No Content)
@@ -283,7 +289,11 @@ export async function request(endpoint, options = {}) {
     return null;
   }
 
-  return response.json();
+  const data = await response.json();
+  if (endpoint === "/auth/login" || endpoint === "/auth/register") {
+    unauthorizedEventDispatched = false;
+  }
+  return data;
 }
 
 export async function login(email, password) {

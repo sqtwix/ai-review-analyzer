@@ -9,18 +9,16 @@ cd "$SCRIPT_DIR"
 
 # 1. Environment configuration setup
 if [ ! -f ".env" ]; then
-    if [ -f "env_example.txt" ]; then
-        echo "--> Creating .env from env_example.txt..."
-        cp env_example.txt .env
-    else
-        echo "--> Creating default .env file..."
-        cat <<EOT > .env
+    echo "--> Creating .env with generated secrets..."
+    DB_PASSWORD_GENERATED="$(openssl rand -hex 24)"
+    JWT_SECRET_GENERATED="$(openssl rand -base64 48 | tr -d '\n')"
+    cat <<EOT > .env
 DB_HOST=postgres
 DB_PORT=5432
 DB_NAME=aichecker
 DB_USER=aichecker_user
-DB_PASSWORD=aichecker_password
-JWT_SECRET=super_secret_jwt_key_aichecker_enterprise_2026!
+DB_PASSWORD=$DB_PASSWORD_GENERATED
+JWT_SECRET=$JWT_SECRET_GENERATED
 JWT_ISSUER=ai-review-analyzer
 JWT_AUDIENCE=ai-review-analyzer-frontend
 JWT_EXPIRY_MINUTES=1440
@@ -38,7 +36,7 @@ AI_DRIVER_FORCE_MODEL_FALLBACK=false
 VITE_OFFLINE_MODE=false
 VITE_ENABLE_DEMO_MODE=false
 EOT
-    fi
+    chmod 600 .env
 else
     echo "--> Existing .env file found."
 fi

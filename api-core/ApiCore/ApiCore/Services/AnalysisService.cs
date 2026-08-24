@@ -99,6 +99,11 @@ public class AnalysisService
             }
             userResponsePaths = expandedPaths;
 
+            if (userResponsePaths.Count == 0)
+            {
+                throw new InvalidDataException("В загруженных файлах не найдено ни одной поддерживаемой таблицы с анкетами.");
+            }
+
             // 1. Повторная глубокая валидация в фоне
             var validation = _validationService.ValidateFiles(userResponsePaths);
             if (!validation.IsValid)
@@ -120,6 +125,10 @@ public class AnalysisService
             _logger.LogInformation($"[Task {taskId}] Запуск циклического парсинга CSV файлов...");
             CourseBatchAnalysisRequest payload = _fileParser.ParseToBatchRequest(userResponsePaths);
             payload.BatchId = taskId;
+            if (payload.Courses.Count == 0)
+            {
+                throw new InvalidDataException("После чтения файлов не найдено ни одной анкеты для анализа.");
+            }
 
             // 3. Отправка JSON-контракта в Python AI-Driver
             _logger.LogInformation($"[Task {taskId}] Парсинг завершен. Отправка контракта в ai-driver...");

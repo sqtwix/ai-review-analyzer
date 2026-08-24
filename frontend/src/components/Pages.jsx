@@ -32,8 +32,10 @@ export function AuthPage({
   return (
     <section className="page auth-page active" id={mode} data-title={isLogin ? "Авторизация" : "Регистрация"}>
       <form className="auth-card" onSubmit={onSubmit}>
-        <p className="eyebrow">{isLogin ? "Вход" : "Регистрация"}</p>
-        <h2>{isLogin ? "Добро пожаловать" : "Создайте рабочее пространство"}</h2>
+        <div className="auth-heading text-stack">
+          <p className="eyebrow">{isLogin ? "Вход" : "Регистрация"}</p>
+          <h2>{isLogin ? "Добро пожаловать" : "Создайте рабочее пространство"}</h2>
+        </div>
         {authError && <div className="error-box">{authError}</div>}
 
         {!isLogin && (
@@ -679,12 +681,19 @@ export function CourseReportDetailPage({
     report.source === "demo" ||
     !sourceTransparency.hasExactScoreCounts ||
     !sourceTransparency.hasEvidenceRegistry ||
+    !validationSummary.isProvided ||
     validationSummary.totalIssues > 0;
+  const productionWarningDetails = [
+    !sourceTransparency.hasExactScoreCounts ? "абсолютные counts 1-10" : "",
+    !sourceTransparency.hasEvidenceRegistry ? "ссылки evidence на строки или вопросы" : "",
+    !validationSummary.isProvided ? "сводка пропусков и ошибок" : "",
+    validationSummary.totalIssues > 0 ? `${validationSummary.totalIssues} пропусков или ошибочных оценок требуют проверки` : "",
+  ].filter(Boolean);
 
   return (
     <section className="page active" id="report-detail" data-title="Детали отчёта">
       <div className="report-header">
-        <div>
+        <div className="report-title-block">
           {isEditingTitle ? (
             <form onSubmit={handleInlineRenameSubmit} className="inline-rename-form">
               <input
@@ -808,7 +817,7 @@ export function CourseReportDetailPage({
             <p>
               {report.source === "demo"
                 ? "Данные, темы, цитаты и рекомендации в этом отчете не являются результатом обработки реальных анкет."
-                : "Frontend показывает только переданные backend данные. Для production нужны counts 1-10, ссылки evidence на строки/вопросы и отдельная сводка пропусков/ошибок."}
+                : `Frontend показывает только переданные backend данные. Требуют внимания: ${productionWarningDetails.join(", ")}.`}
             </p>
           </div>
         </section>

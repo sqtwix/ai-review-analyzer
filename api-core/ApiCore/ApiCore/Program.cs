@@ -28,6 +28,10 @@ builder.Services.AddCors(options =>
 // 2. НАСТРОЙКА JWT ВАЛИДАЦИИ (Этого блока не хватало)
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
 var secretKey = jwtSettings["Secret"] ?? throw new InvalidOperationException("JWT Secret is missing.");
+if (Encoding.UTF8.GetByteCount(secretKey) < 32)
+{
+    throw new InvalidOperationException("JWT Secret must contain at least 32 bytes.");
+}
 
 builder.Services.AddAuthentication(options =>
 {
@@ -140,8 +144,13 @@ builder.Services.AddScoped<ReportsService>();
 builder.Services.AddHttpClient<AnalysisService>(client =>
 {
     var aiDriverUrl = builder.Configuration["AiDriver:Url"] ?? "http://localhost:8000";
+    var timeoutMinutes = Math.Clamp(
+        builder.Configuration.GetValue<int?>("AiDriver:TimeoutMinutes") ?? 15,
+        1,
+        30
+    );
     client.BaseAddress = new Uri(aiDriverUrl.EndsWith("/") ? aiDriverUrl : aiDriverUrl + "/");
-    client.Timeout = TimeSpan.FromMinutes(5); // Увеличиваем таймаут для медленных CPU запусков локальных моделей
+    client.Timeout = TimeSpan.FromMinutes(timeoutMinutes);
 });
 
 var app = builder.Build();
@@ -185,6 +194,10 @@ for (int retry = 0; retry < 5; retry++)
             dbContext.Database.ExecuteSqlRaw(@"
                 ALTER TABLE users ADD COLUMN IF NOT EXISTS settings_json JSONB;
                 ALTER TABLE analysis_reports ADD COLUMN IF NOT EXISTS is_archived BOOLEAN NOT NULL DEFAULT FALSE;
+                UPDATE analysis_reports
+                SET status = 'Failed',
+                    error = 'Обработка была прервана перезапуском сервиса. Запустите анализ повторно.'
+                WHERE status = 'Processing';
             ");
         }
         Console.WriteLine(">>>> [УСПЕХ] Успешное подключение к PostgreSQL.");
@@ -202,6 +215,12 @@ for (int retry = 0; retry < 5; retry++)
 app.UseCors("AllowFrontend");
 app.UseAuthentication(); // СНАЧАЛА: Расшифровываем токен и узнаем кто это
 app.UseAuthorization();  // ЗАТЕМ: Проверяем права доступа к методам
+
+app.MapGet("/health", async (AppDbContext dbContext) =>
+    await dbContext.Database.CanConnectAsync()
+        ? Results.Ok(new { status = "healthy" })
+        : Results.StatusCode(StatusCodes.Status503ServiceUnavailable)
+).AllowAnonymous();
 
 // Глобальная защита эндпоинтов
 app.MapControllers().RequireAuthorization();

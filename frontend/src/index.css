@@ -936,8 +936,8 @@ p {
 
 .menu-button {
   display: none;
-  width: 42px;
-  height: 42px;
+  width: 44px;
+  height: 44px;
   border: 2px solid var(--line);
   border-radius: var(--radius);
   background: var(--surface);
@@ -955,7 +955,7 @@ p {
 .secondary-button,
 .ghost-button,
 .danger-button {
-  min-height: 42px;
+  min-height: 44px;
   border-radius: var(--radius);
   border: 2px solid transparent;
   padding: var(--space-2) var(--space-4);
@@ -1003,7 +1003,7 @@ p {
 .text-link-button {
   width: max-content;
   max-width: 100%;
-  min-height: 34px;
+  min-height: 44px;
   margin-top: var(--space-3);
   padding: 0;
   border: 0;
@@ -1069,10 +1069,10 @@ p {
 }
 
 .inline-icon-button {
-  width: 28px;
-  height: 28px;
-  min-width: 28px;
-  min-height: 28px;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
   padding: 0;
   border: 2px solid var(--line);
   border-radius: 6px;
@@ -1574,6 +1574,7 @@ p {
   display: grid;
   grid-auto-flow: column;
   grid-auto-columns: 1fr;
+  gap: var(--space-1);
   padding: 4px;
   background: var(--bg);
   border: 1px solid var(--line);
@@ -1581,7 +1582,7 @@ p {
 }
 
 .segmented button {
-  min-height: 38px;
+  min-height: 44px;
   border: 2px solid transparent;
   border-radius: 6px;
   background: transparent;
@@ -1663,6 +1664,9 @@ p {
   align-self: stretch;
   min-width: 0;
   padding: var(--space-3);
+  display: grid;
+  align-content: start;
+  gap: var(--space-2);
   border: 2px solid var(--line);
   border-radius: var(--radius);
   background: var(--surface);
@@ -2453,14 +2457,24 @@ th {
   padding: var(--space-7);
   border: 1px solid var(--line);
   border-radius: var(--radius);
+  display: grid;
+  gap: var(--space-4);
   background: var(--surface);
   box-shadow: var(--shadow);
+}
+
+.auth-heading {
+  gap: var(--space-2);
+}
+
+.auth-heading > :where(.eyebrow, h2),
+.auth-card > :where(.error-box, label, .wide, a) {
+  margin: 0;
 }
 
 .auth-card label {
   display: grid;
   gap: var(--space-2);
-  margin: var(--space-4) 0;
   color: var(--muted);
   font-weight: var(--font-weight-secondary);
 }
@@ -2476,7 +2490,6 @@ th {
 
 .auth-card a {
   display: block;
-  margin-top: var(--space-4);
   text-align: center;
 }
 
@@ -2854,7 +2867,7 @@ th {
 }
 
 .sidebar-search {
-  min-height: 38px;
+  min-height: 44px;
   margin-bottom: 0;
   padding: 0 var(--space-3);
   border: 2px solid var(--line);
@@ -3149,17 +3162,17 @@ th {
 }
 
 .export-status-dismiss {
-  width: 36px;
-  height: 36px;
-  min-width: 36px;
-  min-height: 36px;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
 }
 
 .icon-action-button {
-  width: 42px;
-  height: 42px;
-  min-width: 42px;
-  min-height: 42px;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
   padding: 0;
   border: 2px solid var(--line);
   border-radius: var(--radius);
@@ -5089,6 +5102,31 @@ th {
   align-items: start;
 }
 
+.upload-panel {
+  display: grid;
+  align-content: start;
+  gap: var(--module-gap-sm);
+}
+
+.upload-panel-heading {
+  gap: var(--space-2);
+}
+
+.upload-panel-heading > :where(.eyebrow, h2, h3, p),
+.upload-panel > :where(.text-link-button, .dropzone, .validation-box, .upload-file-panel, .offline-create-form),
+.upload-control-group > .field-label,
+.upload-primary-action > .action-helper {
+  margin: 0;
+}
+
+.upload-control-group,
+.upload-primary-action {
+  min-width: 0;
+  display: grid;
+  align-content: start;
+  gap: var(--space-2);
+}
+
 .offline-create-form {
   padding: 16px;
   border: 1px solid var(--line);
@@ -5351,14 +5389,27 @@ th {
   align-items: start;
 }
 
+.settings-copy h3,
+.settings-copy p {
+  margin: 0;
+}
+
 .state-panel {
   display: grid;
   justify-items: center;
-  gap: var(--space-3);
+  gap: var(--space-4);
+}
+
+.state-panel > :where(.state-icon, h2, h3, p) {
+  margin: 0;
 }
 
 .state-action {
   margin-top: var(--space-2);
+}
+
+.dialog > :where(h2, h3, p) {
+  margin: 0;
 }
 
 @media (max-width: 980px) {
@@ -5460,8 +5511,18 @@ th {
   .report-tabs {
     margin-right: 0;
     margin-left: 0;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-2);
     padding-right: 0;
+    padding-bottom: var(--space-3);
     padding-left: 0;
+    overflow: visible;
+  }
+
+  .report-tabs .tab-btn {
+    width: 100%;
+    min-height: 52px;
   }
 
   .export-actions {
@@ -5512,6 +5573,17 @@ th {
 
   .settings-shell {
     padding: var(--space-3);
+  }
+
+  .settings-topbar {
+    flex-direction: row;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .settings-back {
+    width: auto;
+    flex: 1 1 auto;
   }
 }
 

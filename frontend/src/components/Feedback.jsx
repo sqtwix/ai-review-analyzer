@@ -1,4 +1,5 @@
-﻿import { AlertTriangle, CheckCircle2, Info, X, XCircle } from "lucide-react";
+﻿import { useEffect, useRef } from "react";
+import { AlertTriangle, CheckCircle2, Info, X, XCircle } from "lucide-react";
 
 const toastIcons = {
   success: CheckCircle2,
@@ -6,6 +7,48 @@ const toastIcons = {
   warning: AlertTriangle,
   info: Info,
 };
+
+const focusableSelector = "button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href], [tabindex]:not([tabindex='-1'])";
+
+function useDialogFocus(open, onClose) {
+  const dialogRef = useRef(null);
+
+  useEffect(() => {
+    if (!open || !dialogRef.current) return undefined;
+    const previouslyFocused = document.activeElement;
+    const dialog = dialogRef.current;
+    const focusable = () => Array.from(dialog.querySelectorAll(focusableSelector));
+    focusable()[0]?.focus();
+
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        onClose?.();
+        return;
+      }
+      if (event.key !== "Tab") return;
+      const elements = focusable();
+      if (elements.length === 0) return;
+      const first = elements[0];
+      const last = elements[elements.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      previouslyFocused?.focus?.();
+    };
+  }, [open, onClose]);
+
+  return dialogRef;
+}
 
 export function ToastStack({ toasts, onDismiss }) {
   if (!toasts.length) return null;
@@ -47,11 +90,12 @@ export function ConfirmDialog({
   onConfirm,
   onCancel,
 }) {
+  const dialogRef = useDialogFocus(open, onCancel);
   if (!open) return null;
 
   return (
     <div className="modal-backdrop" role="presentation">
-      <section className="dialog" role="dialog" aria-modal="true" aria-labelledby="confirm-dialog-title">
+      <section ref={dialogRef} className="dialog" role="dialog" aria-modal="true" aria-labelledby="confirm-dialog-title">
         <div className={`dialog-icon dialog-icon-${tone}`}>
           <AlertTriangle size={20} strokeWidth={2.2} />
         </div>
@@ -80,11 +124,12 @@ export function NamingDialog({
   onSubmit,
   onSkip,
 }) {
+  const dialogRef = useDialogFocus(open, onSkip);
   if (!open) return null;
 
   return (
     <div className="modal-backdrop" role="presentation">
-      <section className="dialog naming-dialog" role="dialog" aria-modal="true" aria-labelledby="naming-dialog-title">
+      <section ref={dialogRef} className="dialog naming-dialog" role="dialog" aria-modal="true" aria-labelledby="naming-dialog-title">
         <div className="dialog-icon dialog-icon-success">
           <CheckCircle2 size={20} strokeWidth={2.2} />
         </div>
@@ -121,11 +166,12 @@ export function NamingDialog({
 }
 
 export function FileGuideDialog({ open, onClose }) {
+  const dialogRef = useDialogFocus(open, onClose);
   if (!open) return null;
 
   return (
     <div className="modal-backdrop" role="presentation">
-      <section className="dialog file-guide-dialog" role="dialog" aria-modal="true" aria-labelledby="file-guide-title">
+      <section ref={dialogRef} className="dialog file-guide-dialog" role="dialog" aria-modal="true" aria-labelledby="file-guide-title">
         <div className="dialog-icon dialog-icon-info">
           <Info size={20} strokeWidth={2.2} />
         </div>

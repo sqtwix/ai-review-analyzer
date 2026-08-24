@@ -180,15 +180,27 @@ const buildDecisionSupport = ({
     .flat()
     .filter((item) => item.evidence?.rows?.length || item.evidence?.questions?.length)
     .length;
-  const evidenceCount = verifiedEvidenceCount;
+  const qualitativeRows = new Set(
+    [topics, problems, quotes, recommendations]
+      .flat()
+      .flatMap((item) => item.evidence?.rows || [])
+  );
+  const qualitativeCoverageRatio = studentsCount > 0
+    ? clampNumber(qualitativeRows.size / studentsCount, 0, 1)
+    : 0;
+  const qualitativeCoveragePercent = qualitativeCoverageRatio * 100;
   const sampleScore = studentsCount > 0 ? clampNumber((studentsCount / 40) * 35, 8, 35) : 0;
   const metricScore = (filledMetricCount / Math.max(metricCards.length, 1)) * 25;
-  const evidenceScore = clampNumber(evidenceCount * 4, 0, 25);
+  const evidenceScore = sourceTransparency.hasEvidenceRegistry
+    ? 25 * Math.min(1, qualitativeCoverageRatio / 0.6)
+    : 0;
   const actionScore = clampNumber(recommendations.length * 5, 0, 15);
   const rawConfidenceScore = Math.round(sampleScore + metricScore + evidenceScore + actionScore);
-  const confidenceScore = sourceTransparency.hasEvidenceRegistry && sourceTransparency.hasExactScoreCounts
+  let confidenceScore = sourceTransparency.hasEvidenceRegistry && sourceTransparency.hasExactScoreCounts
     ? rawConfidenceScore
     : Math.min(rawConfidenceScore, 55);
+  if (qualitativeCoverageRatio < 0.5) confidenceScore = Math.min(confidenceScore, 79);
+  if (qualitativeCoverageRatio < 0.25) confidenceScore = Math.min(confidenceScore, 69);
   const confidenceLabel =
     confidenceScore >= 80 ? "Высокая" :
     confidenceScore >= 60 ? "Достаточная" :
@@ -200,11 +212,13 @@ const buildDecisionSupport = ({
       ? "Выборка меньше 30 слушателей: выводы стоит подтвердить на следующем запуске."
       : "Размер выборки достаточен для первичной управленческой оценки.",
     sourceTransparency.hasEvidenceRegistry
-      ? "Качественные выводы связаны с номерами вопросов или строк в данных отчета."
+      ? `Качественный анализ покрывает ${qualitativeRows.size} из ${studentsCount} анкет (${qualitativeCoveragePercent.toFixed(1)}%).`
       : "Backend пока не передал номера строк и вопросов: качественные выводы требуют ручной сверки.",
     validationSummary.missingCount > 0 || validationSummary.invalidCount > 0
       ? `Есть пропуски/ошибки в оценках: ${validationSummary.missingCount + validationSummary.invalidCount}. Проверьте, что они не подменены значениями.`
-      : "Пропуски и ошибки оценок не переданы отдельной сводкой.",
+      : validationSummary.isProvided
+        ? "Сводка качества передана: пропусков и ошибочных оценок нет."
+        : "Пропуски и ошибки оценок не переданы отдельной сводкой.",
   ];
 
   const evidenceHighlights = [
@@ -300,9 +314,9 @@ const buildDecisionSupport = ({
     {
       label: "Качественные выводы подтверждены",
       detail: sourceTransparency.hasEvidenceRegistry
-        ? `Есть ${verifiedEvidenceCount} ссылок на строки или вопросы.`
+        ? `Покрыто ${qualitativeRows.size} из ${studentsCount} анкет (${qualitativeCoveragePercent.toFixed(1)}%); есть ${verifiedEvidenceCount} проверяемых ссылок.`
         : "Нет ссылок на строки/вопросы; выводы нельзя считать полностью проверяемыми.",
-      status: sourceTransparency.hasEvidenceRegistry ? "done" : "warning",
+      status: sourceTransparency.hasEvidenceRegistry && qualitativeCoverageRatio >= 0.6 ? "done" : "warning",
     },
     {
       label: "Распределение 1-10 подтверждено",
@@ -315,8 +329,10 @@ const buildDecisionSupport = ({
       label: "Пропуски и ошибки видимы",
       detail: validationSummary.totalIssues > 0
         ? `Передано ${validationSummary.totalIssues} пропусков/ошибок для проверки.`
-        : "Отдельная сводка валидных, пропущенных и ошибочных оценок не передана.",
-      status: validationSummary.totalIssues > 0 ? "warning" : "info",
+        : validationSummary.isProvided
+          ? `Backend передал сводку: ${validationSummary.validCount ?? 0} валидных оценок, пропусков и ошибок нет.`
+          : "Отдельная сводка валидных, пропущенных и ошибочных оценок не передана.",
+      status: validationSummary.totalIssues > 0 ? "warning" : validationSummary.isProvided ? "done" : "info",
     },
     {
       label: "Открытые ответы учтены",
@@ -358,6 +374,7 @@ const buildDecisionSupport = ({
     decisionReasons,
     confidenceScore,
     confidenceLabel,
+    qualitativeCoveragePercent,
     confidenceNotes,
     evidenceHighlights,
     actionPlan,
@@ -406,6 +423,7 @@ export function buildCourseReportViewModel(report) {
     courseAnalysis?.DataQuality ||
     {};
   const validationSummary = {
+    isProvided: Object.keys(validationRaw).length > 0,
     validCount: toNumber(validationRaw.valid_count ?? validationRaw.ValidCount, null),
     missingCount: toNumber(validationRaw.missing_count ?? validationRaw.MissingCount, 0),
     invalidCount: toNumber(validationRaw.invalid_count ?? validationRaw.InvalidCount, 0),

@@ -2,20 +2,31 @@ services:
   api-core:
     build:
       context: ./api-core/ApiCore/ApiCore
-    ports:
-      - "5000:5000"
+    expose:
+      - "5000"
     environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      - ConnectionStrings__DefaultConnection=Host=${DB_HOST:-postgres};Port=${DB_PORT:-5432};Database=${DB_NAME:-aichecker};Username=${DB_USER:-aichecker_user};Password=${DB_PASSWORD:-aichecker_password}
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ConnectionStrings__DefaultConnection=Host=${DB_HOST:-postgres};Port=${DB_PORT:-5432};Database=${DB_NAME:-aichecker};Username=${DB_USER:-aichecker_user};Password=${DB_PASSWORD:?Set DB_PASSWORD in .env}
       - ConnectionStrings__Redis=redis:6379
-      - JwtSettings__Secret=${JWT_SECRET:-super_secret_jwt_key_aichecker_enterprise_2026!}
+      - JwtSettings__Secret=${JWT_SECRET:?Set JWT_SECRET in .env}
       - JwtSettings__Issuer=${JWT_ISSUER:-ai-review-analyzer}
       - JwtSettings__Audience=${JWT_AUDIENCE:-ai-review-analyzer-frontend}
       - JwtSettings__ExpiryMinutes=${JWT_EXPIRY_MINUTES:-1440}
       - AiDriver__Url=http://ai-driver:8000
+      - AiDriver__TimeoutMinutes=${AI_DRIVER_HTTP_TIMEOUT_MINUTES:-45}
     depends_on:
       postgres:
         condition: service_healthy
+      ai-driver:
+        condition: service_healthy
+    volumes:
+      - data_protection_keys:/root/.aspnet/DataProtection-Keys
+    healthcheck:
+      test: [ "CMD", "curl", "-fsS", "http://localhost:5000/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     networks:
       - saas-network
 
@@ -28,9 +39,15 @@ services:
     ports:
       - "80:80"
     depends_on:
-      - api-core
+      api-core:
+        condition: service_healthy
     networks:
       - saas-network
+    healthcheck:
+      test: [ "CMD", "wget", "-q", "-O", "-", "http://127.0.0.1/healthz" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   postgres:
     image: postgres:15-alpine
@@ -38,9 +55,9 @@ services:
     environment:
       POSTGRES_DB: ${DB_NAME:-aichecker}
       POSTGRES_USER: ${DB_USER:-aichecker_user}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-aichecker_password}
-    ports:
-      - "5432:5432"
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
+    expose:
+      - "5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -54,8 +71,8 @@ services:
   ai-driver:
     build:
       context: ./ai-driver
-    ports:
-      - "8000:8000"
+    expose:
+      - "8000"
     environment:
       # DeepSeek конфигурация
       - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
@@ -71,24 +88,34 @@ services:
       - AI_DRIVER_FORCE_MODEL_FALLBACK=${AI_DRIVER_FORCE_MODEL_FALLBACK:-false}
       - AI_AGENT_MAX_TOKENS=${AI_AGENT_MAX_TOKENS:-1536}
       - AI_AGENT_TIMEOUT_SECONDS=${AI_AGENT_TIMEOUT_SECONDS:-45}
+      - AI_EVIDENCE_MAX_TOKENS=${AI_EVIDENCE_MAX_TOKENS:-768}
+      - AI_EVIDENCE_BATCH_SIZE=${AI_EVIDENCE_BATCH_SIZE:-1}
+      - AI_MODEL_READINESS_TIMEOUT_SECONDS=${AI_MODEL_READINESS_TIMEOUT_SECONDS:-180}
+      - AI_EVIDENCE_TIMEOUT_SECONDS=${AI_EVIDENCE_TIMEOUT_SECONDS:-120}
+      - AI_EVIDENCE_RETRY_DELAY_SECONDS=${AI_EVIDENCE_RETRY_DELAY_SECONDS:-30}
     depends_on:
       qwen-local:
-        condition: service_started
+        condition: service_healthy
       redis:
-        condition: service_started
+        condition: service_healthy
     networks:
       - saas-network
     restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=3)" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   # Сервис с локальной моделью через llama.cpp
   qwen-local:
     image: ghcr.io/ggml-org/llama.cpp:server
-    ports:
-      - "8001:8080"
+    expose:
+      - "8080"
     volumes:
       - ./models:/models:ro
     command: >
-      -m /models/${QWEN_GGUF_MODEL_FILE:-qwen2.5-0.5b-instruct-q8_0.gguf} --host 0.0.0.0 --port 8080
+      -m /models/${QWEN_GGUF_MODEL_FILE:-Qwen3-1.7B-Q4_K_M.gguf} --host 0.0.0.0 --port 8080
       -c ${QWEN_CONTEXT_SIZE:-4096} --threads ${QWEN_THREADS:-4} -b ${QWEN_BATCH_SIZE:-256}
       -np ${QWEN_PARALLEL:-1} --alias local-model
     healthcheck:
@@ -96,15 +123,16 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 30s
+      start_period: ${QWEN_START_PERIOD:-180s}
     networks:
       - saas-network
     restart: unless-stopped
 
   redis:
     image: redis:7-alpine
-    ports:
-      - "6379:6379"
+    command: [ "redis-server", "--appendonly", "yes" ]
+    expose:
+      - "6379"
     volumes:
       - redis-data:/data
     networks:
@@ -117,6 +145,7 @@ services:
       retries: 5
 
 volumes:
+  data_protection_keys:
   redis-data:
   postgres_data:
 

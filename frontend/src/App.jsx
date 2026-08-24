@@ -457,7 +457,7 @@ function App() {
         setMockReports(mapped);
       }
     } catch (err) {
-      console.error("Failed to fetch analysis history:", err);
+      if (err?.status !== 401) console.error("Failed to fetch analysis history:", err);
     }
   };
 
@@ -469,7 +469,7 @@ function App() {
         setArchivedReports(mapped);
       }
     } catch (err) {
-      console.error("Failed to fetch archived analysis history:", err);
+      if (err?.status !== 401) console.error("Failed to fetch archived analysis history:", err);
     }
   };
 
@@ -1150,10 +1150,12 @@ function App() {
         <section className="page active" id="upload" data-title="Загрузка данных">
           {!isAnalyzing ? (
             <div className="split upload-layout" id="upload-form-panel">
-              <section className="panel">
-                <p className="eyebrow">Новый анализ</p>
-                <h2>Загрузите файлы опросов слушателей</h2>
-                <p className="muted">Поддерживаются файлы Excel (.xlsx), CSV или ZIP-архивы с таблицами опросов. JSON не принимается как входной формат. Если в файлах не хватает колонок или они повреждены, система сообщит об этом до запуска анализа.</p>
+              <section className="panel upload-panel upload-data-panel">
+                <div className="upload-panel-heading text-stack">
+                  <p className="eyebrow">Новый анализ</p>
+                  <h2>Загрузите файлы опросов слушателей</h2>
+                  <p className="muted">Поддерживаются файлы Excel (.xlsx), CSV или ZIP-архивы с таблицами опросов. JSON не принимается как входной формат. Если в файлах не хватает колонок или они повреждены, система сообщит об этом до запуска анализа.</p>
+                </div>
                 {isLegacyOfflineModeIgnored && (
                   <div className="validation-box validation-box-pending production-guard-box">
                     <b>Production-режим подключен к backend</b>
@@ -1236,46 +1238,50 @@ function App() {
                 )}
               </section>
 
-              <section className="panel">
-                <p className="eyebrow">Параметры</p>
-                <h3>Выбор ИИ-модели</h3>
-                <label className="field-label">ИИ-модель</label>
-                <div className="segmented" id="model-selector-container">
-                  <button
-                    type="button"
-                    className="segmented-option-disabled"
-                    onClick={() => {
-                      notify({
-                        type: "info",
-                        title: "Информация",
-                        message: "Данные модели в разработке",
-                      });
-                    }}
-                    title="Данные модели в разработке"
-                  >
-                    DeepSeek
-                  </button>
-                  <button
-                    type="button"
-                    className="segmented-option-disabled"
-                    onClick={() => {
-                      notify({
-                        type: "info",
-                        title: "Информация",
-                        message: "Данные модели в разработке",
-                      });
-                    }}
-                    title="Данные модели в разработке"
-                  >
-                    GigaChat
-                  </button>
-                  <button
-                    type="button"
-                    className={selectedModel === "Qwen_Local" ? "selected" : ""}
-                    onClick={() => setSelectedModel("Qwen_Local")}
-                  >
-                    Qwen Local
-                  </button>
+              <section className="panel upload-panel upload-settings-panel">
+                <div className="upload-panel-heading text-stack">
+                  <p className="eyebrow">Параметры</p>
+                  <h3>Выбор ИИ-модели</h3>
+                </div>
+                <div className="upload-control-group">
+                  <label className="field-label">ИИ-модель</label>
+                  <div className="segmented" id="model-selector-container">
+                    <button
+                      type="button"
+                      className="segmented-option-disabled"
+                      onClick={() => {
+                        notify({
+                          type: "info",
+                          title: "Информация",
+                          message: "Данные модели в разработке",
+                        });
+                      }}
+                      title="Данные модели в разработке"
+                    >
+                      DeepSeek
+                    </button>
+                    <button
+                      type="button"
+                      className="segmented-option-disabled"
+                      onClick={() => {
+                        notify({
+                          type: "info",
+                          title: "Информация",
+                          message: "Данные модели в разработке",
+                        });
+                      }}
+                      title="Данные модели в разработке"
+                    >
+                      GigaChat
+                    </button>
+                    <button
+                      type="button"
+                      className={selectedModel === "Qwen_Local" ? "selected" : ""}
+                      onClick={() => setSelectedModel("Qwen_Local")}
+                    >
+                      Qwen Local
+                    </button>
+                  </div>
                 </div>
 
                 {showValidation && (
@@ -1293,20 +1299,22 @@ function App() {
                   </div>
                 )}
 
-                <button
-                  className="primary-button wide"
-                  id="start-analysis-btn"
-                  onClick={startAnalysis}
-                  disabled={uploadValidation.status === "error"}
-                  aria-describedby={selectedResponseFiles.length === 0 ? "start-analysis-helper" : undefined}
-                >
-                  Запустить анализ
-                </button>
-                {selectedResponseFiles.length === 0 && (
-                  <p className="action-helper" id="start-analysis-helper">
-                    Чтобы запустить анализ, сначала выберите файл анкет.
-                  </p>
-                )}
+                <div className="upload-primary-action">
+                  <button
+                    className="primary-button wide"
+                    id="start-analysis-btn"
+                    onClick={startAnalysis}
+                    disabled={uploadValidation.status === "error"}
+                    aria-describedby={selectedResponseFiles.length === 0 ? "start-analysis-helper" : undefined}
+                  >
+                    Запустить анализ
+                  </button>
+                  {selectedResponseFiles.length === 0 && (
+                    <p className="action-helper" id="start-analysis-helper">
+                      Чтобы запустить анализ, сначала выберите файл анкет.
+                    </p>
+                  )}
+                </div>
 
                 {isOfflineMode && (
                   <form className="offline-create-form" onSubmit={handleCreateManualReport}>
