@@ -101,6 +101,13 @@ public class AnalysisController : ControllerBase
         _context.AnalysisReports.Add(report);
         await _context.SaveChangesAsync();
 
+        AnalysisService.UpdateTaskProgress(
+            taskId,
+            "Processing",
+            "accepted",
+            1,
+            "Файлы загружены и поставлены в очередь на серверную проверку.");
+
         // 3. Отдаем парсинг и отправку в фоновый сервис БЕЗ await, чтобы не блокировать фронтенд
         // Используем IServiceScopeFactory, чтобы scoped-зависимости (такие как AppDbContext) не уничтожались при завершении HTTP-запроса
         _ = Task.Run(async () =>
@@ -132,6 +139,7 @@ public class AnalysisController : ControllerBase
 
         if (report != null)
         {
+            AnalysisService.TaskTracker.TryGetValue(taskId, out var progress);
             CourseBatchAnalysisResult? result = null;
             if (!string.IsNullOrEmpty(report.ResultJson))
             {
@@ -145,7 +153,13 @@ public class AnalysisController : ControllerBase
             {
                 status = report.Status,
                 result = result,
-                error = report.Error
+                error = report.Error,
+                stage = progress?.Stage ?? (report.Status == "Completed" ? "completed" : report.Status == "Failed" ? "failed" : "accepted"),
+                stage_index = progress?.StageIndex ?? (report.Status == "Completed" ? 5 : 1),
+                total_stages = progress?.TotalStages ?? 5,
+                stage_message = progress?.Message ?? (report.Status == "Completed" ? "Отчёт сформирован и сохранён." : "Задача принята сервером."),
+                started_at = progress?.StartedAt ?? report.CreatedAt,
+                updated_at = progress?.UpdatedAt ?? report.CreatedAt
             });
         }
 

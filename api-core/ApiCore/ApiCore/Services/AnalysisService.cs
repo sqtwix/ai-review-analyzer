@@ -7,13 +7,49 @@ using Microsoft.EntityFrameworkCore;
 using System.IO.Compression;
 
 namespace ApiCore.Services;
+
+public sealed record AnalysisTaskProgress(
+    string Status,
+    string Stage,
+    int StageIndex,
+    int TotalStages,
+    string Message,
+    DateTime StartedAt,
+    DateTime UpdatedAt,
+    string? Error = null);
+
 /*
 Сервис для парсинга файлов и отправки в ai-driver
 */
 
 public class AnalysisService
 {
-    public static readonly ConcurrentDictionary<string, (string Status, CourseBatchAnalysisResult? Result, string? Error)> TaskTracker = new();
+    private const int TotalStages = 5;
+    public static readonly ConcurrentDictionary<string, AnalysisTaskProgress> TaskTracker = new();
+
+    public static void UpdateTaskProgress(
+        string taskId,
+        string status,
+        string stage,
+        int stageIndex,
+        string message,
+        string? error = null)
+    {
+        var now = DateTime.UtcNow;
+        var startedAt = TaskTracker.TryGetValue(taskId, out var current)
+            ? current.StartedAt
+            : now;
+
+        TaskTracker[taskId] = new AnalysisTaskProgress(
+            status,
+            stage,
+            Math.Clamp(stageIndex, 1, TotalStages),
+            TotalStages,
+            message,
+            startedAt,
+            now,
+            error);
+    }
 
     private readonly ValidationService _validationService;
     private readonly ILogger<AnalysisService> _logger;
@@ -37,7 +73,12 @@ public class AnalysisService
     public async Task ProcessAnalysisAsync(string taskId, Guid userId, List<string> userResponsePaths, string modelType, string tempDir)
     {
         _logger.LogInformation($"[Task {taskId}] Начало фоновой обработки пакета файлов.");
-        TaskTracker[taskId] = ("Processing", null, null);
+        UpdateTaskProgress(
+            taskId,
+            "Processing",
+            "validating",
+            2,
+            "Проверяем структуру файлов, архивы, обязательные поля и диапазоны оценок.");
 
         // Получаем объект отчета из базы данных
         var report = await _dbContext.AnalysisReports.FindAsync(taskId);
@@ -110,7 +151,7 @@ public class AnalysisService
             {
                 var errors = string.Join("; ", validation.Errors);
                 _logger.LogError($"[Task {taskId}] Фоновая валидация провалена: {errors}");
-                TaskTracker[taskId] = ("Failed", null, $"Validation failed: {errors}");
+                UpdateTaskProgress(taskId, "Failed", "validating", 2, "Проверка данных завершилась ошибкой.", $"Validation failed: {errors}");
 
                 if (report != null)
                 {
@@ -122,6 +163,12 @@ public class AnalysisService
             }
 
             // 2. Парсинг файла
+            UpdateTaskProgress(
+                taskId,
+                "Processing",
+                "parsing",
+                3,
+                "Читаем ответы и приводим поля анкет к единой структуре.");
             _logger.LogInformation($"[Task {taskId}] Запуск циклического парсинга CSV файлов...");
             CourseBatchAnalysisRequest payload = _fileParser.ParseToBatchRequest(userResponsePaths);
             payload.BatchId = taskId;
@@ -131,6 +178,12 @@ public class AnalysisService
             }
 
             // 3. Отправка JSON-контракта в Python AI-Driver
+            UpdateTaskProgress(
+                taskId,
+                "Processing",
+                "analyzing",
+                4,
+                "Локальная модель анализирует отзывы и подтверждает выводы исходными цитатами.");
             _logger.LogInformation($"[Task {taskId}] Парсинг завершен. Отправка контракта в ai-driver...");
 
             var jsonSerializerOptions = new JsonSerializerOptions { WriteIndented = false };
@@ -151,10 +204,15 @@ public class AnalysisService
 
             if (response.IsSuccessStatusCode)
             {
+                UpdateTaskProgress(
+                    taskId,
+                    "Processing",
+                    "finalizing",
+                    5,
+                    "Проверяем ответ модели и сохраняем итоговый отчёт.");
                 _logger.LogInformation($"[Task {taskId}] Данные успешно доставлены в ai-driver. Получение результатов...");
                 string responseBody = await response.Content.ReadAsStringAsync();
                 var result = JsonSerializer.Deserialize<CourseBatchAnalysisResult>(responseBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-                TaskTracker[taskId] = ("Completed", result, null);
 
                 if (report != null)
                 {
@@ -162,12 +220,13 @@ public class AnalysisService
                     report.ResultJson = responseBody;
                     await _dbContext.SaveChangesAsync();
                 }
+                UpdateTaskProgress(taskId, "Completed", "completed", 5, "Отчёт сформирован и сохранён.");
             }
             else
             {
                 string errorContext = await response.Content.ReadAsStringAsync();
                 _logger.LogError($"[Task {taskId}] ai-driver вернул ошибку: {response.StatusCode}. Контекст: {errorContext}");
-                TaskTracker[taskId] = ("Failed", null, $"ai-driver returned error {response.StatusCode}: {errorContext}");
+                UpdateTaskProgress(taskId, "Failed", "analyzing", 4, "AI-анализ завершился ошибкой.", $"ai-driver returned error {response.StatusCode}: {errorContext}");
 
                 if (report != null)
                 {
@@ -180,7 +239,10 @@ public class AnalysisService
         catch (Exception ex)
         {
             _logger.LogError($"[Task {taskId}] Критическая ошибка при обработке: {ex.Message}");
-            TaskTracker[taskId] = ("Failed", null, ex.Message);
+            var failedStage = TaskTracker.TryGetValue(taskId, out var currentProgress)
+                ? currentProgress
+                : new AnalysisTaskProgress("Processing", "validating", 2, TotalStages, "Выполняется обработка.", DateTime.UtcNow, DateTime.UtcNow);
+            UpdateTaskProgress(taskId, "Failed", failedStage.Stage, failedStage.StageIndex, "Обработка завершилась ошибкой.", ex.Message);
 
             if (report != null)
             {

@@ -2154,47 +2154,219 @@ p {
   margin-top: var(--space-5);
 }
 
-.progress-track {
-  height: 12px;
-  margin: var(--space-5) 0 var(--space-7);
-  overflow: hidden;
-  border-radius: 999px;
-  background: var(--bg);
+.analysis-progress-meta {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  flex-wrap: wrap;
 }
 
-.progress-track span {
-  display: block;
-  height: 100%;
-  width: var(--progress-value, 0%);
+.analysis-stage-badge,
+.analysis-elapsed-time {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  color: var(--text);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+}
+
+.analysis-stage-badge {
+  padding: 0 var(--space-3);
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--line));
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--accent) 9%, var(--surface));
+}
+
+.analysis-elapsed-time {
+  gap: var(--space-2);
+  min-width: 70px;
+  font-variant-numeric: tabular-nums;
+}
+
+.analysis-progress-segments {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: var(--space-2);
+  margin: var(--space-5) 0 var(--space-7);
+}
+
+.analysis-progress-segment {
+  position: relative;
+  height: 8px;
+  overflow: hidden;
+  border-radius: 4px;
+  background: var(--line);
+}
+
+.analysis-progress-segment.done {
   background: var(--accent);
-  transition: width var(--motion-slow) var(--ease-standard);
+}
+
+.analysis-progress-segment.active-step {
+  background: color-mix(in srgb, var(--accent) 28%, var(--line));
+}
+
+.analysis-progress-segment.active-step::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: 42%;
+  background: var(--accent);
+  animation: analysis-segment-sweep 1.4s var(--ease-standard) infinite;
 }
 
 .timeline {
   display: grid;
-  gap: var(--space-4);
+  gap: 0;
 }
 
-.timeline div {
+.timeline-step {
   position: relative;
-  padding-left: var(--space-7);
-  border-left: 2px solid var(--line);
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
+  gap: var(--space-4);
+  min-width: 0;
+  padding-bottom: var(--space-6);
 }
 
-.timeline div::before {
+.timeline-step:last-child {
+  padding-bottom: 0;
+}
+
+.timeline-step::after {
   content: "";
   position: absolute;
-  left: -7px;
-  top: 2px;
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
+  top: 40px;
+  bottom: 0;
+  left: 19px;
+  width: 2px;
   background: var(--line);
 }
 
-.timeline .done::before,
-.timeline .active-step::before {
+.timeline-step.done::after {
   background: var(--accent);
+}
+
+.timeline-step:last-child::after {
+  display: none;
+}
+
+.timeline-step-marker {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: 2px solid var(--line);
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--muted);
+  transition: border-color var(--motion-fast) var(--ease-standard), background var(--motion-fast) var(--ease-standard), color var(--motion-fast) var(--ease-standard);
+}
+
+.timeline-step.done .timeline-step-marker {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--on-accent, #FFFFFF);
+}
+
+.timeline-step.active-step .timeline-step-marker {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+  color: var(--accent);
+  box-shadow: 0 0 0 5px color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
+.timeline-step.active-step .timeline-step-marker svg {
+  animation: analysis-marker-spin 1s linear infinite;
+}
+
+.timeline-step-content {
+  min-width: 0;
+  padding-top: 4px;
+}
+
+.timeline-step-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.timeline-step-heading b {
+  min-width: 0;
+  color: var(--text);
+  font-size: var(--font-size-md);
+}
+
+.timeline-step-heading span {
+  flex: 0 0 auto;
+  color: var(--muted);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+}
+
+.timeline-step.done .timeline-step-heading span,
+.timeline-step.active-step .timeline-step-heading span {
+  color: var(--accent);
+}
+
+.timeline-step p {
+  max-width: 78ch;
+  margin: var(--space-1) 0 0;
+  color: var(--muted);
+}
+
+@keyframes analysis-segment-sweep {
+  from { transform: translateX(-110%); }
+  to { transform: translateX(340%); }
+}
+
+@keyframes analysis-marker-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (max-width: 640px) {
+  .analysis-progress-meta {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .timeline-step {
+    grid-template-columns: 36px minmax(0, 1fr);
+    gap: var(--space-3);
+  }
+
+  .timeline-step-marker {
+    width: 36px;
+    height: 36px;
+  }
+
+  .timeline-step::after {
+    top: 36px;
+    left: 17px;
+  }
+
+  .timeline-step-heading {
+    display: grid;
+    gap: var(--space-1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .analysis-progress-segment.active-step::after,
+  .timeline-step.active-step .timeline-step-marker svg {
+    animation: none;
+  }
+
+  .analysis-progress-segment.active-step::after {
+    width: 100%;
+    opacity: 0.7;
+  }
 }
 
 .table-wrap {

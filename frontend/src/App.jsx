@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from "react";
-import { Clock3, Files, XCircle } from "lucide-react";
+import { BrainCircuit, Check, Clock3, Database, FileCheck2, Files, FileText, LoaderCircle, XCircle } from "lucide-react";
 import {
   login,
   register,
@@ -272,6 +272,53 @@ const exportFormatLabels = {
   json: "JSON",
 };
 
+const ANALYSIS_STAGES = [
+  {
+    key: "accepted",
+    title: "Файлы приняты",
+    description: "Файлы загружены и поставлены в очередь на обработку.",
+    icon: Files,
+  },
+  {
+    key: "validating",
+    title: "Проверка данных",
+    description: "Сервер проверяет структуру файлов, обязательные поля и диапазоны оценок.",
+    icon: FileCheck2,
+  },
+  {
+    key: "parsing",
+    title: "Подготовка ответов",
+    description: "Ответы читаются и приводятся к единой структуре анализа.",
+    icon: Database,
+  },
+  {
+    key: "analyzing",
+    title: "AI-анализ отзывов",
+    description: "Локальная модель выделяет паттерны и подтверждает выводы цитатами.",
+    icon: BrainCircuit,
+  },
+  {
+    key: "finalizing",
+    title: "Сохранение отчёта",
+    description: "Ответ модели проверяется, после чего отчёт сохраняется.",
+    icon: FileText,
+  },
+];
+
+const INITIAL_ANALYSIS_STAGE = {
+  key: "accepted",
+  index: 1,
+  total: ANALYSIS_STAGES.length,
+  message: ANALYSIS_STAGES[0].description,
+};
+
+const formatElapsedTime = (seconds) => {
+  const safeSeconds = Math.max(0, Number(seconds) || 0);
+  const minutes = Math.floor(safeSeconds / 60);
+  const remainingSeconds = safeSeconds % 60;
+  return `${String(minutes).padStart(2, "0")}:${String(remainingSeconds).padStart(2, "0")}`;
+};
+
 function App() {
   const [route, setRoute] = useState(() => {
     return window.location.hash.replace("#", "") || "upload";
@@ -281,7 +328,8 @@ function App() {
   const [selectedResponseFiles, setSelectedResponseFiles] = useState([]);
   const [showValidation, setShowValidation] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [analysisProgress, setAnalysisProgress] = useState(0);
+  const [analysisStage, setAnalysisStage] = useState(INITIAL_ANALYSIS_STAGE);
+  const [analysisElapsedSeconds, setAnalysisElapsedSeconds] = useState(0);
   const [analysisTaskId, setAnalysisTaskId] = useState("");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [historyQuery, setHistoryQuery] = useState("");
@@ -308,7 +356,9 @@ function App() {
   const [registerPassword, setRegisterPassword] = useState("");
 
   const responsesInputRef = useRef(null);
-  const intervalRef = useRef(null);
+  const pollTimeoutRef = useRef(null);
+  const elapsedIntervalRef = useRef(null);
+  const analysisStartedAtRef = useRef(0);
   const saveActionsRef = useRef(null);
   const profileActionsRef = useRef(null);
   const exportDownloadUrlRef = useRef("");
@@ -611,7 +661,8 @@ function App() {
     window.addEventListener("hashchange", handleHashChange);
     return () => {
       window.removeEventListener("hashchange", handleHashChange);
-      if (intervalRef.current) clearInterval(intervalRef.current);
+      if (pollTimeoutRef.current) clearTimeout(pollTimeoutRef.current);
+      if (elapsedIntervalRef.current) clearInterval(elapsedIntervalRef.current);
     };
   }, []);
 
@@ -799,13 +850,25 @@ function App() {
     }
   }, [selectedResponseFiles]);
 
+  const clearAnalysisTimers = () => {
+    if (pollTimeoutRef.current) {
+      clearTimeout(pollTimeoutRef.current);
+      pollTimeoutRef.current = null;
+    }
+    if (elapsedIntervalRef.current) {
+      clearInterval(elapsedIntervalRef.current);
+      elapsedIntervalRef.current = null;
+    }
+  };
+
   const resetUploadForm = () => {
     setSelectedResponseFiles([]);
     setShowValidation(false);
     setIsAnalyzing(false);
-    setAnalysisProgress(0);
+    setAnalysisStage(INITIAL_ANALYSIS_STAGE);
+    setAnalysisElapsedSeconds(0);
     if (responsesInputRef.current) responsesInputRef.current.value = "";
-    if (intervalRef.current) clearInterval(intervalRef.current);
+    clearAnalysisTimers();
   };
 
   const handleNewAnalysis = () => {
@@ -833,8 +896,14 @@ function App() {
     }
 
     setIsAnalyzing(true);
-    setAnalysisProgress(0);
+    setAnalysisStage(INITIAL_ANALYSIS_STAGE);
+    setAnalysisElapsedSeconds(0);
     setAnalysisTaskId("Отправка...");
+    clearAnalysisTimers();
+    analysisStartedAtRef.current = Date.now();
+    elapsedIntervalRef.current = setInterval(() => {
+      setAnalysisElapsedSeconds(Math.floor((Date.now() - analysisStartedAtRef.current) / 1000));
+    }, 1000);
 
     try {
       const data = await uploadFiles(selectedResponseFiles, selectedModel);
@@ -849,26 +918,27 @@ function App() {
         message: data.message || "Файлы успешно отправлены и приняты в обработку.",
       });
 
-      let progress = 0;
-      let hasCompleted = false;
-
-      // Local progress helper that goes slowly up to 90%
-      intervalRef.current = setInterval(() => {
-        if (!hasCompleted) {
-          progress += Math.floor(Math.random() * 4) + 1;
-          if (progress > 90) progress = 90;
-          setAnalysisProgress(progress);
-        }
-      }, 1000);
-
       // Polling function
       const poll = async () => {
         try {
           const statusRes = await getAnalysisStatus(serverTaskId);
+          const stageIndex = Math.min(
+            ANALYSIS_STAGES.length,
+            Math.max(1, Number(statusRes.stage_index) || 1)
+          );
+          const stageDefinition = ANALYSIS_STAGES.find((stage) => stage.key === statusRes.stage)
+            || ANALYSIS_STAGES[stageIndex - 1]
+            || ANALYSIS_STAGES[0];
+
+          setAnalysisStage({
+            key: stageDefinition.key,
+            index: stageIndex,
+            total: Number(statusRes.total_stages) || ANALYSIS_STAGES.length,
+            message: statusRes.stage_message || stageDefinition.description,
+          });
+
           if (statusRes.status === "Completed") {
-            hasCompleted = true;
-            clearInterval(intervalRef.current);
-            setAnalysisProgress(100);
+            clearAnalysisTimers();
 
             // Construct new report based on real result from model
             const result = statusRes.result || {};
@@ -899,7 +969,7 @@ function App() {
               message: "Отчет открыт. Назовите его или пропустите этот шаг.",
             });
           } else if (statusRes.status === "Failed") {
-            clearInterval(intervalRef.current);
+            clearAnalysisTimers();
             setIsAnalyzing(false);
             await fetchHistory();
             notify({
@@ -909,11 +979,11 @@ function App() {
             });
           } else {
             // Processing... Continue polling after timeout
-            setTimeout(poll, 3000);
+            pollTimeoutRef.current = setTimeout(poll, 2000);
           }
         } catch (err) {
           console.error("Polling error:", err);
-          clearInterval(intervalRef.current);
+          clearAnalysisTimers();
           setIsAnalyzing(false);
           notify({
             type: "error",
@@ -924,9 +994,10 @@ function App() {
       };
 
       // Start polling after 2 seconds
-      setTimeout(poll, 2000);
+      pollTimeoutRef.current = setTimeout(poll, 2000);
 
     } catch (err) {
+      clearAnalysisTimers();
       setIsAnalyzing(false);
       notify({
         type: "error",
@@ -1133,15 +1204,10 @@ function App() {
     }
   };
 
-  const getTimelineStepClass = (stepIndex, currentProgress) => {
-    const thresholds = [0, 25, 50, 75];
-    if (currentProgress >= thresholds[stepIndex]) {
-      if (currentProgress > thresholds[stepIndex] + 20 || currentProgress === 100) {
-        return "done";
-      }
-      return "active-step";
-    }
-    return "";
+  const getTimelineStepState = (stepNumber) => {
+    if (stepNumber < analysisStage.index) return "done";
+    if (stepNumber === analysisStage.index) return "active-step";
+    return "pending-step";
   };
 
   const renderActivePage = () => {
@@ -1350,28 +1416,68 @@ function App() {
                   <p className="eyebrow" id="progress-task-id">Задача {analysisTaskId}</p>
                   <h2>Выполнение анализа</h2>
                 </div>
-                <span className="badge" id="progress-percentage-badge">{analysisProgress}%</span>
+                <div className="analysis-progress-meta" aria-live="polite">
+                  <span className="analysis-stage-badge" id="progress-stage-badge">
+                    Этап {analysisStage.index} из {analysisStage.total}
+                  </span>
+                  <span className="analysis-elapsed-time">
+                    <Clock3 size={16} aria-hidden="true" />
+                    {formatElapsedTime(analysisElapsedSeconds)}
+                  </span>
+                </div>
               </div>
-              <div className="progress-track">
-                <span id="progress-fill-bar" style={{ "--progress-value": `${analysisProgress}%` }}></span>
+              <div
+                className="analysis-progress-segments"
+                id="progress-stage-indicator"
+                role="progressbar"
+                aria-label="Этап выполнения анализа"
+                aria-valuemin="1"
+                aria-valuemax={analysisStage.total}
+                aria-valuenow={analysisStage.index}
+                aria-valuetext={`${ANALYSIS_STAGES[analysisStage.index - 1]?.title || "Обработка"}. Этап ${analysisStage.index} из ${analysisStage.total}`}
+              >
+                {ANALYSIS_STAGES.map((stage, index) => (
+                  <span
+                    key={stage.key}
+                    className={`analysis-progress-segment ${getTimelineStepState(index + 1)}`}
+                    aria-hidden="true"
+                  />
+                ))}
               </div>
               <div className="timeline" id="progress-timeline-steps">
-                <div id="step-1" className={getTimelineStepClass(0, analysisProgress)}>
-                  <b>Файлы приняты</b>
-                  <p>Эталон и файлы ответов прошли базовую проверку.</p>
-                </div>
-                <div id="step-2" className={getTimelineStepClass(1, analysisProgress)}>
-                  <b>Данные проверены сервером</b>
-                  <p>{isOfflineMode ? "Демо-режим подготовил локальную структуру отчета." : "Сервер проверяет формат, обязательные колонки, пропуски и ошибочные оценки."}</p>
-                </div>
-                <div id="step-3" className={getTimelineStepClass(2, analysisProgress)}>
-                  <b>ИИ-агенты анализируют паттерны</b>
-                  <p>{isOfflineMode ? "Создается шаблонный демо-результат для проверки интерфейса." : "Статистик проверяет время, методист ищет типовые ошибки."}</p>
-                </div>
-                <div id="step-4" className={getTimelineStepClass(3, analysisProgress)}>
-                  <b>Формируется отчёт</b>
-                  <p>{isOfflineMode ? "Демо-отчет будет доступен локально после завершения." : "Отчет и выгрузки будут готовы после завершения."}</p>
-                </div>
+                {ANALYSIS_STAGES.map((stage, index) => {
+                  const stepNumber = index + 1;
+                  const stepState = getTimelineStepState(stepNumber);
+                  const StageIcon = stage.icon;
+                  const isActive = stepState === "active-step";
+                  const isDone = stepState === "done";
+
+                  return (
+                    <div
+                      id={`step-${stepNumber}`}
+                      key={stage.key}
+                      className={`timeline-step ${stepState}`}
+                      aria-current={isActive ? "step" : undefined}
+                    >
+                      <span className="timeline-step-marker" aria-hidden="true">
+                        {isDone ? (
+                          <Check size={17} strokeWidth={2.6} />
+                        ) : isActive ? (
+                          <LoaderCircle size={18} strokeWidth={2.4} />
+                        ) : (
+                          <StageIcon size={17} strokeWidth={2} />
+                        )}
+                      </span>
+                      <div className="timeline-step-content">
+                        <div className="timeline-step-heading">
+                          <b>{stage.title}</b>
+                          <span>{isDone ? "Завершено" : isActive ? "Выполняется" : "Ожидает"}</span>
+                        </div>
+                        <p>{isActive ? analysisStage.message : stage.description}</p>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}
