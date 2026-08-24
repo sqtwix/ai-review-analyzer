@@ -6,18 +6,16 @@ echo DEPLOYING AI REVIEW ANALYZER (WINDOWS)
 cd /d "%~dp0"
 
 if not exist ".env" (
-    if exist "env_example.txt" (
-        echo --> Creating .env from env_example.txt...
-        copy env_example.txt .env >nul
-    ) else (
-        echo --> Creating default .env file...
+    echo --> Creating .env with generated secrets...
+    for /f %%i in ('powershell -NoProfile -Command "[Convert]::ToHexString([Security.Cryptography.RandomNumberGenerator]::GetBytes(24)).ToLower()"') do set "GENERATED_DB_PASSWORD=%%i"
+    for /f %%i in ('powershell -NoProfile -Command "[Convert]::ToBase64String([Security.Cryptography.RandomNumberGenerator]::GetBytes(48))"') do set "GENERATED_JWT_SECRET=%%i"
         (
             echo DB_HOST=postgres
             echo DB_PORT=5432
             echo DB_NAME=aichecker
             echo DB_USER=aichecker_user
-            echo DB_PASSWORD=aichecker_password
-            echo JWT_SECRET=super_secret_jwt_key_aichecker_enterprise_2026!
+            echo DB_PASSWORD=!GENERATED_DB_PASSWORD!
+            echo JWT_SECRET=!GENERATED_JWT_SECRET!
             echo JWT_ISSUER=ai-review-analyzer
             echo JWT_AUDIENCE=ai-review-analyzer-frontend
             echo JWT_EXPIRY_MINUTES=1440
@@ -35,7 +33,6 @@ if not exist ".env" (
             echo VITE_OFFLINE_MODE=false
             echo VITE_ENABLE_DEMO_MODE=false
         ) > .env
-    )
 ) else (
     echo --> Existing .env file found.
 )

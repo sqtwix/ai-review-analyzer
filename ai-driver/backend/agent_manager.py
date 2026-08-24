@@ -2,9 +2,12 @@ from backend.agent_client import AgentClient
 from backend.agent_factory import AgentFactory
 import json
 import logging
+import os
 from pathlib import Path
 import math
 import statistics
+import time
+from collections import Counter, defaultdict
 
 BASE_DIR = Path(__file__).resolve().parent
 PATH_TO_JSON = BASE_DIR / "system_prompts.json"
@@ -32,6 +35,112 @@ COMMENT_FIELD_LABELS = {
 }
 
 class AgentManager:
+    EVIDENCE_KINDS = {"positive", "problem", "suggestion", "neutral"}
+    SENTIMENTS = {"positive", "neutral", "negative"}
+    PRIORITIES = {"High", "Medium", "Low"}
+    PRIORITY_RANK = {"Low": 1, "Medium": 2, "High": 3}
+    EXPLICIT_SUGGESTION_FIELDS = (
+        "topics_to_add_comment",
+        "topics_to_exclude_comment",
+    )
+    GENERIC_TOPIC_ALIASES = {
+        "motivation_comment": {"motivation", "мотивация"},
+        "usefulness_comment": {"usefulness", "полезность"},
+        "involvement_comment": {"involvement", "вовлеченность", "вовлечённость"},
+        "practice_change_comment": {"practice_change", "practice change"},
+    }
+    NON_SUBSTANTIVE_COMMENTS = {
+        "-", "—", "нет", "не было", "не знаю", "без комментариев",
+        "затрудняюсь ответить", "все хорошо", "всё хорошо", "все отлично",
+        "всё отлично", "none", "no", "n/a",
+    }
+    NO_ACTION_MARKERS = (
+        "никакие", "ничего", "не требуется", "не требуются", "исключать не",
+        "все темы были актуальны", "все актуальны", "всё актуально",
+        "все полезны", "всё полезно", "все прекрасно", "всё прекрасно",
+        "курс очень органичен", "нет предложений", "только добавить",
+        "таких тем нет", "все нужное", "всё нужное", "программа полная",
+        "программа составлена", "курс содержит достаточное количество",
+        "нет таких", "не таких", "программу дополнять не надо",
+        "достаточно полно",
+    )
+    NO_EXCLUSION_PATTERNS = (
+        ("оставить", "все"),
+        ("оставить", "всё"),
+        ("все", "полез"),
+        ("всё", "полез"),
+        ("все", "нуж"),
+        ("всё", "нуж"),
+        ("все", "актуал"),
+        ("всё", "актуал"),
+        ("все", "важ"),
+        ("всё", "важ"),
+    )
+    NO_ADDITION_PATTERNS = (
+        ("все", "тем", "рассмотр"),
+        ("всё", "тем", "рассмотр"),
+        ("программ", "достаточ"),
+        ("дополн", "не треб"),
+        ("все", "актуал"),
+        ("всё", "актуал"),
+        ("все", "достаточ"),
+        ("всё", "достаточ"),
+    )
+    PLACEHOLDER_MARKERS = (
+        "короткое название темы",
+        "детальное описание сути темы",
+        "текстовый вывод",
+        "тема 1 для исключения",
+        "метрику x",
+        "метрику y",
+        "скопируй полностью",
+        "объект улучшения",
+    )
+    EVIDENCE_RESPONSE_SCHEMA = {
+        "type": "object",
+        "additionalProperties": False,
+        "required": ["responses"],
+        "properties": {
+            "responses": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "additionalProperties": False,
+                    "required": ["response_id", "sentiment", "evidence"],
+                    "properties": {
+                        "response_id": {"type": "string"},
+                        "sentiment": {
+                            "type": "string",
+                            "enum": ["positive", "neutral", "negative"],
+                        },
+                        "evidence": {
+                            "type": "array",
+                            "maxItems": 3,
+                            "items": {
+                                "type": "object",
+                                "additionalProperties": False,
+                                "required": ["field", "quote", "topic", "kind", "priority"],
+                                "properties": {
+                                    "field": {"type": "string"},
+                                    "quote": {"type": "string"},
+                                    "topic": {"type": "string"},
+                                    "kind": {
+                                        "type": "string",
+                                        "enum": ["positive", "problem", "suggestion", "neutral"],
+                                    },
+                                    "priority": {
+                                        "type": "string",
+                                        "enum": ["High", "Medium", "Low"],
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+        },
+    }
+
     def __init__(self, agent_factory: AgentFactory):
         try:
             self.agent_factory = agent_factory
@@ -214,6 +323,567 @@ class AgentManager:
             limitations.append(f"В текущем контракте найдено {len(comment_registry)} открытых полей; для требования 19 комментариев нужны оставшиеся колонки во входном файле или расширение маппинга.")
         return limitations
 
+    def _validate_qualitative_result(self, result: dict, source_text: str, response_count: int) -> None:
+        serialized = json.dumps(result, ensure_ascii=False).lower()
+        if any(marker in serialized for marker in self.PLACEHOLDER_MARKERS):
+            raise ValueError("qualitative model output contains prompt placeholders")
+
+        normalized_source = " ".join(source_text.lower().split())
+        topics = result.get("top_topics", [])
+        if not isinstance(topics, list) or len(topics) > 7:
+            raise ValueError("qualitative model output contains an unsupported number of topics")
+
+        for topic in topics:
+            frequency = topic.get("frequency")
+            if not isinstance(frequency, int) or frequency < 1 or frequency > response_count:
+                raise ValueError("qualitative model output contains an unsupported topic frequency")
+
+        for quote in result.get("quotes", []):
+            quote_text = " ".join(str(quote.get("quote", "")).lower().split())
+            if not quote_text or quote_text not in normalized_source:
+                raise ValueError("qualitative model output contains a quote absent from source data")
+            frequency = quote.get("frequency")
+            if not isinstance(frequency, int) or frequency < 1 or frequency > response_count:
+                raise ValueError("qualitative model output contains an unsupported quote frequency")
+
+        sentiment = result.get("sentiment", {})
+        sentiment_values = [float(sentiment.get(key, 0)) for key in ("positive", "neutral", "negative")]
+        if any(value < 0 or value > 100 for value in sentiment_values):
+            raise ValueError("qualitative model sentiment is outside the supported range")
+        sentiment_total = sum(sentiment_values)
+        if abs(sentiment_total - 100.0) > 0.2:
+            raise ValueError("qualitative model sentiment does not sum to 100 percent")
+        if any(not self._is_supported_percentage(value, response_count) for value in sentiment_values):
+            raise ValueError("qualitative model sentiment is not supported by the response count")
+
+        for problem in result.get("key_problems", []):
+            frequency_percent = float(problem.get("frequency_percent", -1))
+            if not self._is_supported_percentage(frequency_percent, response_count):
+                raise ValueError("qualitative model problem frequency is not supported by the response count")
+            if problem.get("severity") not in {"High", "Medium", "Low"}:
+                raise ValueError("qualitative model problem severity is unsupported")
+
+    @staticmethod
+    def _is_supported_percentage(value: float, response_count: int) -> bool:
+        if response_count <= 0 or value < 0 or value > 100:
+            return False
+        nearest_count = round((value / 100.0) * response_count)
+        expected = round((nearest_count / response_count) * 100.0, 1)
+        return abs(value - expected) <= 0.2
+
+    def _reject_prompt_placeholders(self, result: dict, stage: str) -> None:
+        serialized = json.dumps(result, ensure_ascii=False).lower()
+        if any(marker in serialized for marker in self.PLACEHOLDER_MARKERS):
+            raise ValueError(f"{stage} model output contains prompt placeholders")
+
+    @staticmethod
+    def _normalize_text(value: str) -> str:
+        return " ".join(str(value or "").casefold().split())
+
+    @staticmethod
+    def _chunk_items(items: list, size: int) -> list[list]:
+        return [items[index:index + size] for index in range(0, len(items), size)]
+
+    def _is_substantive_comment(self, value: str) -> bool:
+        normalized = self._normalize_text(value).strip(" .,!?:;()[]{}")
+        return len(normalized) >= 3 and normalized not in self.NON_SUBSTANTIVE_COMMENTS
+
+    def _is_evidence_candidate(self, field: str, value: str) -> bool:
+        if not self._is_substantive_comment(value):
+            return False
+        normalized = self._normalize_text(value)
+        if field in self.EXPLICIT_SUGGESTION_FIELDS:
+            if any(marker in normalized for marker in self.NO_ACTION_MARKERS):
+                return False
+            field_patterns = (
+                self.NO_EXCLUSION_PATTERNS
+                if field == "topics_to_exclude_comment"
+                else self.NO_ADDITION_PATTERNS
+            )
+            words = set(normalized.split())
+            if field == "topics_to_exclude_comment" and normalized in {"все", "всё"}:
+                return False
+            return not any(
+                all(
+                    part in words if part in {"все", "всё"} else part in normalized
+                    for part in pattern
+                )
+                for pattern in field_patterns
+            )
+        return True
+
+    def _normalize_evidence_topic(self, field: str, topic: str) -> str:
+        normalized = self._normalize_text(topic)
+        aliases = {
+            self._normalize_text(field),
+            self._normalize_text(field.removesuffix("_comment")),
+            self._normalize_text(COMMENT_FIELD_LABELS.get(field, "")),
+            "тема",
+            "topic",
+            *self.GENERIC_TOPIC_ALIASES.get(field, set()),
+        }
+        return COMMENT_FIELD_LABELS.get(field, topic) if normalized in aliases else topic
+
+    def _prepare_evidence_records(self, responses: list[dict]) -> list[dict]:
+        records = []
+        used_ids = set()
+        for index, response in enumerate(responses, start=1):
+            response_id = str(response.get("student_id") or f"row_{index}").strip()
+            if response_id in used_ids:
+                response_id = f"{response_id}_{index}"
+            used_ids.add(response_id)
+            raw_fields = {
+                field: str(response.get(field) or "").strip()
+                for field in COMMENT_FIELD_LABELS
+                if str(response.get(field) or "").strip()
+            }
+            ordered_fields = [
+                field for field in self.EXPLICIT_SUGGESTION_FIELDS
+                if field in raw_fields
+            ] + [
+                field for field in raw_fields
+                if field not in self.EXPLICIT_SUGGESTION_FIELDS
+            ]
+            fields = {field: raw_fields[field] for field in ordered_fields}
+            if fields:
+                records.append({
+                    "response_id": response_id,
+                    "position_category": response.get("position_category") or "Не указано",
+                    "fields": fields,
+                    "evidence_fields": sorted(
+                        (
+                            field for field, value in fields.items()
+                            if self._is_evidence_candidate(field, value)
+                        ),
+                        key=lambda field: (field not in self.EXPLICIT_SUGGESTION_FIELDS, ordered_fields.index(field)),
+                    ),
+                })
+        return records
+
+    def _validate_evidence_chunk(self, result: dict, records: list[dict]) -> tuple[list[dict], dict[str, str], int]:
+        source_by_id = {record["response_id"]: record for record in records}
+        accepted = []
+        sentiments = {}
+        rejected = 0
+        seen_atoms = set()
+        model_responses = result.get("responses")
+        if model_responses is None and result.get("response_id"):
+            model_responses = [result]
+        elif isinstance(model_responses, dict):
+            model_responses = [model_responses]
+        if not isinstance(model_responses, list):
+            raise ValueError("evidence output does not contain a responses array")
+
+        for model_response in model_responses:
+            if not isinstance(model_response, dict):
+                rejected += 1
+                continue
+            response_id = str(model_response.get("response_id") or "")
+            source = source_by_id.get(response_id)
+            if not source:
+                rejected += 1
+                continue
+
+            sentiment = model_response.get("sentiment")
+            if sentiment in self.SENTIMENTS and response_id not in sentiments:
+                sentiments[response_id] = sentiment
+            elif sentiment not in self.SENTIMENTS:
+                rejected += 1
+
+            evidence_items = model_response.get("evidence")
+            if not isinstance(evidence_items, list):
+                rejected += 1
+                continue
+
+            for item in evidence_items[:3]:
+                if not isinstance(item, dict):
+                    rejected += 1
+                    continue
+                field = str(item.get("field") or "")
+                quote = str(item.get("quote") or "").strip()
+                topic = str(item.get("topic") or "").strip()
+                kind = item.get("kind")
+                priority = item.get("priority")
+                source_value = source["fields"].get(field)
+                topic = self._normalize_evidence_topic(field, topic)
+                if field in self.EXPLICIT_SUGGESTION_FIELDS:
+                    kind = "suggestion"
+                normalized_quote = self._normalize_text(quote)
+                normalized_source = self._normalize_text(source_value or "")
+                serialized = self._normalize_text(json.dumps(item, ensure_ascii=False))
+
+                is_valid = (
+                    source_value is not None
+                    and field in source.get("evidence_fields", source["fields"].keys())
+                    and len(normalized_quote) >= 3
+                    and normalized_quote in normalized_source
+                    and self._is_substantive_comment(quote)
+                    and 2 <= len(topic) <= 120
+                    and kind in self.EVIDENCE_KINDS
+                    and priority in self.PRIORITIES
+                    and not any(marker in serialized for marker in self.PLACEHOLDER_MARKERS)
+                )
+                if not is_valid:
+                    rejected += 1
+                    continue
+
+                atom_key = (response_id, field, normalized_quote, self._normalize_text(topic), kind)
+                if atom_key in seen_atoms:
+                    rejected += 1
+                    continue
+                seen_atoms.add(atom_key)
+                accepted.append({
+                    "response_id": response_id,
+                    "field": field,
+                    "quote": quote,
+                    "topic": topic,
+                    "kind": kind,
+                    "priority": priority,
+                })
+
+        return accepted, sentiments, rejected
+
+    def _request_evidence(self, client: AgentClient, records: list[dict]) -> tuple[list[dict], dict[str, str], int]:
+        raw = client.execute(
+            self.system_prompts[0]["prompt"],
+            json.dumps({"responses": records}, ensure_ascii=False),
+            max_tokens=int(os.getenv("AI_EVIDENCE_MAX_TOKENS", "768")),
+            timeout=float(os.getenv("AI_EVIDENCE_TIMEOUT_SECONDS", "120")),
+            response_schema=self.EVIDENCE_RESPONSE_SCHEMA,
+        )
+        return self._validate_evidence_chunk(json.loads(raw), records)
+
+    def _request_single_with_retry(
+        self,
+        client: AgentClient,
+        record: dict,
+        model_type: str,
+        response_index: int,
+        response_total: int,
+        retry_delay: float,
+    ) -> tuple[list[dict], dict[str, str], int, bool, int]:
+        for attempt in range(2):
+            try:
+                evidence, sentiments, rejected = self._request_evidence(client, [record])
+                return evidence, sentiments, rejected, False, attempt + 1
+            except Exception as error:
+                if attempt == 0:
+                    logger.warning(
+                        "[%s] Evidence response %s/%s failed, retrying in %.0fs: %s",
+                        model_type, response_index, response_total, retry_delay, str(error)
+                    )
+                    readiness_wait = max(
+                        retry_delay,
+                        float(os.getenv("AI_MODEL_READINESS_TIMEOUT_SECONDS", "180")),
+                    )
+                    wait_until_ready = getattr(client, "wait_until_ready", None)
+                    if callable(wait_until_ready):
+                        wait_until_ready(readiness_wait)
+                    else:
+                        time.sleep(retry_delay)
+                    continue
+                logger.warning(
+                    "[%s] Evidence response %s/%s failed after retry: %s",
+                    model_type, response_index, response_total, str(error)
+                )
+        return [], {}, 0, True, 2
+
+    def _extract_evidence(self, client: AgentClient, records: list[dict], model_type: str) -> dict:
+        accepted = []
+        sentiments = {}
+        rejected = 0
+        failed_chunks = 0
+        model_requests = 0
+        fallback_responses = 0
+        retry_delay = max(0.0, float(os.getenv("AI_EVIDENCE_RETRY_DELAY_SECONDS", "30")))
+        batch_size = max(1, min(4, int(os.getenv("AI_EVIDENCE_BATCH_SIZE", "1"))))
+        chunks = self._chunk_items(records, batch_size)
+
+        for chunk_index, chunk in enumerate(chunks, start=1):
+            logger.info(
+                "[%s] Evidence batch %s/%s starting: responses=%s",
+                model_type, chunk_index, len(chunks), len(chunk)
+            )
+            batch_evidence = []
+            batch_sentiments = {}
+            batch_rejected = 0
+            batch_failed = False
+            try:
+                model_requests += 1
+                batch_evidence, batch_sentiments, batch_rejected = self._request_evidence(client, chunk)
+            except Exception as error:
+                batch_failed = True
+                logger.warning(
+                    "[%s] Evidence batch %s/%s failed; splitting into single responses: %s",
+                    model_type, chunk_index, len(chunks), str(error)
+                )
+
+            accepted.extend(batch_evidence)
+            sentiments.update({
+                response_id: sentiment
+                for response_id, sentiment in batch_sentiments.items()
+                if response_id not in sentiments
+            })
+            rejected += batch_rejected
+
+            missing_records = [
+                record for record in chunk
+                if record["response_id"] not in batch_sentiments
+            ]
+            if batch_failed:
+                missing_records = chunk
+
+            for record in missing_records:
+                fallback_responses += 1
+                response_index = records.index(record) + 1
+                single_evidence, single_sentiments, single_rejected, failed, attempts = (
+                    self._request_single_with_retry(
+                        client,
+                        record,
+                        model_type,
+                        response_index,
+                        len(records),
+                        retry_delay,
+                    )
+                )
+                model_requests += attempts
+                accepted.extend(single_evidence)
+                sentiments.update({
+                    response_id: sentiment
+                    for response_id, sentiment in single_sentiments.items()
+                    if response_id not in sentiments
+                })
+                rejected += single_rejected
+                if failed:
+                    failed_chunks += 1
+
+            logger.info(
+                "[%s] Evidence batch %s/%s completed: accepted=%s rejected=%s fallback=%s",
+                model_type,
+                chunk_index,
+                len(chunks),
+                len(batch_evidence),
+                batch_rejected,
+                len(missing_records),
+            )
+
+        return {
+            "evidence": accepted,
+            "sentiments": sentiments,
+            "rejected": rejected,
+            "chunks_total": len(records),
+            "chunks_failed": failed_chunks,
+            "model_requests": model_requests,
+            "fallback_responses": fallback_responses,
+            "batch_size": batch_size,
+        }
+
+    def _aggregate_evidence(self, extraction: dict, total_responses: int) -> dict:
+        evidence = extraction["evidence"]
+        topic_groups = defaultdict(list)
+        quote_groups = defaultdict(list)
+        problem_groups = defaultdict(list)
+        suggestion_groups = defaultdict(list)
+
+        for item in evidence:
+            topic_key = self._normalize_text(item["topic"])
+            topic_groups[topic_key].append(item)
+            quote_groups[self._normalize_text(item["quote"])].append(item)
+            if item["kind"] == "problem":
+                problem_groups[topic_key].append(item)
+            if item["kind"] == "suggestion":
+                suggestion_groups[topic_key].append(item)
+
+        def evidence_info(items: list[dict]) -> dict:
+            rows = sorted({item["response_id"] for item in items})
+            questions = sorted({item["field"] for item in items})
+            return {
+                "rows": rows,
+                "questions": questions,
+                "coverage": round((len(rows) / total_responses) * 100.0, 1) if total_responses else 0.0,
+            }
+
+        sorted_topics = sorted(
+            topic_groups.values(),
+            key=lambda items: (-len({item["response_id"] for item in items}), self._normalize_text(items[0]["topic"]))
+        )[:7]
+        top_topics = []
+        for items in sorted_topics:
+            rows = {item["response_id"] for item in items}
+            representative = items[0]
+            top_topics.append({
+                "topic": representative["topic"],
+                "description": f"Подтверждено ответами {len(rows)} слушателей.",
+                "frequency": len(rows),
+                "evidence": evidence_info(items),
+            })
+
+        key_problems = []
+        for items in sorted(
+            problem_groups.values(),
+            key=lambda group: -len({item["response_id"] for item in group})
+        )[:7]:
+            rows = {item["response_id"] for item in items}
+            representative = items[0]
+            priority = max(items, key=lambda item: self.PRIORITY_RANK[item["priority"]])["priority"]
+            key_problems.append({
+                "problem": representative["topic"],
+                "frequency_percent": round((len(rows) / total_responses) * 100.0, 1),
+                "severity": priority,
+                "evidence": evidence_info(items),
+            })
+
+        quotes = []
+        for items in sorted(
+            quote_groups.values(),
+            key=lambda group: (-len({item["response_id"] for item in group}), self._normalize_text(group[0]["quote"]))
+        )[:12]:
+            rows = {item["response_id"] for item in items}
+            quotes.append({
+                "quote": items[0]["quote"],
+                "frequency": len(rows),
+                "evidence": evidence_info(items),
+            })
+
+        sentiment_counts = Counter(extraction["sentiments"].values())
+        classified = sum(sentiment_counts.values())
+        sentiment = {
+            key: round((sentiment_counts[key] / classified) * 100.0, 1) if classified else 0.0
+            for key in ("positive", "neutral", "negative")
+        }
+
+        recommendations = []
+        recommendation_groups = {**problem_groups}
+        for key, items in suggestion_groups.items():
+            recommendation_groups.setdefault(key, []).extend(items)
+        for items in sorted(
+            recommendation_groups.values(),
+            key=lambda group: -len({item["response_id"] for item in group})
+        )[:7]:
+            rows = {item["response_id"] for item in items}
+            representative = items[0]
+            priority = max(items, key=lambda item: self.PRIORITY_RANK[item["priority"]])["priority"]
+            percent = round((len(rows) / total_responses) * 100.0, 1)
+            recommendations.append({
+                "target": representative["topic"],
+                "action_item": (
+                    f"Рассмотреть подтвержденную обратную связь по теме «{representative['topic']}» "
+                    f"({len(rows)} из {total_responses}, {percent}%)."
+                ),
+                "priority": priority,
+                "evidence": evidence_info(items),
+            })
+
+        return {
+            "top_topics": top_topics,
+            "sentiment": sentiment,
+            "key_problems": key_problems,
+            "quotes": quotes,
+            "recommendations": recommendations,
+            "classified_responses": classified,
+            "suggestion_groups": suggestion_groups,
+        }
+
+    def _build_grounded_report(
+        self,
+        course_name: str,
+        period: str,
+        total_responses: int,
+        stats: dict,
+        validation_summary: dict,
+        fmt_dist: dict,
+        text_analysis: dict,
+        extraction: dict,
+    ) -> dict:
+        preferred_format = max(fmt_dist, key=fmt_dist.get) if fmt_dist else "не указан"
+        preferred_count = fmt_dist.get(preferred_format, 0)
+        preferred_percent = round((preferred_count / total_responses) * 100.0, 1) if total_responses else 0.0
+        added_evidence = [
+            item for item in extraction["evidence"]
+            if item["field"] == "topics_to_add_comment"
+        ]
+        excluded_evidence = [
+            item for item in extraction["evidence"]
+            if item["field"] == "topics_to_exclude_comment"
+        ]
+
+        def grouped_counts(items: list[dict]) -> list[tuple[str, int]]:
+            groups = defaultdict(set)
+            labels = {}
+            for item in items:
+                key = self._normalize_text(item["topic"])
+                groups[key].add(item["response_id"])
+                labels[key] = item["topic"]
+            return sorted(
+                ((labels[key], len(rows)) for key, rows in groups.items()),
+                key=lambda pair: (-pair[1], self._normalize_text(pair[0]))
+            )
+
+        added_topics = [
+            {"topic": topic, "count": count}
+            for topic, count in grouped_counts(added_evidence)
+        ]
+        unwanted_topics = [
+            f"{topic} (N={count})"
+            for topic, count in grouped_counts(excluded_evidence)
+        ]
+        problem_summary = "; ".join(
+            f"{problem['problem']}: {len(problem['evidence']['rows'])} из {total_responses}"
+            for problem in text_analysis["key_problems"][:3]
+        ) or "Подтвержденные проблемы не выделены."
+        topic_summary = "; ".join(
+            f"{topic['topic']}: N={topic['frequency']}"
+            for topic in text_analysis["top_topics"][:3]
+        ) or "Подтвержденные темы не выделены."
+
+        return {
+            "section1_general_info": (
+                f"Курс: {course_name}\nПериод проведения: {period}\n"
+                f"Анкет обработано: {total_responses}.\n"
+                f"Валидных оценок: {validation_summary['valid_count']}; "
+                f"пропусков: {validation_summary['missing_count']}; "
+                f"ошибочных оценок: {validation_summary['invalid_count']}."
+            ),
+            "section2_key_criteria": {
+                "usefulness_summary": f"Средняя полезность: {stats['usefulness']['average']}/10.",
+                "practicality_summary": f"Средняя практико-ориентированность: {stats['practicality']['average']}/10. {problem_summary}",
+                "accessibility_summary": f"Средняя доступность: {stats['accessibility']['average']}/10.",
+                "interaction_summary": f"Среднее взаимодействие с КУ: {stats['interaction']['average']}/10.",
+                "involvement_summary": (
+                    f"Вовлечены {stats['involvement']['involved_percent']}%; "
+                    f"отстранены {stats['involvement']['detached_percent']}%."
+                ),
+            },
+            "section3_suggestions": {
+                "unwanted_topics": unwanted_topics,
+                "added_topics": added_topics,
+                "preferred_format_summary": (
+                    f"Формат «{preferred_format}» выбрали {preferred_count} из {total_responses} "
+                    f"({preferred_percent}%)."
+                ),
+            },
+            "section4_trajectory": {
+                "further_implementation_needed": (
+                    f"Решение требует владельца программы; фактическая средняя полезность составляет "
+                    f"{stats['usefulness']['average']}/10."
+                ),
+                "student_selection_correction": "Подтвержденных данных для изменения отбора слушателей недостаточно.",
+                "added_topics_recommendation": (
+                    "; ".join(f"Рассмотреть «{item['topic']}» (N={item['count']})" for item in added_topics)
+                    or "Подтвержденных предложений о добавлении тем нет."
+                ),
+                "hours_correction_needed": "Подтвержденные замечания: " + problem_summary,
+                "format_correction_needed": (
+                    f"Распределение форматов зафиксировано; лидирует «{preferred_format}» "
+                    f"({preferred_count} из {total_responses})."
+                ),
+                "conclusions": [
+                    topic_summary,
+                    f"Тональность классифицирована для {text_analysis['classified_responses']} из {total_responses} анкет.",
+                ],
+            },
+        }
+
     def _run_pipeline(self, input_data: str, model_type: str) -> str:
         try:
             req_data = json.loads(input_data)
@@ -222,9 +892,7 @@ class AgentManager:
 
             # Создаем очередь агентов
             agent_queue = self.agent_factory.create_queue(model_type)
-            qual_analyst = agent_queue[0]       # qualitative-analyst
-            synth_creator = agent_queue[1]      # synthesis-creator
-            synth_summarizer = agent_queue[2]   # synthesis-summarizer
+            qual_analyst = agent_queue[0]
 
             courses_analysis_results = []
 
@@ -333,122 +1001,87 @@ class AgentManager:
                     trend_source = "unavailable"
                     has_historical_periods = False
 
-                # 2. Агрегация текстовых отзывов для LLM
-                comments = []
-                for idx, r in enumerate(responses):
-                    student_comments = []
-                    for field in [
-                        "motivation_comment", "usefulness_comment", "applied_skills_comment", 
-                        "expected_effect", "expected_effect_reason", "topics_to_exclude_comment", 
-                        "topics_to_add_comment", "practicality_comment", "practice_tuning_comment", 
-                        "practice_change_comment", "accessibility_comment", "logic_sequence_reason", 
-                        "ask_questions_comment", "ask_questions_reason", "detachment_reason_comment", 
-                        "involvement_comment", "interaction_comment"
-                    ]:
-                        val = r.get(field)
-                        if val and str(val).strip():
-                            student_comments.append(f"{field}: {str(val).strip()}")
-                    if student_comments:
-                        pos = r.get("position_category") or "Слушатель"
-                        comments.append(f"[Слушатель {idx+1} ({pos})]:\n" + "\n".join(student_comments))
-                
-                aggregated_text = "\n\n".join(comments)
+                records = self._prepare_evidence_records(responses)
+                if records:
+                    extraction = self._extract_evidence(qual_analyst, records, model_type)
+                    if not extraction["evidence"]:
+                        raise ValueError("evidence pipeline produced no validated evidence")
+                else:
+                    extraction = {
+                        "evidence": [],
+                        "sentiments": {},
+                        "rejected": 0,
+                        "chunks_total": 0,
+                        "chunks_failed": 0,
+                        "model_requests": 0,
+                        "fallback_responses": 0,
+                        "batch_size": 0,
+                    }
 
-                # Шаг 1: Качественный анализ текстовых отзывов
-                logger.info("[%s] Step 1: qualitative-analyst starting for course %s", model_type, course_name)
-                qual_result_str = qual_analyst.execute(
-                    self.system_prompts[0]["prompt"],
-                    aggregated_text if aggregated_text else "Отзывы отсутствуют."
+                aggregated = self._aggregate_evidence(extraction, total_responses)
+                analytical_report = self._build_grounded_report(
+                    course_name,
+                    period,
+                    total_responses,
+                    stats,
+                    validation_summary,
+                    fmt_dist,
+                    aggregated,
+                    extraction,
                 )
-                qual_result = json.loads(qual_result_str)
+                processing_log[-1] = {
+                    "step": "text_analysis",
+                    "status": "completed" if extraction["chunks_failed"] == 0 else "partial",
+                    "message": (
+                        f"Evidence-first обработка: анкет {extraction['chunks_total']}; "
+                        f"ошибок обработки {extraction['chunks_failed']}; "
+                        f"принято evidence {len(extraction['evidence'])}; "
+                        f"отклонено evidence {extraction['rejected']}; "
+                        f"тональность классифицирована для {aggregated['classified_responses']} "
+                        f"из {total_responses} анкет; запросов к модели {extraction['model_requests']}; "
+                        f"fallback на одиночную обработку {extraction['fallback_responses']}."
+                    ),
+                }
+                if extraction["rejected"]:
+                    quality_limitations.append(
+                        f"Отклонено неподтвержденных или некорректных evidence: {extraction['rejected']}."
+                    )
+                if extraction["chunks_failed"]:
+                    quality_limitations.append(
+                        f"Не обработано анкет: {extraction['chunks_failed']} из {extraction['chunks_total']}."
+                    )
+                if aggregated["classified_responses"] < total_responses:
+                    quality_limitations.append(
+                        f"Тональность классифицирована для {aggregated['classified_responses']} "
+                        f"из {total_responses} анкет."
+                    )
 
-                # Шаг 2: Методический синтез и аналитическая записка
-                logger.info("[%s] Step 2: synthesis-creator starting for course %s", model_type, course_name)
-                creator_input = json.dumps({
-                    "course_name": course_name,
-                    "statistics": stats,
-                    "validation_summary": validation_summary,
-                    "score_counts": score_counts,
-                    "metadata": metadata,
-                    "comment_registry": comment_registry,
-                    "processing_log": processing_log,
-                    "quality_limitations": quality_limitations,
-                    "text_analysis": qual_result
-                }, ensure_ascii=False)
-                creator_result_str = synth_creator.execute(
-                    self.system_prompts[1]["prompt"],
-                    creator_input
-                )
-                creator_result = json.loads(creator_result_str)
-
-                # Шаг 3: Объединение результатов и генерация конкретных рекомендаций
-                logger.info("[%s] Step 3: synthesis-summarizer starting for course %s", model_type, course_name)
-                summarizer_input = json.dumps({
+                text_analysis = {
+                    key: aggregated[key]
+                    for key in ("top_topics", "sentiment", "key_problems", "quotes", "recommendations")
+                }
+                courses_analysis_results.append({
                     "course_name": course_name,
                     "period": period,
                     "students_count": total_responses,
+                    "statistics": stats,
+                    "position_distribution": pos_dist,
+                    "preferred_formats": fmt_dist,
                     "validation_summary": validation_summary,
                     "score_counts": score_counts,
                     "metadata": metadata,
                     "comment_registry": comment_registry,
                     "processing_log": processing_log,
                     "quality_limitations": quality_limitations,
-                    "statistics": stats,
-                    "position_distribution": pos_dist,
-                    "preferred_formats": fmt_dist,
-                    "analytical_report": creator_result.get("analytical_report", {}),
                     "dashboard_data": {
                         "correlation_matrix": corr_matrix,
                         "trend_data": trend_data,
                         "trend_source": trend_source,
                         "has_historical_periods": has_historical_periods
                     },
-                    "text_analysis_raw": qual_result
-                }, ensure_ascii=False)
-
-                final_course_report_str = synth_summarizer.execute(
-                    self.system_prompts[2]["prompt"],
-                    summarizer_input
-                )
-                final_course_report = json.loads(final_course_report_str)
-
-                # Добавляем в итоговый список
-                # В зависимости от выдачи ИИ (массив или один объект) извлекаем результат
-                deterministic_fields = {
-                    "course_name": course_name,
-                    "period": period,
-                    "students_count": total_responses,
-                    "statistics": stats,
-                    "position_distribution": pos_dist,
-                    "preferred_formats": fmt_dist,
-                    "validation_summary": validation_summary,
-                    "score_counts": score_counts,
-                    "metadata": metadata,
-                    "comment_registry": comment_registry,
-                    "processing_log": processing_log,
-                    "quality_limitations": quality_limitations,
-                    "dashboard_data": {
-                        "correlation_matrix": corr_matrix,
-                        "trend_data": trend_data,
-                        "trend_source": trend_source,
-                        "has_historical_periods": has_historical_periods
-                    }
-                }
-
-                if isinstance(final_course_report, dict):
-                    if "courses_analysis" in final_course_report:
-                        for item in final_course_report["courses_analysis"]:
-                            if isinstance(item, dict):
-                                item.update(deterministic_fields)
-                            courses_analysis_results.append(item)
-                    else:
-                        final_course_report.update(deterministic_fields)
-                        courses_analysis_results.append(final_course_report)
-                elif isinstance(final_course_report, list):
-                    for item in final_course_report:
-                        if isinstance(item, dict):
-                            item.update(deterministic_fields)
-                        courses_analysis_results.append(item)
+                    "analytical_report": analytical_report,
+                    "text_analysis": text_analysis,
+                })
 
             final_batch_response = {
                 "batch_id": batch_id,

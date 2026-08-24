@@ -11,6 +11,11 @@ namespace ApiCore.Controllers;
 [Route("api/v1/analysis")]
 public class AnalysisController : ControllerBase
 {
+    private static readonly HashSet<string> AllowedUploadExtensions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ".csv", ".xlsx", ".xls", ".zip"
+    };
+
     private readonly AnalysisService _analysisService;
     private readonly AppDbContext _context;
     private readonly IServiceScopeFactory _serviceScopeFactory;
@@ -34,6 +39,18 @@ public class AnalysisController : ControllerBase
         if (userResponseFiles == null || !userResponseFiles.Any())
             return BadRequest(new { error = "Необходимо загрузить хотя бы один файл с отзывами пользователей." });
 
+        var invalidFiles = userResponseFiles
+            .Where(file => file.Length == 0 || !AllowedUploadExtensions.Contains(Path.GetExtension(file.FileName)))
+            .Select(file => Path.GetFileName(file.FileName))
+            .ToArray();
+        if (invalidFiles.Length > 0)
+        {
+            return BadRequest(new
+            {
+                error = $"Пустые или неподдерживаемые файлы: {string.Join(", ", invalidFiles)}. Допускаются .csv, .xlsx, .xls и .zip."
+            });
+        }
+
         var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
         if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
         {
@@ -48,9 +65,22 @@ public class AnalysisController : ControllerBase
         Directory.CreateDirectory(tempDir);
 
         var userResponsePaths = new List<string>();
+        var usedFileNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var file in userResponseFiles)
         {
-            var path = Path.Combine(tempDir, file.FileName);
+            var safeFileName = Path.GetFileName(file.FileName);
+            if (string.IsNullOrWhiteSpace(safeFileName))
+            {
+                return BadRequest(new { error = "Имя загруженного файла некорректно." });
+            }
+
+            var uniqueFileName = safeFileName;
+            var duplicateIndex = 1;
+            while (!usedFileNames.Add(uniqueFileName))
+            {
+                uniqueFileName = $"{Path.GetFileNameWithoutExtension(safeFileName)}_{duplicateIndex++}{Path.GetExtension(safeFileName)}";
+            }
+            var path = Path.Combine(tempDir, uniqueFileName);
             using (var stream = new FileStream(path, FileMode.Create))
             {
                 await file.CopyToAsync(stream);
@@ -116,17 +146,6 @@ public class AnalysisController : ControllerBase
                 status = report.Status,
                 result = result,
                 error = report.Error
-            });
-        }
-
-        // Резервный поиск во временном in-memory кэше
-        if (AnalysisService.TaskTracker.TryGetValue(taskId, out var task))
-        {
-            return Ok(new
-            {
-                status = task.Status,
-                result = task.Result,
-                error = task.Error
             });
         }
 

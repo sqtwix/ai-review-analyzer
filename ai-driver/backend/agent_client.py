@@ -1,7 +1,9 @@
 ﻿from openai import OpenAI
 import json
+import httpx
 import logging
 import os
+import time
 
 # ========================= Agent Client =========================
 
@@ -37,13 +39,22 @@ class AgentClient:
             self.base_url = base_url
             self.model = agent_model
             self.specialization = specialization
+            self.is_local_model = "qwen-local" in self.base_url or self.model == "local-model"
             # OpenAI клиент работает для всех совместимых API (DeepSeek, GigaChat, llama.cpp).
             # Retries are handled by the controller fallback path, so the UI does not hang on local model 500s.
             self.client = OpenAI(api_key=self.api_key, base_url=self.base_url, max_retries=0)
         except Exception as e:
             raise Exception("AgentClient Initialization Exception: agent initialization failed - " + str(e))
 
-    def execute(self, system_prompt: str, user_prompt: str) -> str:
+    def execute(
+        self,
+        system_prompt: str,
+        user_prompt: str,
+        *,
+        max_tokens: int | None = None,
+        timeout: float | None = None,
+        response_schema: dict | None = None,
+    ) -> str:
         # Выполняет запрос к модели и возвращает JSON-строку с ответом.
         # Параметры:
         #   system_prompt - системный промпт, определяющий роль агента
@@ -57,16 +68,35 @@ class AgentClient:
 
         try:
             # Отправка запроса к API нейросети
-            response = self.client.chat.completions.create(
-                model=self.model,
-                messages=[
+            response_format = {"type": "json_object"}
+            if response_schema:
+                response_format = {
+                    "type": "json_schema",
+                    "json_schema": {
+                        "name": "evidence_response",
+                        "strict": True,
+                        "schema": response_schema,
+                    },
+                }
+
+            request_options = {
+                "model": self.model,
+                "messages": [
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt}
                 ],
-                response_format={"type": "json_object"},
-                temperature=0.3,
-                max_tokens=int(os.getenv("AI_AGENT_MAX_TOKENS", "1536")),
-                timeout=float(os.getenv("AI_AGENT_TIMEOUT_SECONDS", "45"))
+                "response_format": response_format,
+                "temperature": 0.1 if self.is_local_model else 0.3,
+                "max_tokens": max_tokens or int(os.getenv("AI_AGENT_MAX_TOKENS", "1536")),
+                "timeout": timeout or float(os.getenv("AI_AGENT_TIMEOUT_SECONDS", "45"))
+            }
+            if self.is_local_model:
+                request_options["extra_body"] = {
+                    "chat_template_kwargs": {"enable_thinking": False}
+                }
+
+            response = self.client.chat.completions.create(
+                **request_options
             )
 
             # Извлекаем содержимое ответа
@@ -89,6 +119,24 @@ class AgentClient:
         except Exception as e:
             logger.error("Agent [%s] execution failed: %s", self.specialization, str(e))
             raise Exception("AgentClient Execution Exception: prompt execution failed - " + str(e))
+
+    def wait_until_ready(self, max_wait_seconds: float, poll_seconds: float = 5.0) -> bool:
+        health_url = self.base_url.rstrip("/")
+        if health_url.endswith("/v1"):
+            health_url = health_url[:-3]
+        health_url += "/health"
+        deadline = time.monotonic() + max(0.0, max_wait_seconds)
+
+        with httpx.Client(timeout=min(5.0, max(1.0, poll_seconds))) as client:
+            while time.monotonic() < deadline:
+                try:
+                    response = client.get(health_url)
+                    if response.is_success:
+                        return True
+                except httpx.HTTPError:
+                    pass
+                time.sleep(poll_seconds)
+        return False
 
     @staticmethod
     def _extract_json_content(raw_content: str) -> str:
