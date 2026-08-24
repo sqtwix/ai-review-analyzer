@@ -103,7 +103,7 @@ public class FileParser
         int accessibilityCommentIdx = FindColumnIndex(headers, new[] { "последовательность тем", "логика изложения", "последовательн" });
         int logicSequenceReasonIdx = FindColumnIndex(headers, new[] { "в чем это заключается" }, accessibilityCommentIdx + 1);
         
-        int askQuestionsIdx = FindColumnIndex(headers, new[] { "задать интересующие", "задать вопросы", "вопросы" });
+        int askQuestionsIdx = FindColumnIndex(headers, new[] { "задать интересующие", "задать вопросы", "могли ли вы на занятии" });
         int askQuestionsReasonIdx = FindColumnIndex(headers, new[] { "подробнее" }, askQuestionsIdx + 1);
         
         int isDetachedIdx = FindColumnIndex(headers, new[] { "отстраненность от процесса", "отстраненность", "отстранен", "вовлеченность", "вовлечен" });

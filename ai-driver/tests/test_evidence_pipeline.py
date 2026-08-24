@@ -101,6 +101,37 @@ class EvidencePipelineTests(unittest.TestCase):
         self.assertEqual({"student_1": "negative"}, sentiments)
         self.assertEqual(1, rejected)
 
+    def test_model_evidence_is_capped_at_two_atoms(self):
+        records = self.manager._prepare_evidence_records([{
+            "student_id": "student_1",
+            "motivation_comment": "Хочу применять знания в работе",
+            "usefulness_comment": "Полезны практические примеры",
+            "applied_skills_comment": "Смогу готовить отчеты",
+        }])
+        result = {
+            "response_id": "student_1",
+            "sentiment": "positive",
+            "evidence": [
+                {
+                    "field": field,
+                    "quote": records[0]["fields"][field],
+                    "topic": topic,
+                    "kind": "positive",
+                    "priority": "Low",
+                }
+                for field, topic in (
+                    ("motivation_comment", "Применение знаний"),
+                    ("usefulness_comment", "Практические примеры"),
+                    ("applied_skills_comment", "Подготовка отчетов"),
+                )
+            ],
+        }
+
+        accepted, _, rejected = self.manager._validate_evidence_chunk(result, records)
+
+        self.assertEqual(2, len(accepted))
+        self.assertEqual(0, rejected)
+
     def test_single_response_root_is_normalized(self):
         records = [{
             "response_id": "student_1",
@@ -123,7 +154,7 @@ class EvidencePipelineTests(unittest.TestCase):
 
         self.assertEqual(0, rejected)
         self.assertEqual("suggestion", accepted[0]["kind"])
-        self.assertEqual("Темы к добавлению", accepted[0]["topic"])
+        self.assertEqual("Больше кейсов", accepted[0]["topic"])
         self.assertEqual({"student_1": "positive"}, sentiments)
 
     def test_non_substantive_comment_cannot_become_evidence(self):
@@ -416,6 +447,62 @@ class EvidencePipelineTests(unittest.TestCase):
         self.assertEqual([], records[1]["evidence_fields"])
         self.assertEqual([], records[2]["evidence_fields"])
         self.assertEqual([], records[3]["evidence_fields"])
+
+    def test_presentation_dataset_no_action_answers_are_filtered(self):
+        records = self.manager._prepare_evidence_records([
+            {
+                "student_id": "student_1",
+                "topics_to_exclude_comment": "Все интересные",
+                "topics_to_add_comment": "Достаточно.",
+                "usefulness_comment": "Абсолютно все",
+            },
+            {
+                "student_id": "student_2",
+                "topics_to_exclude_comment": "Если для более углубленного изучения, то можно исключить онлайн курс.",
+                "topics_to_add_comment": "Практическими заданиями",
+            },
+            {
+                "student_id": "student_3",
+                "topics_to_add_comment": "Практики недостаточно, нужны дополнительные задания",
+            },
+        ])
+
+        self.assertEqual([], records[0]["evidence_fields"])
+        self.assertEqual(
+            ["topics_to_add_comment", "topics_to_exclude_comment"],
+            records[1]["evidence_fields"],
+        )
+        self.assertEqual(["topics_to_add_comment"], records[2]["evidence_fields"])
+
+    def test_burnout_dataset_no_action_answers_are_filtered(self):
+        no_action_pairs = [
+            ("таких нет", "идей нет"),
+            ("все необходимо", "данного курса достаточно"),
+            ("Не обнаружила такое.", "Курс лекций полноценный."),
+            ("Все темы интересные", "Программа, на мой взгляд, органична и целостна"),
+            ("нет таких", "тем и вопросов достаточно"),
+            ("возможно чуть мен", "все ок"),
+        ]
+        records = self.manager._prepare_evidence_records([
+            {
+                "student_id": f"student_{index}",
+                "topics_to_exclude_comment": exclude,
+                "topics_to_add_comment": addition,
+            }
+            for index, (exclude, addition) in enumerate(no_action_pairs, start=1)
+        ])
+
+        self.assertTrue(all(record["evidence_fields"] == [] for record in records))
+
+    def test_uncertain_no_change_answer_is_not_promoted_to_problem(self):
+        self.assertEqual(
+            "neutral",
+            self.manager._normalize_evidence_kind(
+                "practice_change_comment",
+                "затрудняюсь ответить, скорее ничего бы не меняла",
+                "neutral",
+            ),
+        )
 
     def test_transport_failure_is_retried_once(self):
         client = FlakyClient()

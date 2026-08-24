@@ -51,13 +51,17 @@ class AgentManager:
         "practice_change_comment": {"practice_change", "practice change"},
     }
     NON_SUBSTANTIVE_COMMENTS = {
-        "-", "—", "нет", "не было", "не знаю", "без комментариев",
+        "-", "—", "нет", "не было", "не знаю", "все", "всё", "абсолютно все",
+        "абсолютно всё", "все ок", "всё ок", "вся тема", "возможно все",
+        "возможно всё", "без комментариев",
         "затрудняюсь ответить", "все хорошо", "всё хорошо", "все отлично",
         "всё отлично", "none", "no", "n/a",
     }
     NO_ACTION_MARKERS = (
         "никакие", "ничего", "не требуется", "не требуются", "исключать не",
         "не исключать", "не нужно исключать", "не надо исключать",
+        "таких нет", "идей нет", "нет вопросов", "все необходимо",
+        "всё необходимо", "не обнаружила", "возможно чуть мен",
         "все темы были актуальны", "все актуальны", "всё актуально",
         "все полезны", "всё полезно", "все прекрасно", "всё прекрасно",
         "курс очень органичен", "нет предложений", "только добавить",
@@ -77,6 +81,10 @@ class AgentManager:
         ("всё", "актуал"),
         ("все", "важ"),
         ("всё", "важ"),
+        ("все", "интерес"),
+        ("всё", "интерес"),
+        ("все", "необходим"),
+        ("всё", "необходим"),
     )
     NO_ADDITION_PATTERNS = (
         ("все", "тем", "рассмотр"),
@@ -87,6 +95,10 @@ class AgentManager:
         ("всё", "актуал"),
         ("все", "достаточ"),
         ("всё", "достаточ"),
+        ("курс", "достаточ"),
+        ("тем", "достаточ"),
+        ("курс", "полноцен"),
+        ("программ", "органич"),
     )
     PLACEHOLDER_MARKERS = (
         "короткое название темы",
@@ -108,6 +120,7 @@ class AgentManager:
     NON_PROBLEM_MARKERS = (
         "не было проблем", "нет проблем", "без проблем", "не было сложност",
         "нет сложност", "достаточно", "все понятно", "всё понятно",
+        "затрудняюсь ответить",
     )
     EVIDENCE_RESPONSE_SCHEMA = {
         "type": "object",
@@ -128,7 +141,7 @@ class AgentManager:
                         },
                         "evidence": {
                             "type": "array",
-                            "maxItems": 3,
+                            "maxItems": 2,
                             "items": {
                                 "type": "object",
                                 "additionalProperties": False,
@@ -401,7 +414,7 @@ class AgentManager:
     def _is_evidence_candidate(self, field: str, value: str) -> bool:
         if not self._is_substantive_comment(value):
             return False
-        normalized = self._normalize_text(value)
+        normalized = self._normalize_text(value).strip(" .,!?:;()[]{}")
         if field in self.EXPLICIT_SUGGESTION_FIELDS:
             if any(marker in normalized for marker in self.NO_ACTION_MARKERS):
                 return False
@@ -412,6 +425,17 @@ class AgentManager:
             )
             words = set(normalized.split())
             if field == "topics_to_exclude_comment" and normalized in {"все", "всё"}:
+                return False
+            if (
+                field == "topics_to_add_comment"
+                and "достаточ" in normalized
+                and "недостаточ" not in normalized
+                and (normalized == "достаточно" or "всего" in words)
+                and not any(
+                    action_marker in normalized
+                    for action_marker in ("можно больше", "больше вниман", "добав", "нужно")
+                )
+            ):
                 return False
             return not any(
                 all(
@@ -433,16 +457,6 @@ class AgentManager:
             for topic_word in topic_words
             if len(topic_word) >= 6
         )
-        if field in self.EXPLICIT_SUGGESTION_FIELDS and quote and has_suspicious_word:
-            grounded = re.sub(
-                r"^(?:пожалуйста[, ]+)?(?:добавить|добавьте|включить|включите|"
-                r"убрать|уберите|исключить|исключите|сократить|сократите)\s+",
-                "",
-                quote.strip(" .,!?:;"),
-                flags=re.IGNORECASE,
-            ).strip(" .,!?:;")
-            if grounded:
-                return grounded[:1].upper() + grounded[1:120]
         normalized = self._normalize_text(topic)
         aliases = {
             self._normalize_text(field),
@@ -452,6 +466,23 @@ class AgentManager:
             "topic",
             *self.GENERIC_TOPIC_ALIASES.get(field, set()),
         }
+        if (
+            field in self.EXPLICIT_SUGGESTION_FIELDS
+            and quote
+            and (has_suspicious_word or normalized in aliases)
+        ):
+            grounded = re.sub(
+                r"^(?:пожалуйста[, ]+)?(?:добавить|добавьте|включить|включите|"
+                r"убрать|уберите|исключить|исключите|сократить|сократите)\s+",
+                "",
+                quote.strip(" .,!?:;"),
+                flags=re.IGNORECASE,
+            ).strip(" .,!?:;")
+            if grounded:
+                grounded = grounded[:1].upper() + grounded[1:]
+                if len(grounded) > 120:
+                    grounded = grounded[:117].rsplit(" ", 1)[0].rstrip(" .,!?:;") + "..."
+                return grounded
         return COMMENT_FIELD_LABELS.get(field, topic) if normalized in aliases else topic
 
     def _normalize_evidence_kind(self, field: str, quote: str, kind: str) -> str:
@@ -543,7 +574,7 @@ class AgentManager:
                 rejected += 1
                 continue
 
-            for item in evidence_items[:3]:
+            for item in evidence_items[:2]:
                 if not isinstance(item, dict):
                     rejected += 1
                     continue
