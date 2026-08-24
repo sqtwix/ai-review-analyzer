@@ -1,5 +1,13 @@
-export const isOfflineMode =
+const legacyOfflineModeEnabled =
   String(import.meta.env.VITE_OFFLINE_MODE || "").toLowerCase() === "true";
+const explicitDemoModeEnabled =
+  String(import.meta.env.VITE_ENABLE_DEMO_MODE || "").toLowerCase() === "true";
+
+export const isOfflineMode =
+  explicitDemoModeEnabled || (import.meta.env.DEV && legacyOfflineModeEnabled);
+
+export const isLegacyOfflineModeIgnored =
+  import.meta.env.PROD && legacyOfflineModeEnabled && !explicitDemoModeEnabled;
 
 const OFFLINE_REPORTS_KEY = "educheck_offline_reports";
 const OFFLINE_TASKS_KEY = "educheck_offline_tasks";
@@ -18,6 +26,7 @@ const getApiBaseUrl = () => {
 };
 
 const API_BASE_URL = getApiBaseUrl();
+let unauthorizedEventDispatched = false;
 
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -63,7 +72,7 @@ const saveOfflineTasks = (tasks) => {
   writeJson(OFFLINE_TASKS_KEY, tasks);
 };
 
-const generateOfflineReport = ({ taskId, userResponseFiles, modelType }) => {
+const generateOfflineReport = ({ taskId, userResponseFiles }) => {
   const firstResponseName = stripExtension(userResponseFiles[0]?.name || "Применение инструментов ИИ в гос управлении");
   const courseName = firstResponseName.replace(/^\d{2}\.\d{2}-\d{2}\.\d{2}\s+/, "");
   const period = firstResponseName.match(/^\d{2}\.\d{2}-\d{2}\.\d{2}/)?.[0] || "12.05-25.05";
@@ -252,7 +261,10 @@ export async function request(endpoint, options = {}) {
       localStorage.removeItem("username");
       localStorage.removeItem("userEmail");
       window.location.hash = "login";
-      window.dispatchEvent(new Event("auth:unauthorized"));
+      if (!unauthorizedEventDispatched) {
+        unauthorizedEventDispatched = true;
+        window.dispatchEvent(new Event("auth:unauthorized"));
+      }
     }
     let errorMsg = "Произошла ошибка при выполнении запроса";
     try {
@@ -267,7 +279,9 @@ export async function request(endpoint, options = {}) {
         // ignore
       }
     }
-    throw new Error(errorMsg);
+    const error = new Error(errorMsg);
+    error.status = response.status;
+    throw error;
   }
 
   // Handle empty responses (like 204 No Content)
@@ -275,7 +289,11 @@ export async function request(endpoint, options = {}) {
     return null;
   }
 
-  return response.json();
+  const data = await response.json();
+  if (endpoint === "/auth/login" || endpoint === "/auth/register") {
+    unauthorizedEventDispatched = false;
+  }
+  return data;
 }
 
 export async function login(email, password) {

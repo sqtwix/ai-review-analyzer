@@ -35,16 +35,19 @@ public class SurveyResponseDto
     public string PositionCategory { get; set; } = string.Empty;
 
     [JsonPropertyName("usefulness_score")]
-    public int UsefulnessScore { get; set; }
+    public int? UsefulnessScore { get; set; }
 
     [JsonPropertyName("practicality_score")]
-    public int PracticalityScore { get; set; }
+    public int? PracticalityScore { get; set; }
 
     [JsonPropertyName("accessibility_score")]
-    public int AccessibilityScore { get; set; }
+    public int? AccessibilityScore { get; set; }
 
     [JsonPropertyName("interaction_score")]
-    public int InteractionScore { get; set; }
+    public int? InteractionScore { get; set; }
+
+    [JsonPropertyName("score_validation_issues")]
+    public List<ScoreValidationIssueDto> ScoreValidationIssues { get; set; } = new();
 
     [JsonPropertyName("preferred_format")]
     public string PreferredFormat { get; set; } = string.Empty;
@@ -102,4 +105,16 @@ public class SurveyResponseDto
 
     [JsonPropertyName("interaction_comment")]
     public string InteractionComment { get; set; } = string.Empty;
+}
+
+public class ScoreValidationIssueDto
+{
+    [JsonPropertyName("field")]
+    public string Field { get; set; } = string.Empty;
+
+    [JsonPropertyName("status")]
+    public string Status { get; set; } = string.Empty;
+
+    [JsonPropertyName("raw_value")]
+    public string RawValue { get; set; } = string.Empty;
 }

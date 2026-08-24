@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from "react";
-import { Archive, Clock3, Files, Pencil, Save, Upload, XCircle } from "lucide-react";
+import { Clock3, Files, XCircle } from "lucide-react";
 import {
   login,
   register,
@@ -8,9 +8,9 @@ import {
   getAnalysisHistory,
   renameAnalysisReport,
   isOfflineMode,
+  isLegacyOfflineModeIgnored,
   seedOfflineReports,
   createOfflineReport,
-  updateOfflineReport,
   archiveAnalysisReport,
   unarchiveAnalysisReport,
 } from "./api";
@@ -321,7 +321,6 @@ function App() {
 
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [editTitleValue, setEditTitleValue] = useState("");
-  const [isEditingReportContent, setIsEditingReportContent] = useState(false);
 
   const updateLayoutPreferences = (patch) => {
     setLayoutPreferences((currentPreferences) => ({
@@ -438,15 +437,15 @@ function App() {
     const courseAnalysis = coursesAnalysis[0] || {};
 
     return {
-      id: apiReport.id || result.batch_id,
-      course: courseAnalysis.course_name || apiReport.course || "Электронный курс",
+      id: apiReport.id || apiReport.Id || result.batch_id,
+      course: apiReport.courseName || apiReport.CourseName || apiReport.course_name || apiReport.course || courseAnalysis.course_name || "Электронный курс",
       title: apiReport.title || `Анализ опроса за период ${courseAnalysis.period || ""}`,
-      status: apiReport.status,
-      error: apiReport.error,
-      source: apiReport.source,
-      isArchived: Boolean(apiReport.isArchived),
-      createdAt: apiReport.createdAt,
-      result: apiReport.result
+      status: apiReport.status || apiReport.Status,
+      error: apiReport.error || apiReport.Error,
+      source: apiReport.source || "user",
+      isArchived: Boolean(apiReport.isArchived ?? apiReport.IsArchived),
+      createdAt: apiReport.createdAt || apiReport.CreatedAt,
+      result: apiReport.result || apiReport.Result
     };
   };
 
@@ -458,7 +457,7 @@ function App() {
         setMockReports(mapped);
       }
     } catch (err) {
-      console.error("Failed to fetch analysis history:", err);
+      if (err?.status !== 401) console.error("Failed to fetch analysis history:", err);
     }
   };
 
@@ -470,7 +469,7 @@ function App() {
         setArchivedReports(mapped);
       }
     } catch (err) {
-      console.error("Failed to fetch archived analysis history:", err);
+      if (err?.status !== 401) console.error("Failed to fetch archived analysis history:", err);
     }
   };
 
@@ -590,7 +589,6 @@ function App() {
         setRoute(newRoute);
       }
       setIsEditingTitle(false); // Reset inline edit state on navigation
-      setIsEditingReportContent(false);
       setIsSaveMenuOpen(false);
       setIsProfileMenuOpen(false);
       setIsMenuOpen(false); // Close mobile drawer on route change
@@ -754,7 +752,7 @@ function App() {
       return {
         status: "idle",
         title: "Файлы не выбраны",
-        message: "Выберите Excel, CSV или ZIP-архив с анкетами.",
+        message: "Выберите Excel, CSV или ZIP-архив с анкетами. JSON не поддерживается как входной формат.",
       };
     }
 
@@ -783,7 +781,7 @@ function App() {
     return {
       status: "pending",
       title: "Базовая проверка пройдена",
-      message: "Расширения и размер файлов корректны. Наличие обязательных колонок проверит сервер при запуске анализа.",
+      message: "Расширения и размер файлов корректны. Наличие обязательных колонок, пропусков и ошибочных оценок проверит сервер при запуске анализа.",
     };
   }, [selectedResponseFiles]);
 
@@ -915,8 +913,13 @@ function App() {
           }
         } catch (err) {
           console.error("Polling error:", err);
-          // Retry polling in case of transient network issues
-          setTimeout(poll, 3000);
+          clearInterval(intervalRef.current);
+          setIsAnalyzing(false);
+          notify({
+            type: "error",
+            title: "Backend недоступен",
+            message: "Не удалось получить статус анализа. Готовый отчет не создан, чтобы не подменять реальные данные mock-результатом.",
+          });
         }
       };
 
@@ -945,7 +948,11 @@ function App() {
     }
     setIsSavingName(true);
     try {
-      await renameAnalysisReport(namingTaskId, namingValue);
+      const nextTitle = namingValue.trim();
+      await renameAnalysisReport(namingTaskId, nextTitle);
+      setMockReports((reports) =>
+        reports.map((report) => (report.id === namingTaskId ? { ...report, course: nextTitle } : report))
+      );
       await fetchHistory();
       setShowNamingModal(false);
       notify({
@@ -976,8 +983,12 @@ function App() {
     if (!editTitleValue.trim()) return;
 
     const reportId = route.replace("report-detail-", "");
+    const nextTitle = editTitleValue.trim();
     try {
-      await renameAnalysisReport(reportId, editTitleValue);
+      await renameAnalysisReport(reportId, nextTitle);
+      setMockReports((reports) =>
+        reports.map((report) => (report.id === reportId ? { ...report, course: nextTitle } : report))
+      );
       await fetchHistory();
       setIsEditingTitle(false);
       notify({
@@ -991,69 +1002,6 @@ function App() {
         message: err.message,
       });
     }
-  };
-
-  const persistOfflineReport = (reportId, patch) => {
-    setMockReports((reports) =>
-      reports.map((report) => (report.id === reportId ? { ...report, ...patch } : report))
-    );
-    updateOfflineReport(reportId, patch).catch((err) => {
-      notify({
-        type: "error",
-        title: "Не удалось сохранить изменения",
-        message: err.message,
-      });
-    });
-  };
-
-  const handleReportFieldChange = (reportId, field, value) => {
-    persistOfflineReport(reportId, { [field]: value });
-  };
-
-  const handleFindingChange = (report, index, field, value) => {
-    const nextErrors = report.errors.map((error, currentIndex) =>
-      currentIndex === index ? { ...error, [field]: value } : error
-    );
-    persistOfflineReport(report.id, { errors: nextErrors });
-  };
-
-  const addFinding = (report) => {
-    persistOfflineReport(report.id, {
-      errors: [
-        ...report.errors,
-        {
-          priority: "medium",
-          val: "25%",
-          question: "Новый вопрос",
-          text: "Опишите найденную массовую ошибку.",
-        },
-      ],
-    });
-  };
-
-  const removeFinding = (report, index) => {
-    persistOfflineReport(report.id, {
-      errors: report.errors.filter((_, currentIndex) => currentIndex !== index),
-    });
-  };
-
-  const handleRecommendationChange = (report, index, value) => {
-    const nextRecommendations = report.recommendations.map((recommendation, currentIndex) =>
-      currentIndex === index ? value : recommendation
-    );
-    persistOfflineReport(report.id, { recommendations: nextRecommendations });
-  };
-
-  const addRecommendation = (report) => {
-    persistOfflineReport(report.id, {
-      recommendations: [...report.recommendations, "Новая рекомендация для методиста."],
-    });
-  };
-
-  const removeRecommendation = (report, index) => {
-    persistOfflineReport(report.id, {
-      recommendations: report.recommendations.filter((_, currentIndex) => currentIndex !== index),
-    });
   };
 
   const handleCreateManualReport = async (e) => {
@@ -1099,7 +1047,6 @@ function App() {
       await archiveAnalysisReport(archiveTargetId);
       await fetchHistory();
       await fetchArchivedHistory();
-      setIsEditingReportContent(false);
       const archivedRoute = `report-detail-${archiveTargetId}`;
       setArchiveTargetId("");
       if (route === archivedRoute) {
@@ -1203,10 +1150,18 @@ function App() {
         <section className="page active" id="upload" data-title="Загрузка данных">
           {!isAnalyzing ? (
             <div className="split upload-layout" id="upload-form-panel">
-              <section className="panel">
-                <p className="eyebrow">Новый анализ</p>
-                <h2>Загрузите файлы опросов слушателей</h2>
-                <p className="muted">Поддерживаются файлы Excel (.xlsx), CSV или ZIP-архивы с таблицами опросов. Если в файлах не хватает колонок или они повреждены, система сообщит об этом до запуска анализа.</p>
+              <section className="panel upload-panel upload-data-panel">
+                <div className="upload-panel-heading text-stack">
+                  <p className="eyebrow">Новый анализ</p>
+                  <h2>Загрузите файлы опросов слушателей</h2>
+                  <p className="muted">Поддерживаются файлы Excel (.xlsx), CSV или ZIP-архивы с таблицами опросов. JSON не принимается как входной формат. Если в файлах не хватает колонок или они повреждены, система сообщит об этом до запуска анализа.</p>
+                </div>
+                {isLegacyOfflineModeIgnored && (
+                  <div className="validation-box validation-box-pending production-guard-box">
+                    <b>Production-режим подключен к backend</b>
+                    <p>Переменная VITE_OFFLINE_MODE игнорируется в production. Для отдельной демо-сборки используйте VITE_ENABLE_DEMO_MODE=true.</p>
+                  </div>
+                )}
                 <button type="button" className="text-link-button file-guide-trigger" onClick={() => setShowFileGuide(true)}>
                   Как подготовить файл
                 </button>
@@ -1283,53 +1238,56 @@ function App() {
                 )}
               </section>
 
-              <section className="panel">
-                <p className="eyebrow">Параметры</p>
-                <h3>Выбор ИИ-модели</h3>
-                <label className="field-label">ИИ-модель</label>
-                <div className="segmented" id="model-selector-container">
-                  <button
-                    type="button"
-                    style={{ textDecoration: "line-through", textDecorationColor: "#dc2626", textDecorationThickness: "2px", color: "var(--text-muted)", opacity: 0.75 }}
-                    onClick={() => {
-                      notify({
-                        type: "info",
-                        title: "Информация",
-                        message: "Данные модели в разработке",
-                      });
-                    }}
-                    title="Данные модели в разработке"
-                  >
-                    DeepSeek
-                  </button>
-                  <button
-                    type="button"
-                    style={{ textDecoration: "line-through", textDecorationColor: "#dc2626", textDecorationThickness: "2px", color: "var(--text-muted)", opacity: 0.75 }}
-                    onClick={() => {
-                      notify({
-                        type: "info",
-                        title: "Информация",
-                        message: "Данные модели в разработке",
-                      });
-                    }}
-                    title="Данные модели в разработке"
-                  >
-                    GigaChat
-                  </button>
-                  <button
-                    type="button"
-                    className={selectedModel === "Qwen_Local" ? "selected" : ""}
-                    onClick={() => setSelectedModel("Qwen_Local")}
-                  >
-                    Qwen Local
-                  </button>
+              <section className="panel upload-panel upload-settings-panel">
+                <div className="upload-panel-heading text-stack">
+                  <p className="eyebrow">Параметры</p>
+                  <h3>Выбор ИИ-модели</h3>
+                </div>
+                <div className="upload-control-group">
+                  <label className="field-label">ИИ-модель</label>
+                  <div className="segmented" id="model-selector-container">
+                    <button
+                      type="button"
+                      className="segmented-option-disabled"
+                      onClick={() => {
+                        notify({
+                          type: "info",
+                          title: "Информация",
+                          message: "Данные модели в разработке",
+                        });
+                      }}
+                      title="Данные модели в разработке"
+                    >
+                      DeepSeek
+                    </button>
+                    <button
+                      type="button"
+                      className="segmented-option-disabled"
+                      onClick={() => {
+                        notify({
+                          type: "info",
+                          title: "Информация",
+                          message: "Данные модели в разработке",
+                        });
+                      }}
+                      title="Данные модели в разработке"
+                    >
+                      GigaChat
+                    </button>
+                    <button
+                      type="button"
+                      className={selectedModel === "Qwen_Local" ? "selected" : ""}
+                      onClick={() => setSelectedModel("Qwen_Local")}
+                    >
+                      Qwen Local
+                    </button>
+                  </div>
                 </div>
 
                 {showValidation && (
                   <div
                     className={`validation-box validation-box-${uploadValidation.status}`}
                     id="upload-validation-box"
-                    style={{ marginTop: "20px" }}
                   >
                     <b>{uploadValidation.title}</b>
                     <p>{uploadValidation.message}</p>
@@ -1341,21 +1299,22 @@ function App() {
                   </div>
                 )}
 
-                <button
-                  className="primary-button wide"
-                  id="start-analysis-btn"
-                  style={{ marginTop: "20px", width: "100%" }}
-                  onClick={startAnalysis}
-                  disabled={uploadValidation.status === "error"}
-                  aria-describedby={selectedResponseFiles.length === 0 ? "start-analysis-helper" : undefined}
-                >
-                  Запустить анализ
-                </button>
-                {selectedResponseFiles.length === 0 && (
-                  <p className="action-helper" id="start-analysis-helper">
-                    Чтобы запустить анализ, сначала выберите файл анкет.
-                  </p>
-                )}
+                <div className="upload-primary-action">
+                  <button
+                    className="primary-button wide"
+                    id="start-analysis-btn"
+                    onClick={startAnalysis}
+                    disabled={uploadValidation.status === "error"}
+                    aria-describedby={selectedResponseFiles.length === 0 ? "start-analysis-helper" : undefined}
+                  >
+                    Запустить анализ
+                  </button>
+                  {selectedResponseFiles.length === 0 && (
+                    <p className="action-helper" id="start-analysis-helper">
+                      Чтобы запустить анализ, сначала выберите файл анкет.
+                    </p>
+                  )}
+                </div>
 
                 {isOfflineMode && (
                   <form className="offline-create-form" onSubmit={handleCreateManualReport}>
@@ -1385,7 +1344,7 @@ function App() {
               </section>
             </div>
           ) : (
-            <div className="panel" id="upload-progress-panel" style={{ marginTop: "0" }}>
+            <div className="panel" id="upload-progress-panel">
               <div className="section-heading">
                 <div>
                   <p className="eyebrow" id="progress-task-id">Задача {analysisTaskId}</p>
@@ -1394,7 +1353,7 @@ function App() {
                 <span className="badge" id="progress-percentage-badge">{analysisProgress}%</span>
               </div>
               <div className="progress-track">
-                <span id="progress-fill-bar" style={{ width: `${analysisProgress}%`, transition: "width 0.4s ease" }}></span>
+                <span id="progress-fill-bar" style={{ "--progress-value": `${analysisProgress}%` }}></span>
               </div>
               <div className="timeline" id="progress-timeline-steps">
                 <div id="step-1" className={getTimelineStepClass(0, analysisProgress)}>
@@ -1402,8 +1361,8 @@ function App() {
                   <p>Эталон и файлы ответов прошли базовую проверку.</p>
                 </div>
                 <div id="step-2" className={getTimelineStepClass(1, analysisProgress)}>
-                  <b>Данные приведены к JSON</b>
-                  <p>{isOfflineMode ? "Демо-режим подготовил локальную структуру отчета." : "Данные подготовлены для анализа."}</p>
+                  <b>Данные проверены сервером</b>
+                  <p>{isOfflineMode ? "Демо-режим подготовил локальную структуру отчета." : "Сервер проверяет формат, обязательные колонки, пропуски и ошибочные оценки."}</p>
                 </div>
                 <div id="step-3" className={getTimelineStepClass(2, analysisProgress)}>
                   <b>ИИ-агенты анализируют паттерны</b>
@@ -1411,7 +1370,7 @@ function App() {
                 </div>
                 <div id="step-4" className={getTimelineStepClass(3, analysisProgress)}>
                   <b>Формируется отчёт</b>
-                  <p>{isOfflineMode ? "JSON будет доступен локально после завершения." : "Excel, JSON и PDF будут готовы после завершения."}</p>
+                  <p>{isOfflineMode ? "Демо-отчет будет доступен локально после завершения." : "Отчет и выгрузки будут готовы после завершения."}</p>
                 </div>
               </div>
             </div>

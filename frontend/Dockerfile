@@ -8,6 +8,10 @@ RUN npm ci
 
 # Копируем исходный код и собираем статическую папку dist
 COPY . .
+ARG VITE_OFFLINE_MODE=false
+ARG VITE_ENABLE_DEMO_MODE=false
+ENV VITE_OFFLINE_MODE=$VITE_OFFLINE_MODE
+ENV VITE_ENABLE_DEMO_MODE=$VITE_ENABLE_DEMO_MODE
 RUN npm run build
 
 # 2. Этап раздачи статики через Nginx

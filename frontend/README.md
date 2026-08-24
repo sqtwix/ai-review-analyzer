@@ -2,25 +2,27 @@
 
 This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
 
-## Запуск без backend
+## Демо-режим без backend
 
-Frontend умеет работать в offline/demo-режиме без backend. В этом режиме авторизация, история отчетов, создание и редактирование отчетов работают локально через `localStorage`.
+По умолчанию frontend обращается к backend. Если backend недоступен, пользователь видит ошибку, а готовый mock-отчет не создается.
+
+Для отдельной демо-сборки можно явно включить локальный режим. В этом режиме авторизация, история отчетов, создание и редактирование отчетов работают через `localStorage`, а данные помечаются в интерфейсе как демонстрационные.
 
 Для запуска dev-сервера:
 
 ```bash
-VITE_OFFLINE_MODE=true npm run dev
+VITE_ENABLE_DEMO_MODE=true npm run dev
 ```
 
 После запуска откройте адрес, который покажет Vite, обычно `http://127.0.0.1:5173`.
 
-Для production-сборки offline-режим тоже нужно включать на этапе сборки:
+Для production-сборки демо-режим должен включаться только отдельным явным флагом:
 
 ```bash
-VITE_OFFLINE_MODE=true npm run build
+VITE_ENABLE_DEMO_MODE=true npm run build
 ```
 
-Важно: переменные `VITE_*` встраиваются Vite во время build. Если используется Docker, передавайте `VITE_OFFLINE_MODE=true` как build arg/environment до сборки frontend-образа.
+Важно: `VITE_OFFLINE_MODE=true` в production больше не включает mock-режим. Старый флаг работает только в dev для обратной совместимости. Переменные `VITE_*` встраиваются Vite во время build.
 
 Currently, two official plugins are available:
 

@@ -6,47 +6,56 @@ echo DEPLOYING AI REVIEW ANALYZER (WINDOWS)
 cd /d "%~dp0"
 
 if not exist ".env" (
-    if exist "env_example.txt" (
-        echo --> Creating .env from env_example.txt...
-        copy env_example.txt .env >nul
-    ) else (
-        echo --> Creating default .env file...
+    echo --> Creating .env with generated secrets...
+    for /f %%i in ('powershell -NoProfile -Command "[Convert]::ToHexString([Security.Cryptography.RandomNumberGenerator]::GetBytes(24)).ToLower()"') do set "GENERATED_DB_PASSWORD=%%i"
+    for /f %%i in ('powershell -NoProfile -Command "[Convert]::ToBase64String([Security.Cryptography.RandomNumberGenerator]::GetBytes(48))"') do set "GENERATED_JWT_SECRET=%%i"
         (
             echo DB_HOST=postgres
             echo DB_PORT=5432
             echo DB_NAME=aichecker
             echo DB_USER=aichecker_user
-            echo DB_PASSWORD=aichecker_password
-            echo JWT_SECRET=super_secret_jwt_key_aichecker_enterprise_2026!
+            echo DB_PASSWORD=!GENERATED_DB_PASSWORD!
+            echo JWT_SECRET=!GENERATED_JWT_SECRET!
             echo JWT_ISSUER=ai-review-analyzer
             echo JWT_AUDIENCE=ai-review-analyzer-frontend
             echo JWT_EXPIRY_MINUTES=1440
             echo DEEPSEEK_API_KEY=
             echo SBERGPT_API_KEY=
-            echo VITE_OFFLINE_MODE=true
+            echo QWEN_GGUF_MODEL_FILE=qwen2.5-0.5b-instruct-q8_0.gguf
+            echo QWEN_LOCAL_MODEL=local-model
+            echo QWEN_CONTEXT_SIZE=4096
+            echo QWEN_THREADS=4
+            echo QWEN_BATCH_SIZE=256
+            echo QWEN_PARALLEL=1
+            echo AI_AGENT_MAX_TOKENS=1536
+            echo AI_AGENT_TIMEOUT_SECONDS=45
+            echo AI_DRIVER_FORCE_MODEL_FALLBACK=false
+            echo VITE_OFFLINE_MODE=false
+            echo VITE_ENABLE_DEMO_MODE=false
         ) > .env
-    )
 ) else (
     echo --> Existing .env file found.
 )
 
 if not exist "models" mkdir models
 
-set "MODEL_PATH=models\Qwen3.5-0.8B-Q8_0.gguf"
+if "%QWEN_GGUF_MODEL_FILE%"=="" set "QWEN_GGUF_MODEL_FILE=qwen2.5-0.5b-instruct-q8_0.gguf"
+set "MODEL_PATH=models\%QWEN_GGUF_MODEL_FILE%"
 if not exist "%MODEL_PATH%" (
     echo --> Downloading local GGUF model...
-    powershell -Command "Invoke-WebRequest -Uri 'https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct-GGUF/resolve/main/qwen2.5-0.5b-instruct-q8_0.gguf' -OutFile 'models\Qwen3.5-0.8B-Q8_0.gguf'"
+    powershell -Command "Invoke-WebRequest -Uri 'https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct-GGUF/resolve/main/qwen2.5-0.5b-instruct-q8_0.gguf' -OutFile 'models\%QWEN_GGUF_MODEL_FILE%'"
     echo --> Model downloaded successfully.
 ) else (
     echo --> Local GGUF model already exists in .\models, skipping download.
 )
 
 echo --> Starting Docker containers...
-docker compose down -v
+docker compose down
 docker compose up --build -d
 
 echo ==================================================
 echo DEPLOYMENT SUCCESSFUL!
 echo Open application in browser: http://localhost/
+echo Data volumes were preserved. To delete all data intentionally, run: docker compose down -v
 echo ==================================================
 pause

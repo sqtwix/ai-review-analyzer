@@ -13,6 +13,17 @@ const getPriorityClass = (priority) => {
   return "normal";
 };
 
+const formatEvidence = (evidence, fallback) => {
+  const rows = evidence?.rows || [];
+  const questions = evidence?.questions || [];
+  const parts = [];
+
+  if (questions.length) parts.push(`вопросы: ${questions.join(", ")}`);
+  if (rows.length) parts.push(`строки: ${rows.join(", ")}`);
+
+  return parts.length ? parts.join("; ") : fallback;
+};
+
 function EvidenceLine({ children }) {
   return <p className="evidence-line">{children}</p>;
 }
@@ -62,15 +73,14 @@ export function QualitativeTab({ textAnalysis, activeTab, onTabChange, sourceLim
   return (
     <div className="qualitative-layout">
       <aside className="qualitative-subnav" aria-label="Разделы качественного анализа">
-        <div className="search-filter-box" style={{ padding: "10px", marginBottom: "12px" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "6px", background: "var(--surface, #ffffff)", border: "1px solid var(--line, #cbd5e1)", borderRadius: "6px", padding: "6px 10px" }}>
+        <div className="search-filter-box">
+          <div className="qualitative-search-control">
             <Search size={14} className="muted" />
             <input
               type="text"
               placeholder="Поиск по отзывам..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              style={{ border: "none", outline: "none", width: "100%", fontSize: "var(--font-size-xs)", background: "transparent", color: "var(--text)" }}
             />
           </div>
         </div>
@@ -97,7 +107,9 @@ export function QualitativeTab({ textAnalysis, activeTab, onTabChange, sourceLim
                   <div>
                     <h4>{topic.topic}</h4>
                     <p className="muted">{topic.description}</p>
-                    <EvidenceLine>Основание: агрегированная тема, частота упоминаний - {topic.frequency}.</EvidenceLine>
+                    <EvidenceLine>
+                      Основание: {formatEvidence(topic.evidence, `агрегированная тема, частота упоминаний - ${topic.frequency}; источник строк не передан`)}.
+                    </EvidenceLine>
                   </div>
                   <span className="badge evidence-badge">Упоминаний: {topic.frequency}</span>
                 </article>
@@ -140,7 +152,7 @@ export function QualitativeTab({ textAnalysis, activeTab, onTabChange, sourceLim
                   <div>
                     <h4>{problem.problem}</h4>
                     <EvidenceLine>
-                      Основание: встречается в {formatPercent(problem.frequency_percent)} отзывов; уровень риска - {problem.severity}.
+                      Основание: {formatEvidence(problem.evidence, `встречается в ${formatPercent(problem.frequency_percent)} отзывов; источник строк не передан`)}; уровень риска - {problem.severity}.
                     </EvidenceLine>
                   </div>
                 </article>
@@ -158,7 +170,9 @@ export function QualitativeTab({ textAnalysis, activeTab, onTabChange, sourceLim
                 <article key={`${quote.quote}-${index}`} className="panel quote-card qualitative-quote-card">
                   <Quote size={20} className="muted" />
                   <p>«{quote.quote}»</p>
-                  <EvidenceLine>Основание: частота схожих формулировок - {quote.frequency}; {sourceLimitation}</EvidenceLine>
+                  <EvidenceLine>
+                    Основание: {formatEvidence(quote.evidence, `частота схожих формулировок - ${quote.frequency}; ${sourceLimitation}`)}
+                  </EvidenceLine>
                 </article>
               ))}
             </div>
@@ -176,7 +190,7 @@ export function QualitativeTab({ textAnalysis, activeTab, onTabChange, sourceLim
                     <span className="badge recommendation-target">Объект: {recommendation.target}</span>
                     <h4>{recommendation.action_item}</h4>
                     <EvidenceLine>
-                      Основание: рекомендация сформирована из агрегированных проблем и тем; точные ссылки на строки пока недоступны в данных отчета.
+                      Основание: {formatEvidence(recommendation.evidence, "рекомендация сформирована из агрегированных проблем и тем; точные ссылки на строки пока недоступны в данных отчета")}.
                     </EvidenceLine>
                   </div>
                   <span className={`risk-pill ${getPriorityClass(recommendation.priority)}`}>

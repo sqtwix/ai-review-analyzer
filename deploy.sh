@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-echo "DEPLOYING AI REVIEW ANALYZER (OFFLINE/LOCAL)"
+echo "DEPLOYING AI REVIEW ANALYZER"
 
 # Ensure execution from repository root
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
@@ -9,33 +9,41 @@ cd "$SCRIPT_DIR"
 
 # 1. Environment configuration setup
 if [ ! -f ".env" ]; then
-    if [ -f "env_example.txt" ]; then
-        echo "--> Creating .env from env_example.txt..."
-        cp env_example.txt .env
-    else
-        echo "--> Creating default .env file..."
-        cat <<EOT > .env
+    echo "--> Creating .env with generated secrets..."
+    DB_PASSWORD_GENERATED="$(openssl rand -hex 24)"
+    JWT_SECRET_GENERATED="$(openssl rand -base64 48 | tr -d '\n')"
+    cat <<EOT > .env
 DB_HOST=postgres
 DB_PORT=5432
 DB_NAME=aichecker
 DB_USER=aichecker_user
-DB_PASSWORD=aichecker_password
-JWT_SECRET=super_secret_jwt_key_aichecker_enterprise_2026!
+DB_PASSWORD=$DB_PASSWORD_GENERATED
+JWT_SECRET=$JWT_SECRET_GENERATED
 JWT_ISSUER=ai-review-analyzer
 JWT_AUDIENCE=ai-review-analyzer-frontend
 JWT_EXPIRY_MINUTES=1440
 DEEPSEEK_API_KEY=
 SBERGPT_API_KEY=
-VITE_OFFLINE_MODE=true
+QWEN_GGUF_MODEL_FILE=qwen2.5-0.5b-instruct-q8_0.gguf
+QWEN_LOCAL_MODEL=local-model
+QWEN_CONTEXT_SIZE=4096
+QWEN_THREADS=4
+QWEN_BATCH_SIZE=256
+QWEN_PARALLEL=1
+AI_AGENT_MAX_TOKENS=1536
+AI_AGENT_TIMEOUT_SECONDS=45
+AI_DRIVER_FORCE_MODEL_FALLBACK=false
+VITE_OFFLINE_MODE=false
+VITE_ENABLE_DEMO_MODE=false
 EOT
-    fi
+    chmod 600 .env
 else
     echo "--> Existing .env file found."
 fi
 
 # 2. Local AI Model Download (Qwen GGUF)
 mkdir -p models
-MODEL_FILE="Qwen3.5-0.8B-Q8_0.gguf"
+MODEL_FILE="${QWEN_GGUF_MODEL_FILE:-qwen2.5-0.5b-instruct-q8_0.gguf}"
 MODEL_PATH="models/$MODEL_FILE"
 
 if [ ! -f "$MODEL_PATH" ]; then
@@ -48,7 +56,7 @@ fi
 
 # 3. Docker Container Deployment
 echo "--> Starting Docker containers..."
-docker compose down -v 2>/dev/null || true
+docker compose down 2>/dev/null || true
 docker compose up --build -d
 
 echo "--> Cleaning up unused Docker images..."
@@ -57,4 +65,5 @@ docker image prune -f 2>/dev/null || true
 echo "=================================================="
 echo "DEPLOYMENT SUCCESSFUL!"
 echo "Open application in browser: http://localhost/"
+echo "Data volumes were preserved. To delete all data intentionally, run: docker compose down -v"
 echo "=================================================="

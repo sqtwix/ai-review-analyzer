@@ -34,6 +34,10 @@ agent_controller = AgentController(agent_manager=agent_manager)
 # Регистрация маршрутов с префиксом /agents
 app.include_router(setup_routes(agent_controller=agent_controller), prefix="/agents")
 
+@app.get("/health", include_in_schema=False)
+def health():
+    return {"status": "healthy"}
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)

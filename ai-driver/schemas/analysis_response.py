@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import List, Dict
+from typing import List, Dict, Optional
 
 # ========================= Analysis Response Schemas =========================
 
@@ -70,12 +70,44 @@ class TrendPoint(BaseModel):
 
 class DashboardData(BaseModel):
     correlation_matrix: Dict[str, Dict[str, float]]
-    trend_data: List[TrendPoint] = []
+    trend_data: List[TrendPoint] = Field(default_factory=list)
+    trend_source: str = "unavailable"
+    has_historical_periods: bool = False
+
+class ValidationSummary(BaseModel):
+    valid_count: int = 0
+    missing_count: int = 0
+    invalid_count: int = 0
+    total_issues: int = 0
+
+class EvidenceInfo(BaseModel):
+    rows: List[str] = Field(default_factory=list)
+    questions: List[str] = Field(default_factory=list)
+    coverage: Optional[float] = None
+
+class CourseMetadata(BaseModel):
+    education_form: Optional[str] = None
+    teachers: List[str] = Field(default_factory=list)
+    dates_confirmed: bool = False
+    missing_fields: List[str] = Field(default_factory=list)
+
+class CommentRegistryItem(BaseModel):
+    question_id: str
+    label: str
+    non_empty_count: int
+    coverage: float
+    rows: List[str] = Field(default_factory=list)
+
+class ProcessingLogItem(BaseModel):
+    step: str
+    status: str
+    message: str
 
 class TopicInfo(BaseModel):
     topic: str
     description: str
     frequency: int
+    evidence: EvidenceInfo = Field(default_factory=EvidenceInfo)
 
 class SentimentInfo(BaseModel):
     positive: float
@@ -86,22 +118,25 @@ class ProblemInfo(BaseModel):
     problem: str
     frequency_percent: float
     severity: str
+    evidence: EvidenceInfo = Field(default_factory=EvidenceInfo)
 
 class QuoteInfo(BaseModel):
     quote: str
     frequency: int
+    evidence: EvidenceInfo = Field(default_factory=EvidenceInfo)
 
 class RecommendationInfo(BaseModel):
     target: str
     action_item: str
     priority: str
+    evidence: EvidenceInfo = Field(default_factory=EvidenceInfo)
 
 class TextAnalysis(BaseModel):
-    top_topics: List[TopicInfo] = []
+    top_topics: List[TopicInfo] = Field(default_factory=list)
     sentiment: SentimentInfo
-    key_problems: List[ProblemInfo] = []
-    quotes: List[QuoteInfo] = []
-    recommendations: List[RecommendationInfo] = []
+    key_problems: List[ProblemInfo] = Field(default_factory=list)
+    quotes: List[QuoteInfo] = Field(default_factory=list)
+    recommendations: List[RecommendationInfo] = Field(default_factory=list)
 
 class CourseAnalysisResult(BaseModel):
     course_name: str
@@ -113,6 +148,12 @@ class CourseAnalysisResult(BaseModel):
     analytical_report: AnalyticalReport
     dashboard_data: DashboardData
     text_analysis: TextAnalysis
+    validation_summary: ValidationSummary = Field(default_factory=ValidationSummary)
+    score_counts: Dict[str, int] = Field(default_factory=dict)
+    metadata: CourseMetadata = Field(default_factory=CourseMetadata)
+    comment_registry: List[CommentRegistryItem] = Field(default_factory=list)
+    processing_log: List[ProcessingLogItem] = Field(default_factory=list)
+    quality_limitations: List[str] = Field(default_factory=list)
 
 class AnalysisResponse(BaseModel):
     batch_id: str

@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo } from "react";
 import { 
   ArchiveRestore, ArrowLeft, Construction, Eye, Layers3, Monitor, Moon, PanelLeftClose, 
   PanelLeftOpen, Search, Sun, Pencil, Archive, Save, BookOpen, BarChart3, MessageSquare, 
-  AlertTriangle, CheckCircle, HelpCircle, ChevronRight, ThumbsUp, X, ClipboardCheck
+  AlertTriangle, ChevronRight, X, ClipboardCheck
 } from "lucide-react";
 import { buildCourseReportViewModel } from "../reportViewModel";
 import { AnalyticalReportTab } from "./report/AnalyticalReportTab";
@@ -32,8 +32,10 @@ export function AuthPage({
   return (
     <section className="page auth-page active" id={mode} data-title={isLogin ? "Авторизация" : "Регистрация"}>
       <form className="auth-card" onSubmit={onSubmit}>
-        <p className="eyebrow">{isLogin ? "Вход" : "Регистрация"}</p>
-        <h2>{isLogin ? "Добро пожаловать" : "Создайте рабочее пространство"}</h2>
+        <div className="auth-heading text-stack">
+          <p className="eyebrow">{isLogin ? "Вход" : "Регистрация"}</p>
+          <h2>{isLogin ? "Добро пожаловать" : "Создайте рабочее пространство"}</h2>
+        </div>
         {authError && <div className="error-box">{authError}</div>}
 
         {!isLogin && (
@@ -493,7 +495,7 @@ export function StudentsPage({ reports, onNewAnalysis }) {
           <div className="grid two students-breakdown-grid">
             <section className="panel">
               <h3>Категории слушателей</h3>
-              <div className="stats-breakdown" style={{ display: "flex", flexDirection: "column", gap: "12px", marginTop: "14px" }}>
+              <div className="stats-breakdown">
                 {Object.entries(aggregatedData.positions).map(([pos, count]) => {
                   const total = Math.max(Object.values(aggregatedData.positions).reduce((a, b) => a + b, 0), 1);
                   const pct = Math.round((count / total) * 100);
@@ -504,7 +506,7 @@ export function StudentsPage({ reports, onNewAnalysis }) {
                         <span className="muted">{count} чел. ({pct}%)</span>
                       </div>
                       <div className="breakdown-track">
-                        <div style={{ width: `${pct}%` }}></div>
+                        <div style={{ "--bar-width": `${pct}%` }}></div>
                       </div>
                     </div>
                   );
@@ -514,18 +516,18 @@ export function StudentsPage({ reports, onNewAnalysis }) {
 
             <section className="panel">
               <h3>Предпочитаемые форматы обучения</h3>
-              <div className="stats-breakdown" style={{ display: "flex", flexDirection: "column", gap: "12px", marginTop: "14px" }}>
+              <div className="stats-breakdown">
                 {Object.entries(aggregatedData.formats).map(([format, count]) => {
                   const total = Math.max(Object.values(aggregatedData.formats).reduce((a, b) => a + b, 0), 1);
                   const pct = Math.round((count / total) * 100);
                   return (
                     <div key={format} className="breakdown-row">
                       <div className="breakdown-header">
-                        <span style={{ textTransform: "capitalize" }}><b>{format}</b></span>
+                        <span className="text-capitalize"><b>{format}</b></span>
                         <span className="muted">{pct}%</span>
                       </div>
                       <div className="breakdown-track">
-                        <div style={{ width: `${pct}%` }}></div>
+                        <div style={{ "--bar-width": `${pct}%` }}></div>
                       </div>
                     </div>
                   );
@@ -644,7 +646,6 @@ export function CourseReportDetailPage({
   handleArchiveReport,
   isSaveMenuOpen,
   setIsSaveMenuOpen,
-  isProfileMenuOpen,
   setIsProfileMenuOpen,
   handleExportReport,
   saveActionsRef,
@@ -668,13 +669,31 @@ export function CourseReportDetailPage({
     courseName,
     period,
     studentsCount,
+    sourceTransparency,
+    validationSummary,
+    metadata,
+    commentRegistry,
+    processingLog,
+    qualityLimitations,
   } = reportViewModel;
-  const reportSourceLabel = report.source === "demo" ? "Демо" : "Создано мной";
+  const reportSourceLabel = report.source === "demo" ? "Демо-данные" : "Данные пользователя";
+  const hasProductionWarnings =
+    report.source === "demo" ||
+    !sourceTransparency.hasExactScoreCounts ||
+    !sourceTransparency.hasEvidenceRegistry ||
+    !validationSummary.isProvided ||
+    validationSummary.totalIssues > 0;
+  const productionWarningDetails = [
+    !sourceTransparency.hasExactScoreCounts ? "абсолютные counts 1-10" : "",
+    !sourceTransparency.hasEvidenceRegistry ? "ссылки evidence на строки или вопросы" : "",
+    !validationSummary.isProvided ? "сводка пропусков и ошибок" : "",
+    validationSummary.totalIssues > 0 ? `${validationSummary.totalIssues} пропусков или ошибочных оценок требуют проверки` : "",
+  ].filter(Boolean);
 
   return (
     <section className="page active" id="report-detail" data-title="Детали отчёта">
       <div className="report-header">
-        <div>
+        <div className="report-title-block">
           {isEditingTitle ? (
             <form onSubmit={handleInlineRenameSubmit} className="inline-rename-form">
               <input
@@ -789,6 +808,54 @@ export function CourseReportDetailPage({
           </button>
         </section>
       )}
+
+      {hasProductionWarnings && (
+        <section className={`report-quality-banner ${report.source === "demo" ? "report-quality-banner-demo" : ""}`} role="status">
+          <AlertTriangle size={18} strokeWidth={2.2} aria-hidden="true" />
+          <div>
+            <strong>{report.source === "demo" ? "Это демонстрационный отчет" : "Нужна проверка источников данных"}</strong>
+            <p>
+              {report.source === "demo"
+                ? "Данные, темы, цитаты и рекомендации в этом отчете не являются результатом обработки реальных анкет."
+                : `Frontend показывает только переданные backend данные. Требуют внимания: ${productionWarningDetails.join(", ")}.`}
+            </p>
+          </div>
+        </section>
+      )}
+
+      <section className="report-transparency-panel" aria-labelledby="report-transparency-title">
+        <div>
+          <p className="eyebrow">Проверяемость данных</p>
+          <h3 id="report-transparency-title">Источник, полнота и ограничения</h3>
+        </div>
+        <div className="transparency-grid">
+          <article>
+            <strong>Реквизиты</strong>
+            <p>Форма: {metadata.educationForm || "не передана"}</p>
+            <p>Преподаватели: {metadata.teachers.length ? metadata.teachers.join(", ") : "не переданы"}</p>
+            <p>Даты: {metadata.datesConfirmed ? "подтверждены" : "не подтверждены"}</p>
+          </article>
+          <article>
+            <strong>Открытые ответы</strong>
+            <p>{commentRegistry.length} полей в реестре</p>
+            <p>{commentRegistry.reduce((sum, item) => sum + Number(item.non_empty_count ?? item.NonEmptyCount ?? 0), 0)} непустых ответов</p>
+            <p>{commentRegistry.length >= 19 ? "Требование 19 полей закрыто" : "Нужен маппинг до 19 открытых полей"}</p>
+          </article>
+          <article>
+            <strong>Обработка</strong>
+            <p>{processingLog.length} шаг(а) в журнале</p>
+            <p>{validationSummary.validCount ?? 0} валидных оценок</p>
+            <p>{validationSummary.totalIssues} пропусков/ошибок</p>
+          </article>
+        </div>
+        {qualityLimitations.length > 0 && (
+          <ul className="quality-limitations-list" aria-label="Ограничения качества">
+            {qualityLimitations.map((limitation) => (
+              <li key={limitation}>{limitation}</li>
+            ))}
+          </ul>
+        )}
+      </section>
 
       {/* Main Tabs Navigation */}
       <nav className="report-tabs" aria-label="Разделы отчета">
