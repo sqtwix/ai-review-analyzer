@@ -943,7 +943,7 @@ function App() {
             // Construct new report based on real result from model
             const result = statusRes.result || {};
             const cleanResponseName = selectedResponseFiles[0].name.replace(/\.[^/.]+$/, "");
-            const courseName = cleanResponseName.replace(/^\d{2}\.\d{2}-\d{2}\.\d{2}\s+/, "");
+            const courseName = cleanResponseName.replace(/^\d{2}\.\d{2}-\d{2}\.\d{2}(?:\.\d{4})?\s+/, "");
 
             setNamingTaskId(serverTaskId);
             setNamingValue(courseName);

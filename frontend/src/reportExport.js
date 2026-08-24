@@ -752,7 +752,7 @@ export async function exportReportToDocx(report) {
     ? [
         createDocxHeading("0. Решение и план действий"),
         createBulletParagraph(`Решение: ${decisionSupport.decision.title}`),
-        createBulletParagraph(`Надежность анализа: ${decisionSupport.confidenceScore}% (${decisionSupport.confidenceLabel})`),
+        createBulletParagraph(`Полнота обоснования: ${decisionSupport.confidenceScore}% (${decisionSupport.confidenceLabel})`),
         ...decisionSupport.decisionReasons.map((reason) => createBulletParagraph(`Причина: ${reason}`)),
         ...decisionSupport.actionPlan.map((action) =>
           createBulletParagraph(`${action.priorityLabel}: ${action.title}. ${action.detail} ${action.owner}. ${action.timing}.`)

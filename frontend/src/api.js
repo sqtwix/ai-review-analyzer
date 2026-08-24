@@ -74,7 +74,7 @@ const saveOfflineTasks = (tasks) => {
 
 const generateOfflineReport = ({ taskId, userResponseFiles }) => {
   const firstResponseName = stripExtension(userResponseFiles[0]?.name || "Применение инструментов ИИ в гос управлении");
-  const courseName = firstResponseName.replace(/^\d{2}\.\d{2}-\d{2}\.\d{2}\s+/, "");
+  const courseName = firstResponseName.replace(/^\d{2}\.\d{2}-\d{2}\.\d{2}(?:\.\d{4})?\s+/, "");
   const period = firstResponseName.match(/^\d{2}\.\d{2}-\d{2}\.\d{2}/)?.[0] || "12.05-25.05";
 
   return normalizeOfflineReport({

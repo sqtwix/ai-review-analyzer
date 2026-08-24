@@ -49,8 +49,8 @@ export function DecisionSupportTab({ decisionSupport }) {
           )}
         </div>
 
-        <aside className="confidence-card" aria-label="Надежность анализа">
-          <span>Надежность анализа</span>
+        <aside className="confidence-card" aria-label="Полнота обоснования">
+          <span>Полнота обоснования</span>
           <strong>{confidenceScore}%</strong>
           <small>{confidenceLabel}</small>
         </aside>
@@ -135,7 +135,7 @@ export function DecisionSupportTab({ decisionSupport }) {
       <section className="panel confidence-notes-panel">
         <div className="decision-card-heading">
           <Lightbulb size={20} strokeWidth={2.2} aria-hidden="true" />
-          <h3>Как читать надежность</h3>
+          <h3>Как читать полноту обоснования</h3>
         </div>
         <ul className="confidence-notes">
           {confidenceNotes.map((note) => (

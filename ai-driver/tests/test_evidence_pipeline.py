@@ -245,6 +245,149 @@ class EvidencePipelineTests(unittest.TestCase):
         self.assertEqual([], records[0]["evidence_fields"])
         self.assertEqual(["topics_to_add_comment"], records[1]["evidence_fields"])
 
+    def test_do_not_exclude_answer_is_not_treated_as_requested_exclusion(self):
+        records = self.manager._prepare_evidence_records([{
+            "student_id": "student_1",
+            "topics_to_exclude_comment": "Не исключать",
+        }])
+
+        self.assertEqual([], records[0]["evidence_fields"])
+
+    def test_explicit_problem_language_corrects_model_kind(self):
+        records = self.manager._prepare_evidence_records([{
+            "student_id": "student_1",
+            "accessibility_comment": "Слишком быстрый темп, не хватало времени на вопросы",
+        }])
+        result = {
+            "response_id": "student_1",
+            "sentiment": "negative",
+            "evidence": [{
+                "field": "accessibility_comment",
+                "quote": "Слишком быстрый темп, не хватало времени на вопросы",
+                "topic": "Темп обучения",
+                "kind": "neutral",
+                "priority": "High",
+            }],
+        }
+
+        accepted, _, rejected = self.manager._validate_evidence_chunk(result, records)
+
+        self.assertEqual(0, rejected)
+        self.assertEqual("problem", accepted[0]["kind"])
+
+    def test_explicit_problem_is_kept_when_model_spends_limit_on_suggestion(self):
+        records = self.manager._prepare_evidence_records([{
+            "student_id": "student_1",
+            "topics_to_add_comment": "Добавить больше практических кейсов",
+            "accessibility_comment": "Слишком быстрый темп, не хватало времени на вопросы",
+        }])
+        result = {
+            "response_id": "student_1",
+            "sentiment": "negative",
+            "evidence": [{
+                "field": "topics_to_add_comment",
+                "quote": "Добавить больше практических кейсов",
+                "topic": "Практические кейсы",
+                "kind": "suggestion",
+                "priority": "Medium",
+            }],
+        }
+
+        accepted, _, rejected = self.manager._validate_evidence_chunk(result, records)
+
+        self.assertEqual(0, rejected)
+        problem = next(item for item in accepted if item["kind"] == "problem")
+        self.assertEqual("accessibility_comment", problem["field"])
+        self.assertEqual(
+            "Слишком быстрый темп, не хватало времени на вопросы",
+            problem["quote"],
+        )
+        self.assertEqual("Комментарий о доступности материала", problem["topic"])
+
+    def test_error_word_in_neutral_context_is_not_promoted_to_problem(self):
+        self.assertEqual(
+            "neutral",
+            self.manager._normalize_evidence_kind(
+                "logic_sequence_reason",
+                "Сначала рассмотрели нормальный сценарий, затем ошибки",
+                "neutral",
+            ),
+        )
+        self.assertEqual(
+            "suggestion",
+            self.manager._normalize_evidence_kind(
+                "practice_change_comment",
+                "Разобрать ошибки загрузки и некорректные форматы файлов",
+                "suggestion",
+            ),
+        )
+        self.assertEqual(
+            "problem",
+            self.manager._normalize_evidence_kind(
+                "detachment_reason_comment",
+                "Когда возникла ошибка при загрузке файла",
+                "neutral",
+            ),
+        )
+
+    def test_explicit_suggestion_topic_is_grounded_in_quote(self):
+        records = self.manager._prepare_evidence_records([{
+            "student_id": "student_1",
+            "topics_to_add_comment": "Добавить кейсы из государственного управления",
+        }])
+        result = {
+            "response_id": "student_1",
+            "sentiment": "positive",
+            "evidence": [{
+                "field": "topics_to_add_comment",
+                "quote": "Добавить кейсы из государственного управления",
+                "topic": "Госудебные кейсы",
+                "kind": "suggestion",
+                "priority": "High",
+            }],
+        }
+
+        accepted, _, rejected = self.manager._validate_evidence_chunk(result, records)
+
+        self.assertEqual(0, rejected)
+        self.assertEqual("Кейсы из государственного управления", accepted[0]["topic"])
+
+    def test_single_response_cannot_create_high_priority(self):
+        extraction = {
+            "evidence": [
+                {
+                    "response_id": "student_1",
+                    "field": "topics_to_add_comment",
+                    "quote": "Добавить больше примеров",
+                    "topic": "Больше примеров",
+                    "kind": "suggestion",
+                    "priority": "High",
+                },
+                {
+                    "response_id": "student_2",
+                    "field": "accessibility_comment",
+                    "quote": "Слишком быстрый темп",
+                    "topic": "Темп обучения",
+                    "kind": "problem",
+                    "priority": "High",
+                },
+            ],
+            "sentiments": {},
+        }
+
+        aggregated = self.manager._aggregate_evidence(extraction, 12)
+
+        priorities = {item["target"]: item["priority"] for item in aggregated["recommendations"]}
+        self.assertEqual("Low", priorities["Больше примеров"])
+        self.assertEqual("Medium", priorities["Темп обучения"])
+        self.assertEqual("Medium", aggregated["key_problems"][0]["severity"])
+
+    def test_preferred_format_is_not_reported_as_actual_education_form(self):
+        metadata = self.manager._build_metadata({"Очно": 8, "Онлайн": 4})
+
+        self.assertIsNone(metadata["education_form"])
+        self.assertIn("education_form", metadata["missing_fields"])
+
     def test_real_dataset_no_action_variants_are_filtered_without_hiding_video_request(self):
         records = self.manager._prepare_evidence_records([
             {

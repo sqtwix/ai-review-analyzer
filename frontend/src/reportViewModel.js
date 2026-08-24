@@ -139,12 +139,15 @@ const buildDecisionSupport = ({
   const recommendations = textAnalysis?.recommendations || [];
 
   const lowMetrics = metricCards
-    .filter((card) => Number.isFinite(card.average) && card.average < 8)
+    .filter((card) => Number.isFinite(card.average) && card.average < 7.5)
     .sort((a, b) => a.average - b.average);
-  const highProblems = problems.filter((problem) => normalizePriority(problem.severity) === "high");
+  const criticalMetrics = lowMetrics.filter((card) => card.average < 6.5);
+  const highProblems = problems.filter((problem) => (
+    normalizePriority(problem.severity) === "high" && toNumber(problem.frequency_percent) >= 20
+  ));
   const detachedPercent = getMetricValue(involvement, "detached_percent") ?? getMetricValue(involvement, "DetachedPercent");
-  const hasDetachedRisk = Number.isFinite(detachedPercent) && detachedPercent >= 20;
-  const issueCount = lowMetrics.length + highProblems.length + (hasDetachedRisk ? 1 : 0);
+  const hasDetachedConcern = Number.isFinite(detachedPercent) && detachedPercent >= 20;
+  const hasDetachedRisk = Number.isFinite(detachedPercent) && detachedPercent >= 40;
 
   let decision = {
     tone: "watch",
@@ -152,13 +155,24 @@ const buildDecisionSupport = ({
     summary: "Есть полезные сильные стороны, но отчет показывает зоны, которые лучше исправить до масштабирования.",
   };
 
-  if (Number.isFinite(overallSatisfaction) && overallSatisfaction >= 8 && issueCount <= 1) {
+  if (
+    Number.isFinite(overallSatisfaction) &&
+    overallSatisfaction >= 8 &&
+    criticalMetrics.length === 0 &&
+    highProblems.length === 0 &&
+    !hasDetachedConcern
+  ) {
     decision = {
       tone: "good",
       title: "Курс можно продолжать с точечными правками",
       summary: "Оценки стабильные, критичных сигналов немного. Главная задача - не потерять сильные элементы программы.",
     };
-  } else if ((Number.isFinite(overallSatisfaction) && overallSatisfaction < 7) || issueCount >= 4) {
+  } else if (
+    (Number.isFinite(overallSatisfaction) && overallSatisfaction < 6.5) ||
+    criticalMetrics.length >= 2 ||
+    highProblems.length >= 2 ||
+    hasDetachedRisk
+  ) {
     decision = {
       tone: "risk",
       title: "Нужна переработка программы",
@@ -172,7 +186,7 @@ const buildDecisionSupport = ({
       : "",
     lowMetrics[0] ? `Самый слабый критерий: ${lowMetrics[0].label} (${lowMetrics[0].average.toFixed(1)} / 10).` : "",
     highProblems[0] ? `Критичный сигнал: ${highProblems[0].problem}.` : "",
-    hasDetachedRisk ? `Отстраненность слушателей: ${detachedPercent.toFixed(0)}%.` : "",
+    hasDetachedConcern ? `Отстраненность слушателей: ${detachedPercent.toFixed(0)}%.` : "",
   ].filter(Boolean);
 
   const filledMetricCount = metricCards.filter((card) => Number.isFinite(card.average)).length;
@@ -253,7 +267,7 @@ const buildDecisionSupport = ({
       type: "Метрика",
       title: metric.label,
       detail: `Средний балл ${metric.average.toFixed(1)} / 10.`,
-      support: metric.summary || "Критерий ниже целевого уровня 8.0.",
+      support: metric.summary || "Критерий ниже ориентира 7.5.",
       tone: "watch",
     })),
   ].slice(0, 6);
@@ -273,18 +287,18 @@ const buildDecisionSupport = ({
     .sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]);
 
   const metricActions = lowMetrics.slice(0, 2).map((metric) => ({
-    priority: metric.average < 7.5 ? "high" : "medium",
-    priorityLabel: metric.average < 7.5 ? priorityLabels.high : priorityLabels.medium,
+    priority: metric.average < 6.5 ? "high" : "medium",
+    priorityLabel: metric.average < 6.5 ? priorityLabels.high : priorityLabels.medium,
     title: `Разобрать критерий «${metric.label}»`,
     detail: metric.summary || `Средний балл ниже целевого уровня: ${metric.average.toFixed(1)} / 10.`,
     owner: "Методист программы",
     timing: "Перед согласованием следующей версии",
   }));
 
-  const engagementAction = hasDetachedRisk
+  const engagementAction = hasDetachedConcern
     ? [{
-        priority: "high",
-        priorityLabel: priorityLabels.high,
+        priority: hasDetachedRisk ? "high" : "medium",
+        priorityLabel: hasDetachedRisk ? priorityLabels.high : priorityLabels.medium,
         title: "Снизить отстраненность слушателей",
         detail: "Добавить больше интерактива, практических заданий или коротких проверок понимания.",
         owner: "Куратор программы",

@@ -5,6 +5,7 @@ import logging
 import os
 from pathlib import Path
 import math
+import re
 import statistics
 import time
 from collections import Counter, defaultdict
@@ -56,6 +57,7 @@ class AgentManager:
     }
     NO_ACTION_MARKERS = (
         "никакие", "ничего", "не требуется", "не требуются", "исключать не",
+        "не исключать", "не нужно исключать", "не надо исключать",
         "все темы были актуальны", "все актуальны", "всё актуально",
         "все полезны", "всё полезно", "все прекрасно", "всё прекрасно",
         "курс очень органичен", "нет предложений", "только добавить",
@@ -95,6 +97,17 @@ class AgentManager:
         "метрику y",
         "скопируй полностью",
         "объект улучшения",
+    )
+    PROBLEM_MARKERS = (
+        "слишком быст", "слишком слож", "слишком мало", "мало практи",
+        "мало пример", "недостаточ", "не хват", "непонят", "не понят",
+        "неясн", "затрудн", "сложно", "трудност", "сбой",
+        "возникла ошибка", "возникли ошибки", "ошибка при загруз",
+        "не работ", "мешал", "без пример", "без практи", "не на все",
+    )
+    NON_PROBLEM_MARKERS = (
+        "не было проблем", "нет проблем", "без проблем", "не было сложност",
+        "нет сложност", "достаточно", "все понятно", "всё понятно",
     )
     EVIDENCE_RESPONSE_SCHEMA = {
         "type": "object",
@@ -293,13 +306,10 @@ class AgentManager:
         return registry
 
     def _build_metadata(self, fmt_dist) -> dict:
-        preferred_format = max(fmt_dist, key=fmt_dist.get) if fmt_dist else None
-        missing_fields = []
-        if not preferred_format:
-            missing_fields.append("education_form")
-        missing_fields.extend(["teachers", "confirmed_dates"])
+        # preferred_format is a respondent preference, not the actual delivery mode.
+        missing_fields = ["education_form", "teachers", "confirmed_dates"]
         return {
-            "education_form": preferred_format,
+            "education_form": None,
             "teachers": [],
             "dates_confirmed": False,
             "missing_fields": missing_fields
@@ -412,7 +422,27 @@ class AgentManager:
             )
         return True
 
-    def _normalize_evidence_topic(self, field: str, topic: str) -> str:
+    def _normalize_evidence_topic(self, field: str, topic: str, quote: str = "") -> str:
+        topic_words = re.findall(r"[\w-]+", self._normalize_text(topic))
+        quote_words = re.findall(r"[\w-]+", self._normalize_text(quote))
+        has_suspicious_word = any(
+            topic_word not in quote_words and any(
+                len(os.path.commonprefix((topic_word, quote_word))) >= 5
+                for quote_word in quote_words
+            )
+            for topic_word in topic_words
+            if len(topic_word) >= 6
+        )
+        if field in self.EXPLICIT_SUGGESTION_FIELDS and quote and has_suspicious_word:
+            grounded = re.sub(
+                r"^(?:пожалуйста[, ]+)?(?:добавить|добавьте|включить|включите|"
+                r"убрать|уберите|исключить|исключите|сократить|сократите)\s+",
+                "",
+                quote.strip(" .,!?:;"),
+                flags=re.IGNORECASE,
+            ).strip(" .,!?:;")
+            if grounded:
+                return grounded[:1].upper() + grounded[1:120]
         normalized = self._normalize_text(topic)
         aliases = {
             self._normalize_text(field),
@@ -423,6 +453,24 @@ class AgentManager:
             *self.GENERIC_TOPIC_ALIASES.get(field, set()),
         }
         return COMMENT_FIELD_LABELS.get(field, topic) if normalized in aliases else topic
+
+    def _normalize_evidence_kind(self, field: str, quote: str, kind: str) -> str:
+        if field in self.EXPLICIT_SUGGESTION_FIELDS:
+            return "suggestion"
+        normalized = self._normalize_text(quote)
+        has_problem = any(marker in normalized for marker in self.PROBLEM_MARKERS)
+        has_negation = any(marker in normalized for marker in self.NON_PROBLEM_MARKERS)
+        return "problem" if has_problem and not has_negation else kind
+
+    def _calibrate_priority(self, items: list[dict], total_responses: int) -> str:
+        rows = {item["response_id"] for item in items}
+        requested = max(items, key=lambda item: self.PRIORITY_RANK[item["priority"]])["priority"]
+        if len(rows) == 1:
+            return "Medium" if requested == "High" and any(item["kind"] == "problem" for item in items) else "Low"
+        coverage = len(rows) / total_responses if total_responses else 0.0
+        if len(rows) < 3 and coverage < 0.25 and requested == "High":
+            return "Medium"
+        return requested
 
     def _prepare_evidence_records(self, responses: list[dict]) -> list[dict]:
         records = []
@@ -505,9 +553,8 @@ class AgentManager:
                 kind = item.get("kind")
                 priority = item.get("priority")
                 source_value = source["fields"].get(field)
-                topic = self._normalize_evidence_topic(field, topic)
-                if field in self.EXPLICIT_SUGGESTION_FIELDS:
-                    kind = "suggestion"
+                topic = self._normalize_evidence_topic(field, topic, quote)
+                kind = self._normalize_evidence_kind(field, quote, kind)
                 normalized_quote = self._normalize_text(quote)
                 normalized_source = self._normalize_text(source_value or "")
                 serialized = self._normalize_text(json.dumps(item, ensure_ascii=False))
@@ -539,6 +586,30 @@ class AgentManager:
                     "topic": topic,
                     "kind": kind,
                     "priority": priority,
+                })
+
+        accepted_problem_sources = {
+            (item["response_id"], item["field"], self._normalize_text(item["quote"]))
+            for item in accepted
+            if item["kind"] == "problem"
+        }
+        for response_id, source in source_by_id.items():
+            for field in source.get("evidence_fields", []):
+                quote = str(source["fields"].get(field) or "").strip()
+                source_key = (response_id, field, self._normalize_text(quote))
+                if (
+                    source_key in accepted_problem_sources
+                    or self._normalize_evidence_kind(field, quote, "neutral") != "problem"
+                ):
+                    continue
+                accepted_problem_sources.add(source_key)
+                accepted.append({
+                    "response_id": response_id,
+                    "field": field,
+                    "quote": quote,
+                    "topic": COMMENT_FIELD_LABELS[field],
+                    "kind": "problem",
+                    "priority": "Medium",
                 })
 
         return accepted, sentiments, rejected
@@ -725,7 +796,7 @@ class AgentManager:
         )[:7]:
             rows = {item["response_id"] for item in items}
             representative = items[0]
-            priority = max(items, key=lambda item: self.PRIORITY_RANK[item["priority"]])["priority"]
+            priority = self._calibrate_priority(items, total_responses)
             key_problems.append({
                 "problem": representative["topic"],
                 "frequency_percent": round((len(rows) / total_responses) * 100.0, 1),
@@ -762,7 +833,7 @@ class AgentManager:
         )[:7]:
             rows = {item["response_id"] for item in items}
             representative = items[0]
-            priority = max(items, key=lambda item: self.PRIORITY_RANK[item["priority"]])["priority"]
+            priority = self._calibrate_priority(items, total_responses)
             percent = round((len(rows) / total_responses) * 100.0, 1)
             recommendations.append({
                 "target": representative["topic"],
