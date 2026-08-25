@@ -23,6 +23,12 @@ cd ai-review-analyzer
 deploy.bat
 ```
 
+**ВАЖНО - deploy файл может с первого раза не корректно запустить докеры, если так случилось, то сделайте:**
+```
+docker compose down -v
+docker compose up --build -d
+```
+
 После выполнения скрипта откройте веб-интерфейс в браузере:
 **[http://localhost/](http://localhost/)**
 
