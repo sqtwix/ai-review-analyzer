@@ -1,38 +1,46 @@
-# React + Vite
+# Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+React/Vite-интерфейс системы анализа отзывов. Production image собирается многостадийным `frontend/Dockerfile` и отдаётся Nginx; запросы `/api/` проксируются в `api-core`.
 
-## Демо-режим без backend
+Основной production-запуск выполняется из корня репозитория через `./deploy.sh` или `deploy.bat`. Отдельно запускать frontend для production не требуется.
 
-По умолчанию frontend обращается к backend. Если backend недоступен, пользователь видит ошибку, а готовый mock-отчет не создается.
-
-Для отдельной демо-сборки можно явно включить локальный режим. В этом режиме авторизация, история отчетов, создание и редактирование отчетов работают через `localStorage`, а данные помечаются в интерфейсе как демонстрационные.
-
-Для запуска dev-сервера:
+## Локальная разработка
 
 ```bash
-VITE_ENABLE_DEMO_MODE=true npm run dev
+npm ci
+npm run dev -- --host 127.0.0.1
 ```
 
-После запуска откройте адрес, который покажет Vite, обычно `http://127.0.0.1:5173`.
-
-Для production-сборки демо-режим должен включаться только отдельным явным флагом:
+В обычном dev-режиме frontend ожидает API на `http://127.0.0.1:5000/api/v1`. Это подходит для локально запущенного `.NET` backend. Чтобы использовать backend из уже поднятого Compose-стека, направьте Vite через опубликованный Nginx:
 
 ```bash
-VITE_ENABLE_DEMO_MODE=true npm run build
+VITE_API_URL=http://localhost/api/v1 npm run dev -- --host 127.0.0.1
 ```
 
-Важно: `VITE_OFFLINE_MODE=true` в production больше не включает mock-режим. Старый флаг работает только в dev для обратной совместимости. Переменные `VITE_*` встраиваются Vite во время build.
+При недоступном backend интерфейс показывает ошибку и не создаёт mock-отчёт.
 
-Currently, two official plugins are available:
+## Build flags
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- `VITE_ENABLE_DEMO_MODE=false` — production-режим с реальным API; значение по умолчанию.
+- `VITE_ENABLE_DEMO_MODE=true` — изолированный demo-flow через `localStorage`, только для локальной проверки интерфейса.
+- `VITE_OFFLINE_MODE` оставлен для обратной совместимости и не должен использоваться для production mock-сборки.
 
-## React Compiler
+Demo-режим включается только явно:
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+```bash
+VITE_ENABLE_DEMO_MODE=true npm run dev -- --host 127.0.0.1
+```
 
-## Expanding the Oxlint configuration
+В production Compose оба frontend-флага по умолчанию равны `false` и берутся из `.env` на этапе Docker build.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+## Проверки
+
+```bash
+npm test
+npm run lint
+npm run build
+```
+
+Production build может вывести предупреждение Vite о крупных чанках библиотек экспорта. Это предупреждение не означает ошибку сборки.
+
+Полный runtime и deployment flow описан в корневом [README](../README.md). Подробный frontend regression checklist находится в [VERIFICATION.md](./VERIFICATION.md).

@@ -1,85 +1,71 @@
 # Frontend Verification
 
-## Commands
+## Автоматические проверки
 
-Codex desktop does not expose system `node`/`npm` in this workspace. Use the bundled runtime path when running the Vite scripts locally:
-
-```bash
-PATH=/Users/maxbond/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:$PATH \
-VITE_ENABLE_DEMO_MODE=true ./node_modules/.bin/vite --host 127.0.0.1 --port 5173
-```
-
-Production build smoke:
+Из каталога `frontend/`:
 
 ```bash
-PATH=/Users/maxbond/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:$PATH \
-./node_modules/.bin/vite build
+npm ci
+npm test
+npm run lint
+npm run build
 ```
 
-Lint smoke:
+Vite может сообщать о крупных чанках существующих chart/export-зависимостей. Сборка считается успешной только при exit code `0` и наличии файлов в `dist/`.
+
+Для проверки production API из Vite при запущенном Compose используйте:
 
 ```bash
-PATH=/Users/maxbond/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin:$PATH \
-./node_modules/.bin/oxlint
+VITE_API_URL=http://localhost/api/v1 npm run dev -- --host 127.0.0.1
 ```
 
-Vite can report large chunk warnings for existing export/chart dependencies.
+## Production smoke
 
-## Audit Inputs
+Из корня репозитория запустите один из поддерживаемых flow:
 
-The frontend review is tracked as ten input units:
+```bash
+./deploy.sh
+```
 
-- `00-index.md` - reading order, priorities, and checked flows.
-- `01-ui.md` - visual clarity, duplicate labels, non-product technical text.
-- `02-ux.md` - analysis flow, upload state, discoverability.
-- `03-accessibility.md` - file upload, modal labels, button names, theme radios.
-- `04-responsive.md` - mobile 390px students and history layouts.
-- `05-upload-and-validation.md` - selected file list, removal, validation copy.
-- `06-export-and-data.md` - file download reliability and export feedback.
-- `07-settings-and-archive.md` - settings/archive navigation and wording.
-- `08-additional-recommendations.md` - product polish and user guidance.
-- `09-priority-cards.md` - P1-P7 regression priorities.
+```bash
+./deploy.sh --local-ai
+```
 
-## Runtime Smoke Test
+После запуска проверьте:
 
-Run:
+- frontend `/healthz` отвечает успешно;
+- вход и восстановление сессии используют реальный API;
+- экран загрузки показывает фактическую доступность локальной модели;
+- в base-режиме интерфейс предупреждает, что будет сформирован только количественный отчёт;
+- в local-AI режиме интерфейс сообщает о готовности Qwen;
+- при ошибке backend mock-отчёт не создаётся;
+- завершённый отчёт открывается из истории и сохраняется после повторного deploy.
+
+## Demo smoke
+
+Demo-flow предназначен только для изолированной проверки интерфейса:
 
 ```bash
 VITE_ENABLE_DEMO_MODE=true npm run dev -- --host 127.0.0.1
 ```
 
-Checked flows:
+Проверьте загрузку XLSX, переход к отчёту, вкладки dashboard/qualitative/report, переименование, архив и экспорт. Demo-результаты хранятся в `localStorage` и не подтверждают работу backend или модели.
 
-- Offline login opens the upload workspace.
-- XLSX upload shows client validation for extension and file size.
-- Offline analysis reaches the naming dialog and saves a report.
-- Report detail opens with dashboard, qualitative analysis, and analytical report tabs.
-- Dashboard renders five chart panels.
-- Qualitative analysis shows topic evidence lines.
-- Analytical report renders four required sections.
-- Mobile viewport check does not produce horizontal page overflow.
+## Responsive и accessibility
 
-## Regression Checklist
+- Desktop, tablet и mobile `390x844` не имеют горизонтального page overflow.
+- На mobile страница студентов использует карточки без обрезанных значений.
+- Upload доступен с клавиатуры и имеет label/description.
+- Модальные окна закрываются клавишей Escape и корректно управляют фокусом.
+- Интерактивные элементы имеют доступные имена и видимый focus state.
+- Sidebar, архив и настройки доступны с клавиатуры.
 
-- Upload screen has a keyboard-accessible file picker and no stale selected files after completing/archiving a report.
-- Multi-file upload shows file names, sizes, validation status, per-file removal, and clear-all.
-- Starting analysis without files explains what is missing.
-- Completed offline analysis opens the report immediately, with naming as a secondary step.
-- Report header has distinct actions for saving a title and exporting a file.
-- Export menu exposes loading, success, and failure feedback for PDF, DOCX, Excel, CSV, and JSON.
-- Mobile 390x844 shows the Students page without clipped values; course rows are readable.
-- Sidebar history keeps full accessible names and shows enough metadata to distinguish reports.
-- Settings and archive are reachable from the main sidebar and profile menu.
-- Accessibility toolbar labels controls clearly and allows reset to defaults.
+## Основные регрессии
 
-## Priority Cards Acceptance
-
-Use this list as the post-fix gate for `09-priority-cards.md`.
-
-- P1 Export: PDF, DOCX, Excel, CSV, and JSON create non-empty blobs, show loading/success/error state, and expose a fallback download link with the correct filename extension.
-- P2 Mobile Students: viewport `390x844` shows course cards instead of a clipped table, with no horizontal page overflow.
-- P3 File Choice: selected files show name, size, extension, validation status, per-file remove action, and `Очистить все`.
-- P4 File Upload A11Y: the upload control has a visible keyboard-focusable target, label/description, Enter/Space activation, and a named file input.
-- P5 Save Actions: inline rename uses `Сохранить название`; report export is named `Экспортировать отчет`.
-- P6 Settings Visibility: `Студенты`, `Архив`, and `Настройки` are visible in the main sidebar; `#settings-archive` opens the archive tab directly.
-- P7 Accessibility Toolbar: groups are labeled, controls have specific aria labels, active state is visible beyond color, and reset is available.
+- Выбранные файлы показывают имя, размер, расширение, статус, удаление и `Очистить все`.
+- Запуск без файлов объясняет, каких данных не хватает.
+- Inline rename использует `Сохранить название`, экспорт — `Экспортировать отчёт`.
+- PDF, DOCX, Excel, CSV и JSON показывают loading/success/error и создают непустые файлы с правильным расширением.
+- Processing использует реальные server stages; фиктивного прогресса до 90% нет.
+- Failed-задача показывает серверную ошибку и позволяет запустить новый анализ.
+- Qualitative fallback явно сообщает, что модель недоступна, и не показывает выдуманные темы, цитаты или рекомендации.
