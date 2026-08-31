@@ -21,6 +21,7 @@ class RuntimeHealthTests(unittest.TestCase):
         with patch.dict(os.environ, {
             "DEEPSEEK_API_KEY": "",
             "SBERGPT_API_KEY": "",
+            "LOCAL_AI_ENABLED": "false",
             "QWEN_LOCAL_URL": "http://qwen-local:8080/v1",
         }, clear=False), patch("main.httpx.get", side_effect=httpx.ConnectError("offline")):
             response = readiness()
@@ -35,6 +36,7 @@ class RuntimeHealthTests(unittest.TestCase):
         with patch.dict(os.environ, {
             "DEEPSEEK_API_KEY": "configured",
             "SBERGPT_API_KEY": "",
+            "LOCAL_AI_ENABLED": "false",
         }, clear=False), patch("main.httpx.get", side_effect=httpx.ConnectError("offline")):
             response = readiness()
 
