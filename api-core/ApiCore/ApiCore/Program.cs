@@ -152,6 +152,12 @@ builder.Services.AddHttpClient<AnalysisService>(client =>
     client.BaseAddress = new Uri(aiDriverUrl.EndsWith("/") ? aiDriverUrl : aiDriverUrl + "/");
     client.Timeout = TimeSpan.FromMinutes(timeoutMinutes);
 });
+builder.Services.AddHttpClient("AiDriverStatus", client =>
+{
+    var aiDriverUrl = builder.Configuration["AiDriver:Url"] ?? "http://localhost:8000";
+    client.BaseAddress = new Uri(aiDriverUrl.EndsWith("/") ? aiDriverUrl : aiDriverUrl + "/");
+    client.Timeout = TimeSpan.FromSeconds(5);
+});
 
 var app = builder.Build();
 

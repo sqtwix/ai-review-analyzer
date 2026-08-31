@@ -5,6 +5,7 @@ import {
   register,
   uploadFiles,
   getAnalysisStatus,
+  getAnalysisAvailability,
   getAnalysisHistory,
   renameAnalysisReport,
   isOfflineMode,
@@ -325,6 +326,7 @@ function App() {
   });
   const [mockReports, setMockReports] = useState([]);
   const [selectedModel, setSelectedModel] = useState("Qwen_Local");
+  const [modelAvailability, setModelAvailability] = useState({ state: "checking" });
   const [selectedResponseFiles, setSelectedResponseFiles] = useState([]);
   const [showValidation, setShowValidation] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -535,6 +537,29 @@ function App() {
       setMockReports([]);
       setArchivedReports([]);
     }
+  }, [token]);
+
+  useEffect(() => {
+    let ignore = false;
+
+    if (!token) {
+      setModelAvailability({ state: "checking" });
+      return () => {
+        ignore = true;
+      };
+    }
+
+    getAnalysisAvailability()
+      .then((availability) => {
+        if (!ignore) setModelAvailability({ state: "ready", ...availability });
+      })
+      .catch(() => {
+        if (!ignore) setModelAvailability({ state: "unavailable", model_available: false });
+      });
+
+    return () => {
+      ignore = true;
+    };
   }, [token]);
 
   useEffect(() => {
@@ -1348,6 +1373,13 @@ function App() {
                       Qwen Local
                     </button>
                   </div>
+                  <p className="action-helper" role="status">
+                    {modelAvailability.state === "checking"
+                      ? "Проверяем доступность локальной модели."
+                      : modelAvailability.providers?.qwen_local?.available
+                        ? "Локальная модель готова для качественного анализа."
+                        : "Локальная модель недоступна: будет сформирован количественный отчёт без качественных выводов."}
+                  </p>
                 </div>
 
                 {showValidation && (

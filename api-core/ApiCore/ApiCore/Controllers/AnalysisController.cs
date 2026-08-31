@@ -24,13 +24,54 @@ public class AnalysisController : ControllerBase
     private readonly AppDbContext _context;
     private readonly IServiceScopeFactory _serviceScopeFactory;
     private readonly ReportsService _reportsService;
+    private readonly IHttpClientFactory _httpClientFactory;
 
-    public AnalysisController(AnalysisService analysisService, AppDbContext context, IServiceScopeFactory serviceScopeFactory, ReportsService reportsService)
+    public AnalysisController(
+        AnalysisService analysisService,
+        AppDbContext context,
+        IServiceScopeFactory serviceScopeFactory,
+        ReportsService reportsService,
+        IHttpClientFactory httpClientFactory)
     {
         _analysisService = analysisService;
         _context = context;
         _serviceScopeFactory = serviceScopeFactory;
         _reportsService = reportsService;
+        _httpClientFactory = httpClientFactory;
+    }
+
+    [HttpGet("availability")]
+    public async Task<IActionResult> GetAvailability()
+    {
+        try
+        {
+            var response = await _httpClientFactory.CreateClient("AiDriverStatus").GetAsync("ready");
+            var payload = await response.Content.ReadAsStringAsync();
+            return new ContentResult
+            {
+                StatusCode = (int)response.StatusCode,
+                Content = payload,
+                ContentType = "application/json; charset=utf-8"
+            };
+        }
+        catch (HttpRequestException)
+        {
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, new
+            {
+                status = "unavailable",
+                model_available = false,
+                message = "Сервис качественного анализа недоступен."
+            });
+        }
+        catch (TaskCanceledException)
+        {
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, new
+            {
+                status = "unavailable",
+                model_available = false,
+                message = "Проверка доступности модели превысила лимит времени."
+            });
+        }
     }
 
     [HttpPost("upload")]

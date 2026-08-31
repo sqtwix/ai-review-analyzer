@@ -1,34 +1,21 @@
 # Анализ отзывов слушателей
 
-Система принимает выгрузки анкет в Excel/CSV, рассчитывает количественные показатели и формирует качественный анализ через локальную GGUF-модель. В состав входят React/Nginx frontend, .NET API, FastAPI AI driver, PostgreSQL и опциональный llama.cpp server.
-
-## Архитектура запуска
+Система принимает Excel/CSV-выгрузки анкет, рассчитывает количественные показатели и, когда доступна модель, формирует качественный анализ. В состав входят React/Nginx frontend, .NET API, FastAPI AI driver, PostgreSQL и опциональный llama.cpp server.
 
 ```text
 Browser :APP_PORT
   -> frontend (Nginx, /api proxy)
      -> api-core (.NET, JWT, parsing, reports)
         -> postgres (users and reports; named volume)
-        -> ai-driver (FastAPI analysis pipeline)
-           -> qwen-local (llama.cpp; local-ai profile)
-           -> DeepSeek / SberGPT endpoints (API-only optional providers)
+        -> ai-driver (analysis and deterministic fallback)
+           -> qwen-local (optional local-ai Compose profile)
 ```
 
-Frontend публикуется на `APP_PORT` (по умолчанию `80`). Остальные порты доступны только внутри Compose network. `api-core` ждёт healthy PostgreSQL и AI driver; frontend ждёт healthy API. Локальная модель находится в отдельном profile, поэтому базовое приложение и cloud API-flow могут стартовать без GGUF.
+Frontend публикуется на `APP_PORT` (по умолчанию `80`). PostgreSQL, API, AI driver и модель доступны только внутри Compose network.
 
-Текущий пользовательский интерфейс выбирает только `Qwen Local`. DeepSeek и SberGPT реализованы в backend, но кнопки UI отключены; эти провайдеры нельзя считать проверенным пользовательским flow.
+## Рекомендуемый запуск
 
-## Требования
-
-- Docker Engine с Docker Compose v2 (`docker compose`) или Compose v1.29+ (`docker-compose`)
-- Linux/macOS: Bash, OpenSSL, curl и `sha256sum` либо `shasum`
-- Windows 10/11: Docker Desktop и Windows PowerShell 5.1+
-- Для локальной модели: не менее 8 ГБ RAM и около 4 ГБ свободного места на модель, образы и рабочий запас
-- Для первой установки: сеть для Docker images и GGUF; повторный offline-запуск возможен только при уже закэшированных образах и модели
-
-ARM64 и x86_64 поддерживаются при наличии соответствующих multi-platform Docker images. GPU acceleration в текущем Compose не настроена; llama.cpp работает с настройками образа по умолчанию.
-
-## Полный локальный запуск
+Требуется Docker Engine с Docker Compose v2 (`docker compose`) или standalone Compose 1.29+ (`docker-compose`). Linux/macOS также требуют Bash и OpenSSL. На Windows нужны Docker Desktop и Windows PowerShell 5.1+.
 
 Linux/macOS:
 
@@ -46,110 +33,73 @@ cd ai-review-analyzer
 deploy.bat
 ```
 
-Скрипт при первой установке создаёт `.env` из `env_example.txt`, генерирует `DB_PASSWORD` и `JWT_SECRET`, скачивает модель во временный `.part`-файл, проверяет SHA-256 и только затем атомарно переименовывает файл. После этого Compose собирает и запускает полный stack с profile `local-ai`.
+Это единственный рекомендуемый happy path. Он запускает базовую платформу без локальной модели, не скачивает GGUF и не требует API key. При первой установке скрипт создаёт постоянный `.env` из `env_example.txt` и генерирует `DB_PASSWORD` и `JWT_SECRET`, не выводя их. На следующих запусках скрипт сохраняет существующие значения и секреты, добавляя только отсутствующие non-secret defaults из шаблона.
 
-Повторный запуск не меняет существующий `.env`, модель или named volumes. Существующая модель каждый раз проверяется по SHA-256. `compose down`, `down -v` и очистка Docker images скриптами не выполняются. Контейнеры, оставшиеся от удалённых сервисов этого Compose project, удаляются как orphans; их named volumes сохраняются. При переходе на `--cloud` скрипт дополнительно останавливает только уже запущенный `qwen-local`, потому что профильный сервис не считается Compose orphan; файл модели остаётся на месте.
+Откройте `http://localhost:APP_PORT/`, подставив значение `APP_PORT` из `.env`.
 
-Приложение: `http://localhost/` либо порт из `APP_PORT`.
+Без доступного провайдера приложение остаётся готовым к работе. Анализ создаёт документированный детерминированный количественный отчёт; качественные темы, тональность, цитаты и рекомендации в нём явно отмечены как несформированные. Это не ошибка очереди и не подмена данных результатом модели.
 
-## Базовый или cloud-запуск
+## Локальная модель
 
-Без локальной модели:
+Локальная модель выключена по умолчанию. Её запуск требует явного opt-in `--local-ai`: скрипт передаёт `LOCAL_AI_ENABLED=true` и активирует Compose profile `local-ai` только на этот запуск.
 
 ```bash
-./deploy.sh --cloud
+./deploy.sh --local-ai
 ```
 
 ```bat
-deploy.bat cloud
+deploy.bat --local-ai
 ```
 
-Этот режим не скачивает GGUF и не запускает `qwen-local`. Для backend-вызовов DeepSeek или SberGPT задайте соответствующий API key в `.env`. Без локальной модели и без cloud key базовое приложение стартует, `/health` остаётся healthy, а `/ready` AI driver возвращает `503 not_ready`. Анкеты без содержательного свободного текста завершаются обычным количественным отчётом; при необходимости AI driver ждёт модель до `AI_MODEL_READINESS_TIMEOUT_SECONDS`, а затем возвращает детерминированный количественный fallback-отчёт. В fallback качественные темы, тональность, цитаты и рекомендации помечаются как несформированные, а не подменяются данными модели.
+В этом режиме требуется `curl` (Linux/macOS), около 4 ГБ для модели и не менее 8 ГБ RAM. Скрипт проверяет имя, URL и SHA-256, скачивает отсутствующий GGUF во временный `.part`-файл, проверяет checksum и только затем переименовывает его. Существующий файл модели проверяется, но не перезаписывается.
 
-## Ручной Compose-flow
+Обратный переход выполняется обычным базовым запуском. Он останавливает только устаревший `qwen-local`; `.env`, файл модели, named volumes, базу и отчёты сохраняет. Скрипты не вызывают `compose down`, `down -v`, удаление models или очистку Docker images.
 
-Создайте `.env` и обязательно заполните секреты:
+Для ручного Compose вызова model flow также требует обоих условий:
 
 ```bash
-cp env_example.txt .env
-# DB_PASSWORD: случайное непустое значение
-# JWT_SECRET: случайное значение не короче 32 байт
+LOCAL_AI_ENABLED=true docker compose --profile local-ai up --build -d
 ```
 
-Полный локальный stack с уже размещённой моделью:
+Базовый manual flow должен оставлять профиль отключённым:
 
 ```bash
-docker compose --profile local-ai config --quiet
-docker compose --profile local-ai up --build -d --remove-orphans --wait
+LOCAL_AI_ENABLED=false docker compose up --build -d
 ```
 
-Базовый stack без локальной модели:
+## Конфигурация
 
-```bash
-docker compose config --quiet
-docker compose up --build -d --remove-orphans --wait
-```
+`env_example.txt` содержит публичные defaults. `DB_PASSWORD`, `JWT_SECRET`, `DEEPSEEK_API_KEY` и `SBERGPT_API_KEY` являются секретными ключами: существующий `.env` ими не дополняется и не меняется. Если обязательные `DB_PASSWORD` или `JWT_SECRET` пусты, либо значения boolean/port/checksum некорректны, deploy завершается до Compose build/up с понятной ошибкой.
 
-Для standalone Compose замените `docker compose` на `docker-compose`. Если версия не поддерживает `--wait`, уберите этот флаг и проверьте `docker-compose ps` вручную.
-
-Отдельные сервисы:
-
-```bash
-docker compose up -d postgres
-docker compose up --build -d ai-driver
-docker compose --profile local-ai up -d qwen-local
-docker compose up --build -d api-core
-docker compose up --build -d frontend
-```
-
-Compose автоматически запускает объявленные зависимости выбранного сервиса. `qwen-local` запускается отдельно, потому что он не нужен cloud-flow.
-
-## Обновление конфигурации
-
-1. Сравните существующий `.env` с `env_example.txt`; deploy-скрипты намеренно не дописывают и не меняют пользовательский файл.
-2. Измените нужные значения в `.env`.
-3. Повторно запустите тот же deploy command. Compose пересоздаст только сервисы с изменившейся конфигурацией или image.
-
-Пара `QWEN_GGUF_MODEL_URL`/`QWEN_GGUF_MODEL_SHA256` обязательна для нестандартного имени модели. Filename должен быть обычным именем без пути. Рекомендуемая модель:
-
-```text
-Qwen3-1.7B-Q4_K_M.gguf
-SHA-256 d2387ca2dbfee2ffabce7120d3770dadca0b293052bc2f0e138fdc940d9bc7b5
-```
-
-Источник закреплён на commit `daeb8e2d528a760970442092f6bf1e55c3b659eb`: [ggml-org/Qwen3-1.7B-GGUF](https://huggingface.co/ggml-org/Qwen3-1.7B-GGUF/blob/daeb8e2d528a760970442092f6bf1e55c3b659eb/Qwen3-1.7B-Q4_K_M.gguf).
+`LOCAL_AI_ENABLED=false` в `.env` является безопасным значением по умолчанию. `--local-ai` временно передаёт `true` только в Compose process и не меняет пользовательский файл.
 
 ## Health и диагностика
+
+Deploy проверяет Compose config до build/up и после запуска ждёт healthy `postgres`, `ai-driver`, `api-core` и `frontend`; в local-AI режиме дополнительно ждёт `qwen-local`. Это одинаково работает с Compose, поддерживающим `--wait`, и без него. При неуспехе скрипт выводит `compose ps` и последние логи обязательных сервисов.
 
 ```bash
 curl -fsS http://localhost:${APP_PORT:-80}/healthz
 docker compose ps
-docker compose exec ai-driver python -c "import urllib.request; print(urllib.request.urlopen('http://localhost:8000/health').read().decode())"
 docker compose exec ai-driver python -c "import urllib.request; print(urllib.request.urlopen('http://localhost:8000/ready').read().decode())"
 ```
 
-- frontend `/healthz`: Nginx liveness
-- api-core `/health`: API + PostgreSQL connectivity
-- ai-driver `/health`: process liveness
-- ai-driver `/ready`: доступный local provider или наличие ключа cloud provider; доступность облачного API и валидность ключа этот маршрут не проверяет
-- qwen-local `/health`: llama.cpp model readiness
+- frontend `/healthz`: liveness Nginx
+- api-core `/health`: API и PostgreSQL connectivity
+- ai-driver `/health`: liveness процесса
+- ai-driver `/ready`: readiness платформы; `model_available` отдельно показывает доступность провайдера
+- `/api/v1/analysis/availability`: тот же статус для авторизованного UI
+- qwen-local `/health`: readiness локальной модели
 
-Остановка без удаления данных:
-
-```bash
-docker compose --profile local-ai stop
-```
-
-`docker compose down -v` удаляет named volumes с базой и выполнять его следует только при намеренном полном сбросе данных.
-
-## Проверки без Docker
+## Проверки разработки
 
 ```bash
+bash -n deploy.sh
+bash ai-driver/tests/test_deploy_env.sh
+docker compose config --quiet
+docker compose --profile local-ai config --quiet
 dotnet build api-core/ApiCore/ApiCore.sln -c Release
 cd ai-driver && python -m unittest discover -s tests -v
 cd frontend && npm ci && npm test && npm run lint && npm run build
 ```
 
-## Production-ограничения
-
-Конфигурация ориентирована на повторяемый single-host deployment и сохранение данных, но сама по себе не доказывает production readiness. Перед внешней публикацией остаются обязательными TLS/reverse proxy, централизованное управление секретами, backup/restore PostgreSQL, наблюдаемость, ограничения ресурсов, закрепление Docker images по digest, миграции БД вместо runtime DDL и нагрузочные/аварийные испытания на целевой ОС и hardware.
+Контейнеры по-прежнему используют стандартные образы и не заявляют полноценных non-root/read-only гарантий: API временно принимает файлы, PostgreSQL требует writeable database storage, а Nginx/llama.cpp требуют дополнительной адаптации runtime paths. Для внешней публикации остаются обязательными TLS/reverse proxy, backup/restore PostgreSQL, управление секретами, закрепление image digests, миграции БД и нагрузочные проверки на целевой инфраструктуре.

@@ -43,25 +43,35 @@ def health():
 
 @app.get("/ready", include_in_schema=False)
 def readiness():
+    local_ai_enabled = os.getenv("LOCAL_AI_ENABLED", "").strip().lower() == "true"
     providers = {
         "deepseek": {"configured": bool(os.getenv("DEEPSEEK_API_KEY", "").strip())},
         "sbergpt": {"configured": bool(os.getenv("SBERGPT_API_KEY", "").strip())},
-        "qwen_local": {"configured": False},
+        "qwen_local": {"enabled": local_ai_enabled, "available": False},
     }
 
-    health_url = os.getenv("QWEN_LOCAL_URL", "http://localhost:8080/v1").rstrip("/")
-    if health_url.endswith("/v1"):
-        health_url = health_url[:-3]
-    try:
-        providers["qwen_local"]["configured"] = httpx.get(
-            health_url + "/health", timeout=2.0
-        ).is_success
-    except (httpx.HTTPError, ValueError):
-        pass
+    if local_ai_enabled:
+        health_url = os.getenv("QWEN_LOCAL_URL", "http://localhost:8080/v1").rstrip("/")
+        if health_url.endswith("/v1"):
+            health_url = health_url[:-3]
+        try:
+            providers["qwen_local"]["available"] = httpx.get(
+                health_url + "/health", timeout=2.0
+            ).is_success
+        except (httpx.HTTPError, ValueError):
+            pass
 
-    ready = any(provider["configured"] for provider in providers.values())
-    payload = {"status": "ready" if ready else "not_ready", "providers": providers}
-    return JSONResponse(payload, status_code=200 if ready else 503)
+    model_available = (
+        providers["deepseek"]["configured"]
+        or providers["sbergpt"]["configured"]
+        or providers["qwen_local"]["available"]
+    )
+    payload = {
+        "status": "ready",
+        "model_available": model_available,
+        "providers": providers,
+    }
+    return JSONResponse(payload, status_code=200)
 
 if __name__ == "__main__":
     import uvicorn

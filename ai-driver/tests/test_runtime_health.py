@@ -5,6 +5,7 @@ from unittest.mock import patch
 import httpx
 
 from backend.agent_factory import AgentFactory
+from backend.agent_manager import AgentManager
 from controllers.agent_controller import AgentController
 from main import readiness
 from schemas.analysis_request import AnalysisRequest
@@ -16,7 +17,7 @@ class UnavailableQwenManager:
 
 
 class RuntimeHealthTests(unittest.TestCase):
-    def test_readiness_is_not_ready_without_any_provider(self):
+    def test_platform_readiness_is_not_blocked_without_any_provider(self):
         with patch.dict(os.environ, {
             "DEEPSEEK_API_KEY": "",
             "SBERGPT_API_KEY": "",
@@ -24,8 +25,11 @@ class RuntimeHealthTests(unittest.TestCase):
         }, clear=False), patch("main.httpx.get", side_effect=httpx.ConnectError("offline")):
             response = readiness()
 
-        self.assertEqual(503, response.status_code)
-        self.assertEqual("not_ready", json.loads(response.body)["status"])
+        payload = json.loads(response.body)
+        self.assertEqual(200, response.status_code)
+        self.assertEqual("ready", payload["status"])
+        self.assertFalse(payload["model_available"])
+        self.assertFalse(payload["providers"]["qwen_local"]["enabled"])
 
     def test_readiness_reports_configured_cloud_provider(self):
         with patch.dict(os.environ, {
@@ -36,6 +40,11 @@ class RuntimeHealthTests(unittest.TestCase):
 
         self.assertEqual(200, response.status_code)
         self.assertTrue(json.loads(response.body)["providers"]["deepseek"]["configured"])
+
+    def test_local_provider_requires_explicit_enablement(self):
+        with patch.dict(os.environ, {"LOCAL_AI_ENABLED": "false"}, clear=False):
+            with self.assertRaisesRegex(ValueError, "LOCAL_AI_ENABLED is not enabled"):
+                AgentFactory().create_queue("qwen_local")
 
     def test_cloud_provider_without_key_fails_explicitly(self):
         with patch.dict(os.environ, {"DEEPSEEK_API_KEY": ""}, clear=False):
@@ -63,6 +72,29 @@ class RuntimeHealthTests(unittest.TestCase):
         self.assertEqual(200, response.status_code)
         self.assertEqual("skipped", course["processing_log"][-1]["status"])
         self.assertIn("модель недоступна", course["quality_limitations"][0].lower())
+
+    def test_no_ai_runtime_smoke_uses_documented_quantitative_fallback(self):
+        request = AnalysisRequest.model_validate({
+            "batch_id": "no-ai-smoke",
+            "courses": [{
+                "course_name": "No AI runtime",
+                "responses": [{
+                    "student_id": "student-1",
+                    "usefulness_score": 8,
+                    "practicality_score": 7,
+                    "accessibility_score": 9,
+                    "interaction_score": 8,
+                }],
+            }],
+        })
+
+        with patch.dict(os.environ, {"LOCAL_AI_ENABLED": "false"}, clear=False):
+            response = AgentController(AgentManager(AgentFactory())).get_qwen_local_data_analysis(request)
+
+        course = json.loads(response.body)["courses_analysis"][0]
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(8.0, course["statistics"]["usefulness"]["average"])
+        self.assertEqual("skipped", course["processing_log"][-1]["status"])
 
 
 if __name__ == "__main__":

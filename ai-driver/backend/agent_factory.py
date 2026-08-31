@@ -48,6 +48,8 @@ class AgentFactory:
                 agent_model = os.getenv("SBERGPT_MODEL", "GigaChat-Pro")
 
             case "qwen_local":
+                if os.getenv("LOCAL_AI_ENABLED", "").strip().lower() != "true":
+                    raise ValueError("LOCAL_AI_ENABLED is not enabled")
                 # llama.cpp OpenAI-совместимый сервер:
                 # - не требует аутентификации
                 # - base_url должен заканчиваться на /v1

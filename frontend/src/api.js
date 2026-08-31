@@ -394,6 +394,14 @@ export async function getAnalysisStatus(taskId) {
   return request(`/analysis/status/${taskId}`);
 }
 
+export async function getAnalysisAvailability() {
+  if (isOfflineMode) {
+    return { status: "ready", model_available: false, offline: true };
+  }
+
+  return request("/analysis/availability");
+}
+
 export async function getAnalysisHistory(options = {}) {
   const { includeArchived = false, onlyArchived = false } = options;
 
