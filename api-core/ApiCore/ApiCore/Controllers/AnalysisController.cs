@@ -15,6 +15,10 @@ public class AnalysisController : ControllerBase
     {
         ".csv", ".xlsx", ".xls", ".zip"
     };
+    private static readonly HashSet<string> AllowedModelTypes = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "deepseek", "gigachat", "sbergpt", "qwen_local", "qwen", "local"
+    };
 
     private readonly AnalysisService _analysisService;
     private readonly AppDbContext _context;
@@ -33,11 +37,17 @@ public class AnalysisController : ControllerBase
     [DisableRequestSizeLimit] // Чтобы методисты могли загружать тяжелые CSV/архивы
     public async Task<IActionResult> UploadFiles(
         [FromForm] List<IFormFile> userResponseFiles,    // Массив файлов с реальными отзывами/анкетами
-        [FromForm] string modelType = "deepseek")     // Выбор нейросети (deepseek или gigachat)
+        [FromForm] string modelType = "qwen_local")
     {
         // 1. Быстрая валидация (Критерий ТЗ: Обработка ошибок)
         if (userResponseFiles == null || !userResponseFiles.Any())
             return BadRequest(new { error = "Необходимо загрузить хотя бы один файл с отзывами пользователей." });
+
+        modelType = modelType?.Trim().ToLowerInvariant() ?? string.Empty;
+        if (!AllowedModelTypes.Contains(modelType))
+        {
+            return BadRequest(new { error = "Неподдерживаемая ИИ-модель. Допускаются deepseek, gigachat и qwen_local." });
+        }
 
         var invalidFiles = userResponseFiles
             .Where(file => file.Length == 0 || !AllowedUploadExtensions.Contains(Path.GetExtension(file.FileName)))

@@ -35,11 +35,15 @@ class AgentFactory:
         match model:
             case "deepseek":
                 api_key = os.getenv("DEEPSEEK_API_KEY")
+                if not api_key:
+                    raise ValueError("DEEPSEEK_API_KEY is not configured")
                 base_url = os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com")
                 agent_model = os.getenv("DEEPSEEK_MODEL", "deepseek-chat")
 
             case "sbergpt":
                 api_key = os.getenv("SBERGPT_API_KEY")
+                if not api_key:
+                    raise ValueError("SBERGPT_API_KEY is not configured")
                 base_url = os.getenv("SBERGPT_BASE_URL", "https://gigachat.devices.sberbank.ru/api/v1/")
                 agent_model = os.getenv("SBERGPT_MODEL", "GigaChat-Pro")
 

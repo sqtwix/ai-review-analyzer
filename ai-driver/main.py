@@ -1,6 +1,8 @@
 ﻿from fastapi import FastAPI, APIRouter
 import os
 import logging
+import httpx
+from fastapi.responses import JSONResponse
 
 from backend.agent_client import AgentClient
 from backend.agent_factory import AgentFactory
@@ -37,6 +39,29 @@ app.include_router(setup_routes(agent_controller=agent_controller), prefix="/age
 @app.get("/health", include_in_schema=False)
 def health():
     return {"status": "healthy"}
+
+
+@app.get("/ready", include_in_schema=False)
+def readiness():
+    providers = {
+        "deepseek": {"configured": bool(os.getenv("DEEPSEEK_API_KEY", "").strip())},
+        "sbergpt": {"configured": bool(os.getenv("SBERGPT_API_KEY", "").strip())},
+        "qwen_local": {"configured": False},
+    }
+
+    health_url = os.getenv("QWEN_LOCAL_URL", "http://localhost:8080/v1").rstrip("/")
+    if health_url.endswith("/v1"):
+        health_url = health_url[:-3]
+    try:
+        providers["qwen_local"]["configured"] = httpx.get(
+            health_url + "/health", timeout=2.0
+        ).is_success
+    except (httpx.HTTPError, ValueError):
+        pass
+
+    ready = any(provider["configured"] for provider in providers.values())
+    payload = {"status": "ready" if ready else "not_ready", "providers": providers}
+    return JSONResponse(payload, status_code=200 if ready else 503)
 
 if __name__ == "__main__":
     import uvicorn

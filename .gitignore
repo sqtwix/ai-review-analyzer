@@ -6,6 +6,10 @@
 # AI model files
 *.gguf
 *.llamafile
+models/
+
+# Local runtime artifacts
+outputs/
 
 # User-specific files
 *.rsuser

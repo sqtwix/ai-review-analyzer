@@ -84,7 +84,7 @@ builder.Services.AddOpenApi(options =>
             formSchema.Properties.Add("modelType", new OpenApiSchema
             {
                 Type = "string",
-                Default = new OpenApiString("deepseek"),
+                Default = new OpenApiString("qwen_local"),
                 Description = "Модель ИИ (deepseek, gigachat или qwen_local)"
             });
 
@@ -145,9 +145,9 @@ builder.Services.AddHttpClient<AnalysisService>(client =>
 {
     var aiDriverUrl = builder.Configuration["AiDriver:Url"] ?? "http://localhost:8000";
     var timeoutMinutes = Math.Clamp(
-        builder.Configuration.GetValue<int?>("AiDriver:TimeoutMinutes") ?? 15,
+        builder.Configuration.GetValue<int?>("AiDriver:TimeoutMinutes") ?? 45,
         1,
-        30
+        120
     );
     client.BaseAddress = new Uri(aiDriverUrl.EndsWith("/") ? aiDriverUrl : aiDriverUrl + "/");
     client.Timeout = TimeSpan.FromMinutes(timeoutMinutes);
