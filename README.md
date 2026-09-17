@@ -128,6 +128,7 @@ python3 scripts/production_smoke.py
 python3 scripts/production_smoke.py --require-local-ai --sample example_files/example_minimal.csv
 ```
 
+Порядок полного развертывания системы (включая режим `--local-ai`) подробно описан в [DEPLOYMENT.md](./DEPLOYMENT.md).
 Порядок обновления, backup, пробного и боевого restore описан в [OPERATIONS.md](./OPERATIONS.md).
 
 Workflow `.github/workflows/ci.yml` повторяет обязательные build/test/lint/audit/Compose-проверки на каждом pull request и push в `main`.
