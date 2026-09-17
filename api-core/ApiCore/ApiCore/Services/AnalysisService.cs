@@ -25,6 +25,8 @@ public sealed record AnalysisTaskProgress(
 public class AnalysisService
 {
     private const int TotalStages = 5;
+    private const int MaxArchiveEntryCount = 1000;
+    private const long MaxArchiveUncompressedBytes = 100L * 1024 * 1024;
     public static readonly ConcurrentDictionary<string, AnalysisTaskProgress> TaskTracker = new();
 
     public static void UpdateTaskProgress(
@@ -80,11 +82,14 @@ public class AnalysisService
             2,
             "Проверяем структуру файлов, архивы, обязательные поля и диапазоны оценок.");
 
-        // Получаем объект отчета из базы данных
-        var report = await _dbContext.AnalysisReports.FindAsync(taskId);
+        AnalysisReport? report = null;
 
         try
         {
+            // Получаем объект отчета из базы данных внутри try, чтобы даже ошибка
+            // подключения не оставила временные файлы и progress entry навсегда.
+            report = await _dbContext.AnalysisReports.FindAsync(taskId);
+
             // 0. Распаковка ZIP архивов, если они присутствуют
             var expandedPaths = new List<string>();
             foreach (var path in userResponsePaths)
@@ -100,30 +105,37 @@ public class AnalysisService
                     {
                         using (var archive = System.IO.Compression.ZipFile.OpenRead(path))
                         {
-                            foreach (var entry in archive.Entries)
+                            if (archive.Entries.Count > MaxArchiveEntryCount)
                             {
-                                if (string.IsNullOrEmpty(entry.Name)) continue;
-                                
-                                // Пропускаем системные/скрытые файлы macOS/Windows
-                                if (entry.FullName.StartsWith("__MACOSX") || entry.Name.StartsWith("._") || entry.Name.Equals(".DS_Store", StringComparison.OrdinalIgnoreCase))
-                                    continue;
+                                throw new InvalidDataException($"Архив содержит более {MaxArchiveEntryCount} элементов.");
+                            }
 
+                            var supportedEntries = archive.Entries
+                                .Where(entry => !string.IsNullOrEmpty(entry.Name))
+                                .Where(entry => !entry.FullName.StartsWith("__MACOSX", StringComparison.OrdinalIgnoreCase))
+                                .Where(entry => !entry.Name.StartsWith("._", StringComparison.OrdinalIgnoreCase))
+                                .Where(entry => !entry.Name.Equals(".DS_Store", StringComparison.OrdinalIgnoreCase))
+                                .Where(entry => new[] { ".xlsx", ".xls", ".csv" }.Contains(Path.GetExtension(entry.Name).ToLowerSuffix()))
+                                .ToList();
+
+                            if (supportedEntries.Sum(entry => entry.Length) > MaxArchiveUncompressedBytes)
+                            {
+                                throw new InvalidDataException("Суммарный размер файлов в архиве превышает 100 МБ.");
+                            }
+
+                            foreach (var entry in supportedEntries)
+                            {
                                 var nestedExt = Path.GetExtension(entry.Name).ToLowerSuffix();
-                                if (nestedExt == ".xlsx" || nestedExt == ".xls" || nestedExt == ".csv")
+                                var destinationPath = Path.Combine(zipExtractDir, entry.Name);
+                                int counter = 1;
+                                while (File.Exists(destinationPath))
                                 {
-                                    var destinationPath = Path.Combine(zipExtractDir, entry.Name);
-                                    
-                                    // Обработка конфликтов имен файлов
-                                    int counter = 1;
-                                    while (File.Exists(destinationPath))
-                                    {
-                                        var nameWithoutExt = Path.GetFileNameWithoutExtension(entry.Name);
-                                        destinationPath = Path.Combine(zipExtractDir, $"{nameWithoutExt}_{counter++}{nestedExt}");
-                                    }
-                                    
-                                    entry.ExtractToFile(destinationPath);
-                                    expandedPaths.Add(destinationPath);
+                                    var nameWithoutExt = Path.GetFileNameWithoutExtension(entry.Name);
+                                    destinationPath = Path.Combine(zipExtractDir, $"{nameWithoutExt}_{counter++}{nestedExt}");
                                 }
+
+                                entry.ExtractToFile(destinationPath);
+                                expandedPaths.Add(destinationPath);
                             }
                         }
                     }
@@ -253,6 +265,7 @@ public class AnalysisService
         }
         finally
         {
+            TaskTracker.TryRemove(taskId, out _);
             try
             {
                 if (Directory.Exists(tempDir))

@@ -54,6 +54,8 @@ class AgentController:
                 status_code=200,
                 content=validated_response.model_dump()
             )
+        except HTTPException:
+            raise
         except Exception as e:
             logger.warning("DeepSeek processing failed or timed out: %s. Falling back to programmatic analysis.", str(e))
             fallback_data = self._generate_programmatic_analysis(input_data)
@@ -76,6 +78,8 @@ class AgentController:
                 status_code=200,
                 content=validated_response.model_dump()
             )
+        except HTTPException:
+            raise
         except Exception as e:
             logger.warning("SberGPT processing failed or timed out: %s. Falling back to programmatic analysis.", str(e))
             fallback_data = self._generate_programmatic_analysis(input_data)
@@ -98,6 +102,8 @@ class AgentController:
                 status_code=200,
                 content=validated_response.model_dump()
             )
+        except HTTPException:
+            raise
         except Exception as e:
             logger.warning("Qwen Local processing failed or timed out: %s. Falling back to programmatic analysis.", str(e))
             fallback_data = self._generate_programmatic_analysis(input_data)

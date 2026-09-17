@@ -70,7 +70,7 @@ public class ValidationService
             else
             {
                 using var stream = File.OpenRead(filePath);
-                var encoding = GetEncoding(stream);
+                var encoding = FileParser.DetectTextEncoding(stream);
                 using var reader = new StreamReader(stream, encoding);
 
                 var headerLine = reader.ReadLine();
@@ -136,29 +136,6 @@ public class ValidationService
         return result;
     }
 
-    private Encoding GetEncoding(Stream stream)
-    {
-        System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
-        var cp1251 = System.Text.Encoding.GetEncoding(1251);
-
-        byte[] buffer = new byte[1024];
-        int bytesRead = stream.Read(buffer, 0, buffer.Length);
-        if (stream.CanSeek) stream.Position = 0;
-
-        string utf8String = Encoding.UTF8.GetString(buffer, 0, bytesRead);
-        if (utf8String.Contains("\uFFFD"))
-        {
-            return cp1251;
-        }
-
-        string cp1251String = cp1251.GetString(buffer, 0, bytesRead);
-        if (cp1251String.Contains("должность") || cp1251String.Contains("полезность") || cp1251String.Contains("формат") || cp1251String.Contains("практико"))
-        {
-            return cp1251;
-        }
-
-        return Encoding.UTF8;
-    }
 }
 
 public static class StringExtensions

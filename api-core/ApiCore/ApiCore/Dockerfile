@@ -18,7 +18,10 @@ RUN dotnet publish -c Release -o /app/publish /p:UseAppHost=false
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
+COPY api-entrypoint.sh /usr/local/bin/api-entrypoint.sh
+RUN chmod 0555 /usr/local/bin/api-entrypoint.sh
 
 ENV ASPNETCORE_URLS=http://+:5000
 
-ENTRYPOINT ["dotnet", "ApiCore.dll"]
+ENTRYPOINT ["/usr/local/bin/api-entrypoint.sh"]
+CMD ["dotnet", "ApiCore.dll"]

@@ -2,10 +2,13 @@ using System.Text;
 using ApiCore.Data;
 using ApiCore.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer; // Добавить этот using
+using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.Models;
+using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,6 +17,46 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddControllers();
+
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    // api-core is only reachable from the internal Compose network.
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
+});
+
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.OnRejected = async (context, cancellationToken) =>
+    {
+        context.HttpContext.Response.ContentType = "application/json; charset=utf-8";
+        await context.HttpContext.Response.WriteAsJsonAsync(
+            new { error = "Слишком много запросов. Повторите позже." },
+            cancellationToken);
+    };
+    options.AddPolicy("auth", httpContext => RateLimitPartition.GetFixedWindowLimiter(
+        httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+        _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 20,
+            Window = TimeSpan.FromMinutes(1),
+            QueueLimit = 0,
+            AutoReplenishment = true
+        }));
+    options.AddPolicy("uploads", httpContext => RateLimitPartition.GetFixedWindowLimiter(
+        httpContext.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+            ?? httpContext.Connection.RemoteIpAddress?.ToString()
+            ?? "unknown",
+        _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 10,
+            Window = TimeSpan.FromMinutes(1),
+            QueueLimit = 0,
+            AutoReplenishment = true
+        }));
+});
 
 builder.Services.AddCors(options =>
 {
@@ -218,8 +261,10 @@ for (int retry = 0; retry < 5; retry++)
 }
 
 // 6. MIDDLEWARE (Порядок строго критичен!)
+app.UseForwardedHeaders();
 app.UseCors("AllowFrontend");
 app.UseAuthentication(); // СНАЧАЛА: Расшифровываем токен и узнаем кто это
+app.UseRateLimiter();
 app.UseAuthorization();  // ЗАТЕМ: Проверяем права доступа к методам
 
 app.MapGet("/health", async (AppDbContext dbContext) =>

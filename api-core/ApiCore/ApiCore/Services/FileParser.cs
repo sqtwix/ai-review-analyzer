@@ -58,7 +58,7 @@ public class FileParser
         {
             rows = new List<List<string>>();
             using var stream = File.OpenRead(filePath);
-            var encoding = GetEncoding(stream);
+            var encoding = DetectTextEncoding(stream);
             using var reader = new StreamReader(stream, encoding);
 
             string? line;
@@ -316,28 +316,37 @@ public class FileParser
         return result;
     }
 
-    private Encoding GetEncoding(Stream stream)
+    public static Encoding DetectTextEncoding(Stream stream)
     {
         System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
         var cp1251 = System.Text.Encoding.GetEncoding(1251);
 
-        byte[] buffer = new byte[1024];
+        byte[] buffer = new byte[64 * 1024];
         int bytesRead = stream.Read(buffer, 0, buffer.Length);
         if (stream.CanSeek) stream.Position = 0;
 
-        string utf8String = Encoding.UTF8.GetString(buffer, 0, bytesRead);
-        if (utf8String.Contains("\uFFFD"))
+        try
+        {
+            var strictUtf8 = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false, throwOnInvalidBytes: true);
+            var decoder = strictUtf8.GetDecoder();
+            var chars = new char[strictUtf8.GetMaxCharCount(bytesRead)];
+            decoder.Convert(
+                buffer,
+                0,
+                bytesRead,
+                chars,
+                0,
+                chars.Length,
+                flush: false,
+                out _,
+                out _,
+                out _);
+            return Encoding.UTF8;
+        }
+        catch (DecoderFallbackException)
         {
             return cp1251;
         }
-
-        string cp1251String = cp1251.GetString(buffer, 0, bytesRead);
-        if (cp1251String.Contains("должность") || cp1251String.Contains("полезность") || cp1251String.Contains("формат") || cp1251String.Contains("практико"))
-        {
-            return cp1251;
-        }
-
-        return Encoding.UTF8;
     }
 
     public static string ExtractCourseName(string fileName)

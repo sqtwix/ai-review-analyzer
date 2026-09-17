@@ -3,6 +3,7 @@ using ApiCore.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Npgsql;
 using System;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -24,9 +25,12 @@ public class AuthService
 
     public async Task<AuthResponse?> RegisterAsync(RegisterRequest request)
     {
+        var normalizedEmail = request.Email.Trim().ToLowerInvariant();
+        var normalizedUsername = request.Username.Trim();
+
         // Проверяем асинхронно, занято ли имя пользователя ИЛИ почта
         var userExists = await _context.Users
-            .AnyAsync(u => u.Email.ToLower() == request.Email.ToLower());
+            .AnyAsync(u => u.Email.ToLower() == normalizedEmail);
 
         if (userExists)
         {
@@ -36,13 +40,22 @@ public class AuthService
         var newUser = new User
         {
             Id = Guid.NewGuid(),
-            Username = request.Username,
-            Email = request.Email,
-            PasswordHash = _passwordHasher.HashPassword(request.Username, request.Password)
+            Username = normalizedUsername,
+            Email = normalizedEmail,
+            PasswordHash = _passwordHasher.HashPassword(normalizedUsername, request.Password)
         };
 
         await _context.Users.AddAsync(newUser);
-        await _context.SaveChangesAsync();
+        try
+        {
+            await _context.SaveChangesAsync();
+        }
+        catch (DbUpdateException exception)
+            when (exception.InnerException is PostgresException postgresException
+                && postgresException.SqlState == PostgresErrorCodes.UniqueViolation)
+        {
+            return null;
+        }
 
         var token = GenerateJwtToken(newUser);
         return new AuthResponse { Token = token, Username = newUser.Username };
@@ -50,9 +63,11 @@ public class AuthService
 
     public async Task<AuthResponse?> LoginAsync(LoginRequest request)
     {
+        var normalizedEmail = request.Email.Trim().ToLowerInvariant();
+
         // Ищем пользователя в БД по имени
         var user = await _context.Users
-            .FirstOrDefaultAsync(u => u.Email.ToLower() == request.Email.ToLower());
+            .FirstOrDefaultAsync(u => u.Email.ToLower() == normalizedEmail);
 
         if (user == null) return null;
 

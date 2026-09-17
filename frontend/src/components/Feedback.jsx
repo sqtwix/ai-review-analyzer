@@ -182,7 +182,7 @@ export function FileGuideDialog({ open, onClose }) {
         <div className="file-guide-list">
           <section>
             <h4>Форматы</h4>
-            <p>.xlsx, .csv или .zip. Файлы Word пока не поддерживаются.</p>
+            <p>.xlsx, .xls, .csv или .zip; до 20 файлов и 50 МБ суммарно. Файлы Word не поддерживаются.</p>
           </section>
           <section>
             <h4>Структура</h4>

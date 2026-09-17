@@ -66,7 +66,9 @@ export function AuthPage({
           Пароль
           <input
             type="password"
-            placeholder={isLogin ? "Пароль" : "Минимум 6 символов"}
+            placeholder={isLogin ? "Пароль" : "Минимум 8 символов"}
+            minLength={isLogin ? undefined : 8}
+            maxLength={128}
             value={isLogin ? loginPassword : registerPassword}
             onChange={(e) => (isLogin ? onLoginPasswordChange(e.target.value) : onRegisterPasswordChange(e.target.value))}
             required

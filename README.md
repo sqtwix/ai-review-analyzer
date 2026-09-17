@@ -13,9 +13,13 @@ Browser :APP_PORT
 
 Frontend публикуется на `APP_PORT` (по умолчанию `80`). PostgreSQL, API, AI driver и модель доступны только внутри Compose network.
 
+За один анализ можно загрузить до 20 файлов `.csv`, `.xlsx`, `.xls` или `.zip` суммарным размером до 50 МБ. Для ZIP дополнительно действуют лимиты 1000 элементов и 100 МБ распакованных поддерживаемых таблиц.
+
+Для защиты от подбора паролей auth API ограничен 20 запросами в минуту на IP, а запуск анализа — 10 загрузками в минуту на пользователя.
+
 ## Рекомендуемый запуск
 
-Требуется Docker Engine с Docker Compose v2 (`docker compose`) или standalone Compose 1.29+ (`docker-compose`). Linux/macOS также требуют Bash и OpenSSL. Для режима `--local-ai` нужны `curl` и `sha256sum` либо `shasum`. На Windows нужны Docker Desktop и Windows PowerShell 5.1+.
+Требуется запущенный Docker Engine с Docker Compose v2 (`docker compose`) или standalone Compose 1.29+ (`docker-compose`). Linux/macOS также требуют Bash и OpenSSL. Для режима `--local-ai` нужны `curl` и `sha256sum` либо `shasum`. На Windows нужны Docker Desktop и Windows PowerShell 5.1+.
 
 Linux/macOS:
 
@@ -61,9 +65,10 @@ deploy.bat --local-ai
 LOCAL_AI_ENABLED=true docker compose --profile local-ai up --build -d
 ```
 
-Базовый manual flow должен оставлять профиль отключённым:
+Базовый manual flow должен оставлять профиль отключённым. Если ранее запускался `local-ai`, сначала остановите его контейнер: Compose не останавливает уже запущенный профиль автоматически.
 
 ```bash
+LOCAL_AI_ENABLED=true docker compose --profile local-ai stop qwen-local
 LOCAL_AI_ENABLED=false docker compose up --build -d
 ```
 
@@ -79,7 +84,7 @@ LOCAL_AI_ENABLED=false docker compose up --build -d
 
 ## Health и диагностика
 
-Deploy проверяет Compose config до build/up и после запуска ждёт healthy `postgres`, `ai-driver`, `api-core` и `frontend`; в local-AI режиме дополнительно ждёт `qwen-local`. Это одинаково работает с Compose, поддерживающим `--wait`, и без него. При неуспехе скрипт выводит `compose ps` и последние логи обязательных сервисов.
+Deploy проверяет Compose config до build/up и после запуска ждёт healthy `postgres`, `ai-driver`, `api-core` и `frontend`; в local-AI режиме дополнительно ждёт `qwen-local`. Это одинаково работает с Compose, поддерживающим `--wait`, и без него. При неуспехе скрипт выводит `compose ps` и последние логи обязательных сервисов. Docker logs ограничены пятью файлами по 10 МБ на сервис.
 
 ```bash
 curl -fsS http://localhost:80/healthz
@@ -108,4 +113,23 @@ cd ai-driver && python -m unittest discover -s tests -v
 cd frontend && npm ci && npm test && npm run lint && npm run build
 ```
 
-Контейнеры по-прежнему используют стандартные образы и не заявляют полноценных non-root/read-only гарантий: API временно принимает файлы, PostgreSQL требует writeable database storage, а Nginx/llama.cpp требуют дополнительной адаптации runtime paths. Для внешней публикации остаются обязательными TLS/reverse proxy, backup/restore PostgreSQL, управление секретами, закрепление image digests, миграции БД и нагрузочные проверки на целевой инфраструктуре.
+Для Python-тестов на host сначала установите `ai-driver/requirements.txt` в виртуальное окружение Python 3.13. После production build тот же набор можно прогнать без host-установки:
+
+```bash
+docker compose exec ai-driver python -m unittest discover -s tests -v
+```
+
+Frontend-проверки требуют Node.js 20+ и `npm`.
+
+После запуска всего стека end-to-end smoke без внешних Python-зависимостей проверяет защиту API, регистрацию/вход и негативные auth-кейсы, валидацию загрузок, анализ реального файла, историю, переименование, архив и межпользовательскую изоляцию. Он создаёт технических smoke-пользователей и отчёт в текущей БД:
+
+```bash
+python3 scripts/production_smoke.py
+python3 scripts/production_smoke.py --require-local-ai --sample example_files/example_minimal.csv
+```
+
+Порядок обновления, backup, пробного и боевого restore описан в [OPERATIONS.md](./OPERATIONS.md).
+
+Workflow `.github/workflows/ci.yml` повторяет обязательные build/test/lint/audit/Compose-проверки на каждом pull request и push в `main`.
+
+API и AI driver запускают приложение непривилегированными пользователями, с read-only root filesystem и `no-new-privileges`; временные загрузки API изолированы в отдельном служебном volume и очищаются при старте. Для остальных контейнеров не заявляются полные non-root/read-only гарантии: PostgreSQL требует writeable database storage, а Nginx/llama.cpp требуют дополнительной адаптации runtime paths. Для внешней публикации остаются обязательными TLS/reverse proxy, централизованное управление секретами, закрепление image digests, миграции БД, автоматические off-host backups и нагрузочные проверки на целевой инфраструктуре.

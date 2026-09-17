@@ -7,6 +7,21 @@ trap 'rm -rf -- "$test_dir"' EXIT
 
 source "$repo_dir/deploy.sh"
 
+# CMD uses the outer double quotes to delimit PowerShell's -Command value.
+# Any additional unescaped double quote is stripped by cmd.exe and can turn
+# PowerShell escapes such as `n into parser errors on Windows PowerShell 5.1.
+awk '
+    /^[[:space:]]*powershell -NoProfile -Command/ {
+        line = $0
+        quote_count = gsub(/"/, "", line)
+        if (quote_count != 2) {
+            print "unsafe nested double quote in deploy.bat PowerShell command at line " FNR > "/dev/stderr"
+            failed = 1
+        }
+    }
+    END { exit failed }
+' "$repo_dir/deploy.bat"
+
 template="$test_dir/template.env"
 env_file="$test_dir/.env"
 printf '%s\n' \
@@ -52,6 +67,30 @@ fi
 printf '%s\n' 'QWEN_GGUF_MODEL_FILE=../unsafe.gguf' 'QWEN_GGUF_MODEL_URL=https://example.invalid/model' 'QWEN_GGUF_MODEL_SHA256=not-a-checksum' > "$test_dir/invalid-model.env"
 if validate_local_model_config "$test_dir/invalid-model.env" >/dev/null 2>&1; then
   echo "invalid model configuration unexpectedly passed" >&2
+  exit 1
+fi
+
+# Windows entrypoint cannot be executed on Unix CI, but its supported modes and
+# safety invariants must stay in parity with deploy.sh.
+for expected in \
+  '--local-ai' \
+  '--cloud' \
+  'docker compose' \
+  'docker-compose' \
+  'config --quiet' \
+  'stop qwen-local' \
+  'DEPLOY_WAIT_TIMEOUT_SECONDS' \
+  'QWEN_GGUF_MODEL_SHA256' \
+  'Existing .env, models, named volumes, and application data were preserved.'
+do
+  grep -Fq -- "$expected" "$repo_dir/deploy.bat" || {
+    echo "deploy.bat is missing required behavior: $expected" >&2
+    exit 1
+  }
+done
+
+if grep -Eiq '(^|[[:space:]])down([[:space:]]|$)|down[[:space:]]+-v' "$repo_dir/deploy.bat"; then
+  echo "deploy.bat must not tear down the stack or named volumes" >&2
   exit 1
 fi
 

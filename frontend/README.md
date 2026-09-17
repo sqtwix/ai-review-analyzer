@@ -11,7 +11,7 @@ npm ci
 npm run dev -- --host 127.0.0.1
 ```
 
-В обычном dev-режиме frontend ожидает API на `http://127.0.0.1:5000/api/v1`. Это подходит для локально запущенного `.NET` backend. Чтобы использовать backend из уже поднятого Compose-стека, направьте Vite через опубликованный Nginx:
+В обычном dev-режиме frontend ожидает API на `http://127.0.0.1:5000/api/v1`. Это подходит для отдельно настроенного и запущенного `.NET` backend; его launch profile также использует порт `5000`. Для обычной frontend-разработки проще сначала поднять весь Compose-стек, а затем направить Vite через опубликованный Nginx:
 
 ```bash
 VITE_API_URL=http://localhost/api/v1 npm run dev -- --host 127.0.0.1

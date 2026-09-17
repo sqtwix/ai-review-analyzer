@@ -10,6 +10,7 @@ models/
 
 # Local runtime artifacts
 outputs/
+backups/
 
 # User-specific files
 *.rsuser

@@ -55,7 +55,7 @@
   --ease-standard: cubic-bezier(0.2, 0, 0, 1);
   --ease-out: cubic-bezier(0, 0, 0.2, 1);
   --ease-emphasis: cubic-bezier(0.2, 0, 0, 1.2);
-  --font-sans: Inter, "Segoe UI", Arial, sans-serif;
+  --font-sans: "Segoe UI", Arial, sans-serif;
   --font-size-primary: 1rem;
   --font-size-secondary: 0.875rem;
   --font-size-accent: var(--font-size-primary);

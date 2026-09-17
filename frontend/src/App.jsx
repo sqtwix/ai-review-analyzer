@@ -231,7 +231,9 @@ const initialMockReports = [
   }
 ];
 
-const allowedUploadExtensions = new Set(["csv", "xlsx", "zip"]);
+const allowedUploadExtensions = new Set(["csv", "xlsx", "xls", "zip"]);
+const MAX_UPLOAD_FILE_COUNT = 20;
+const MAX_TOTAL_UPLOAD_BYTES = 50 * 1024 * 1024;
 
 const formatFileSize = (size) => {
   if (!Number.isFinite(size)) return "0 Б";
@@ -244,11 +246,18 @@ const getUploadFileExtension = (file) => file.name.split(".").pop()?.toLowerCase
 
 const getUploadFileStatus = (file) => {
   const extension = getUploadFileExtension(file);
+  if (file.name.length > 200) {
+    return {
+      tone: "error",
+      label: "Имя слишком длинное",
+      details: "Имя файла должно быть короче 201 символа.",
+    };
+  }
   if (!allowedUploadExtensions.has(extension)) {
     return {
       tone: "error",
       label: "Неподдерживаемый формат",
-      details: "Поддерживаются только .xlsx, .csv и .zip.",
+      details: "Поддерживаются .xlsx, .xls, .csv и .zip.",
     };
   }
   if (file.size === 0) {
@@ -753,8 +762,8 @@ function App() {
       if (!registerUsername || !registerEmail || !registerPassword) {
         throw new Error("Заполните все поля.");
       }
-      if (registerPassword.length < 6) {
-        throw new Error("Пароль должен быть не менее 6 символов.");
+      if (registerPassword.length < 8) {
+        throw new Error("Пароль должен быть не менее 8 символов.");
       }
       const data = await register(registerUsername, registerEmail, registerPassword);
       if (data && data.token) {
@@ -828,7 +837,7 @@ function App() {
       return {
         status: "idle",
         title: "Файлы не выбраны",
-        message: "Выберите Excel, CSV или ZIP-архив с анкетами. JSON не поддерживается как входной формат.",
+        message: "Выберите Excel, CSV или ZIP-архив с анкетами. До 20 файлов и 50 МБ суммарно.",
       };
     }
 
@@ -837,12 +846,13 @@ function App() {
       return !allowedUploadExtensions.has(extension);
     });
     const emptyFiles = selectedResponseFiles.filter((file) => file.size === 0);
+    const longNameFiles = selectedResponseFiles.filter((file) => file.name.length > 200);
 
     if (invalidFiles.length > 0) {
       return {
         status: "error",
         title: "Неподдерживаемый формат",
-        message: `Проверьте файлы: ${invalidFiles.map((file) => file.name).join(", ")}. Поддерживаются только .xlsx, .csv и .zip. Удалите неподходящий файл или выберите другой.`,
+        message: `Проверьте файлы: ${invalidFiles.map((file) => file.name).join(", ")}. Поддерживаются .xlsx, .xls, .csv и .zip. Удалите неподходящий файл или выберите другой.`,
       };
     }
 
@@ -851,6 +861,31 @@ function App() {
         status: "error",
         title: "Пустой файл",
         message: `Мы не нашли данных в файлах: ${emptyFiles.map((file) => file.name).join(", ")}. Удалите пустой файл или выберите другой.`,
+      };
+    }
+
+    if (longNameFiles.length > 0) {
+      return {
+        status: "error",
+        title: "Слишком длинное имя файла",
+        message: "Сократите имя файла до 200 символов и повторите загрузку.",
+      };
+    }
+
+    if (selectedResponseFiles.length > MAX_UPLOAD_FILE_COUNT) {
+      return {
+        status: "error",
+        title: "Слишком много файлов",
+        message: `За один запуск можно загрузить не более ${MAX_UPLOAD_FILE_COUNT} файлов.`,
+      };
+    }
+
+    const totalBytes = selectedResponseFiles.reduce((total, file) => total + file.size, 0);
+    if (totalBytes > MAX_TOTAL_UPLOAD_BYTES) {
+      return {
+        status: "error",
+        title: "Файлы слишком большие",
+        message: "Суммарный размер загрузки не должен превышать 50 МБ.",
       };
     }
 
@@ -1245,7 +1280,7 @@ function App() {
                 <div className="upload-panel-heading text-stack">
                   <p className="eyebrow">Новый анализ</p>
                   <h2>Загрузите файлы опросов слушателей</h2>
-                  <p className="muted">Поддерживаются файлы Excel (.xlsx), CSV или ZIP-архивы с таблицами опросов. JSON не принимается как входной формат. Если в файлах не хватает колонок или они повреждены, система сообщит об этом до запуска анализа.</p>
+                  <p className="muted">Поддерживаются Excel (.xlsx, .xls), CSV и ZIP-архивы — до 20 файлов и 50 МБ суммарно. JSON и Word не принимаются. Если не хватает колонок или файл повреждён, система вернёт понятную ошибку.</p>
                 </div>
                 {isLegacyOfflineModeIgnored && (
                   <div className="validation-box validation-box-pending production-guard-box">
@@ -1277,14 +1312,14 @@ function App() {
                       ? selectedResponseFiles[0].name
                       : `Выбрано файлов: ${selectedResponseFiles.length}`}
                   </strong>
-                  <p id="responses-upload-help">Нажмите Enter или Space для выбора файлов анкет (.csv, .xlsx) или ZIP-архива</p>
+                  <p id="responses-upload-help">Нажмите Enter или Space для выбора .csv, .xlsx, .xls или ZIP-архива</p>
                   <input
                     type="file"
                     id="responses-input"
                     ref={responsesInputRef}
                     className="sr-only"
                     multiple
-                    accept=".csv,.xlsx,.zip"
+                    accept=".csv,.xlsx,.xls,.zip"
                     aria-label="Файлы анкет для анализа"
                     aria-describedby="responses-upload-help"
                     onChange={(e) => handleFileChange(e, "responses")}

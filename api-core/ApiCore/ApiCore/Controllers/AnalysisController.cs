@@ -2,6 +2,7 @@ using ApiCore.Services;
 using ApiCore.Models;
 using ApiCore.Data;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 
 namespace ApiCore.Controllers;
@@ -11,6 +12,11 @@ namespace ApiCore.Controllers;
 [Route("api/v1/analysis")]
 public class AnalysisController : ControllerBase
 {
+    private const int MaxUploadFileCount = 20;
+    private const long MaxTotalUploadBytes = 50L * 1024 * 1024;
+    private const long MaxRequestBodyBytes = 52L * 1024 * 1024;
+    private const int MaxUploadFileNameLength = 200;
+
     private static readonly HashSet<string> AllowedUploadExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
         ".csv", ".xlsx", ".xls", ".zip"
@@ -75,7 +81,9 @@ public class AnalysisController : ControllerBase
     }
 
     [HttpPost("upload")]
-    [DisableRequestSizeLimit] // Чтобы методисты могли загружать тяжелые CSV/архивы
+    [EnableRateLimiting("uploads")]
+    [RequestSizeLimit(MaxRequestBodyBytes)]
+    [RequestFormLimits(MultipartBodyLengthLimit = MaxRequestBodyBytes)]
     public async Task<IActionResult> UploadFiles(
         [FromForm] List<IFormFile> userResponseFiles,    // Массив файлов с реальными отзывами/анкетами
         [FromForm] string modelType = "qwen_local")
@@ -84,6 +92,17 @@ public class AnalysisController : ControllerBase
         if (userResponseFiles == null || !userResponseFiles.Any())
             return BadRequest(new { error = "Необходимо загрузить хотя бы один файл с отзывами пользователей." });
 
+        if (userResponseFiles.Count > MaxUploadFileCount)
+        {
+            return BadRequest(new { error = $"За один запуск можно загрузить не более {MaxUploadFileCount} файлов." });
+        }
+
+        var totalUploadBytes = userResponseFiles.Sum(file => file.Length);
+        if (totalUploadBytes > MaxTotalUploadBytes)
+        {
+            return BadRequest(new { error = "Суммарный размер файлов не должен превышать 50 МБ." });
+        }
+
         modelType = modelType?.Trim().ToLowerInvariant() ?? string.Empty;
         if (!AllowedModelTypes.Contains(modelType))
         {
@@ -91,14 +110,16 @@ public class AnalysisController : ControllerBase
         }
 
         var invalidFiles = userResponseFiles
-            .Where(file => file.Length == 0 || !AllowedUploadExtensions.Contains(Path.GetExtension(file.FileName)))
+            .Where(file => file.Length == 0
+                || file.FileName.Length > MaxUploadFileNameLength
+                || !AllowedUploadExtensions.Contains(Path.GetExtension(file.FileName)))
             .Select(file => Path.GetFileName(file.FileName))
             .ToArray();
         if (invalidFiles.Length > 0)
         {
             return BadRequest(new
             {
-                error = $"Пустые или неподдерживаемые файлы: {string.Join(", ", invalidFiles)}. Допускаются .csv, .xlsx, .xls и .zip."
+                error = $"Пустые, неподдерживаемые или имеющие слишком длинное имя файлы: {string.Join(", ", invalidFiles)}. Допускаются .csv, .xlsx, .xls и .zip; имя — до 200 символов."
             });
         }
 
@@ -239,9 +260,9 @@ public class AnalysisController : ControllerBase
             return Unauthorized(new { error = "Пользователь не авторизован." });
         }
 
-        if (string.IsNullOrWhiteSpace(request.Name))
+        if (string.IsNullOrWhiteSpace(request.Name) || request.Name.Trim().Length > 255)
         {
-            return BadRequest(new { error = "Название не может быть пустым." });
+            return BadRequest(new { error = "Название должно содержать от 1 до 255 символов." });
         }
 
         var success = await _reportsService.RenameReportAsync(taskId, userId, request.Name);
