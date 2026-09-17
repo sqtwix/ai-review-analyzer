@@ -19,7 +19,7 @@ FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
 COPY api-entrypoint.sh /usr/local/bin/api-entrypoint.sh
-RUN chmod 0555 /usr/local/bin/api-entrypoint.sh
+RUN sed -i 's/\r$//' /usr/local/bin/api-entrypoint.sh && chmod 0555 /usr/local/bin/api-entrypoint.sh
 
 ENV ASPNETCORE_URLS=http://+:5000
 
