@@ -26,7 +26,8 @@ Linux/macOS:
 ```bash
 git clone https://github.com/sqtwix/ai-review-analyzer.git
 cd ai-review-analyzer
-./deploy.sh
+./deploy.sh --local-ai
+
 ```
 
 Windows CMD или PowerShell:
@@ -34,7 +35,7 @@ Windows CMD или PowerShell:
 ```bat
 git clone https://github.com/sqtwix/ai-review-analyzer.git
 cd ai-review-analyzer
-deploy.bat
+deploy.bat --local-ai
 ```
 
 Это единственный рекомендуемый happy path. Он запускает базовую платформу без локальной модели, не скачивает GGUF и не требует API key. При первой установке скрипт создаёт постоянный `.env` из `env_example.txt` и генерирует `DB_PASSWORD` и `JWT_SECRET`, не выводя их. На следующих запусках скрипт сохраняет существующие значения и секреты, добавляя только отсутствующие non-secret defaults из шаблона.
